@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:vm="using:SuiteCreatorAvalonia.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="SuiteCreatorAvalonia.Views.UninstallsView"
+			 x:DataType="vm:UninstallsViewModel">
+
+	<Design.DataContext>
+		<vm:UninstallsViewModel/>
+	</Design.DataContext>
+	
+	<Grid
+		RowDefinitions="Auto,*"
+		ColumnDefinitions="Auto,*,Auto">
+		<TextBlock
+			Classes="TabHeader"
+			Text="Uninstalls"
+			Grid.ColumnSpan="2"
+			Grid.Column="0"/>
+	</Grid>
+	
+</UserControl>

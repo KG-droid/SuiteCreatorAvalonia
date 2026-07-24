@@ -1,0 +1,253 @@
+<Window 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:AvaloniaEdit="using:AvaloniaEdit"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:labsGif="using:Avalonia.Labs.Gif"
+    mc:Ignorable="d"
+	Topmost="True"
+	RequestedThemeVariant="Default"
+	WindowStartupLocation="Manual"
+	ShowInTaskbar="False"
+	SizeToContent="WidthAndHeight"
+	CanResize="False"
+	WindowDecorations="None"
+	BorderThickness="0"
+	MinWidth="300"
+    Background="Transparent"
+	TransparencyLevelHint="Transparent"
+    ExtendClientAreaToDecorationsHint="False"
+	SystemDecorations="None"
+	LayoutUpdated="Popup_LayoutUpdated"
+    x:Class="SuiteCreatorAvalonia.Views.PopupSampleWindow"
+    x:DataType="vm:PopupSampleWindowViewModel">
+
+	<Design.DataContext>
+		<vm:PopupSampleWindowViewModel/>
+	</Design.DataContext>
+
+	<Window.Styles>
+		<Style Selector="Image.PointerEnlarge:pointerover">
+			<Setter Property="RenderTransform">
+				<Setter.Value>
+					<ScaleTransform ScaleX="1.1" ScaleY="1.1"/>
+				</Setter.Value>
+			</Setter>
+		</Style>
+		<Style Selector="Button">
+			<Setter Property="Foreground" Value="{Binding CompanyLogoForegroundColor}"/>
+			<Setter Property="Background" Value="{Binding CompanyLogoBackgroundColor}"/>
+		</Style>
+		<Style Selector="Button:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="{Binding CompanyLogoBackgroundColorShade}"/>
+			<Setter Property="Foreground" Value="{Binding CompanyLogoForegroundColor}"/>
+		</Style>
+	</Window.Styles>
+
+	<Window.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.ThemeDictionaries>
+				<ResourceDictionary x:Key='Light'>
+					<BoxShadows x:Key="MainBoxShadow">-3 3 10 1 LightGray</BoxShadows>
+				</ResourceDictionary>
+				<ResourceDictionary x:Key='Dark'>
+					<BoxShadows x:Key="MainBoxShadow">-6 6 15 2 Black</BoxShadows>
+				</ResourceDictionary>
+			</ResourceDictionary.ThemeDictionaries>
+		</ResourceDictionary>
+	</Window.Resources>
+
+	<Grid
+		Margin="0,13,7,13"
+		Background="Transparent"
+		ColumnDefinitions="Auto,*">
+		
+		<!-- Company logo tab -->
+		<Canvas
+			Margin="0,0,-1,0"
+			VerticalAlignment="Stretch"
+			Width="60"
+			Grid.Column="0">
+			<Path
+				Canvas.Top="11"
+				VerticalAlignment="Center"
+				Fill="{Binding CompanyLogoBackgroundColor}"
+				Opacity="0.97"
+				Data="M60,0
+					v155.59
+					c0-14.66-18.1-33.24-40-39.81
+					C13.67,113.71-.16,106.81,0,95.78
+					v-35.97
+					c-.16-11.03,13.67-17.93,20-20
+					C41.9,33.24,60,14.66,60,0Z" />
+				<UserControl
+					Content="{Binding CompanyLogo}"
+					Width="40"
+					Height="40"
+					Canvas.Left="8"
+					Canvas.Top="68" />
+		</Canvas>
+		
+		<!-- Main View-->
+		<Border
+			x:Name="Main_Border"
+			BoxShadow="{DynamicResource MainBoxShadow}"
+			CornerRadius="15"
+			Grid.Column="1"
+			Background="{DynamicResource SystemAltHighColor}"
+			Opacity="0.97"
+			Padding="5">
+
+			<!-- App name, version and action -->
+			<StackPanel
+				Name="Title_StackPanel"
+				Margin="15">
+				<Grid
+					ColumnDefinitions="Auto,Auto,*"
+					RowDefinitions="Auto,Auto"
+					Margin="0,0,0,10">
+					<Image
+						Grid.Column="0"
+						Grid.RowSpan="2"
+						Source="{Binding IconDisplay}"
+						Width="30"
+						Height="30"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Margin="0,0,10,0"/>
+					<TextBlock
+						Grid.Column="1"
+						VerticalAlignment="Center"
+						HorizontalAlignment="Left"
+						FontSize="14"
+						FontWeight="Bold"
+						TextWrapping="NoWrap"
+						Text="{Binding Name}"/>
+					<TextBlock
+						Grid.Column="1"
+						Grid.Row="1"
+						VerticalAlignment="Center"
+						HorizontalAlignment="Left"
+						FontSize="10"
+						TextWrapping="NoWrap"
+						Text="{Binding Version, StringFormat='Version: {0}'}"/>
+					<StackPanel
+						Orientation="Horizontal"
+						VerticalAlignment="Center"
+						HorizontalAlignment="Right"
+						Spacing="5"
+						Grid.Column="2"
+						Grid.RowSpan="2">
+						<TextBlock
+							FontSize="13"
+							FontWeight="Bold"
+							TextWrapping="NoWrap"
+							Text="{Binding Action}"/>
+						<mi:MaterialIcon
+							Width="23"
+							Height="23"
+							Kind="{Binding ActionIconKind}"/>
+					</StackPanel>
+				</Grid>
+				
+				<!-- Main Warning text -->
+				<AvaloniaEdit:TextEditor
+					FontSize="13"
+					Document="{Binding MainText}"
+					Margin="5,5,5,15"/>
+
+				<!-- Apps to close -->
+				<Border
+					IsVisible="{Binding IsClosuresAppsVisible}">
+					<WrapPanel
+						HorizontalAlignment="Center"
+						Margin="20,-15,20,20">
+						<Image
+							ToolTip.Tip="{Binding Name}"
+							ToolTip.ShowDelay="0"
+							ToolTip.Placement="Bottom"
+							ToolTip.VerticalOffset="3"
+							Classes="PointerEnlarge"
+							Margin="10"
+							Grid.Column="0"
+							Source="{Binding IconDisplay}"
+							Width="30"
+							Height="30"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"/>
+					</WrapPanel>
+				</Border>
+
+				<!-- Timer warning-->
+				<TextBlock
+					Name="SkippableWarning_TextBlock"
+					IsVisible="{Binding MaxDelayDays}"
+					FontSize="13"
+					FontStyle="Italic"
+					TextAlignment="Center"
+					TextWrapping="Wrap"
+					MaxWidth="300">
+					<TextBlock.Text>
+						<MultiBinding StringFormat="If no choice is made, the {0:0.} will {1:0.} after the timer below expires in {2:0.}min">
+							<Binding Path="Action"/>
+							<Binding Path="TimerExpireAction" StringFormat="{}{0}"/>
+							<Binding Path="Timer"/>
+						</MultiBinding>
+					</TextBlock.Text>
+				</TextBlock>
+
+				<TextBlock
+					IsVisible="{Binding !IsVisible, ElementName=SkippableWarning_TextBlock}"
+					FontSize="13"
+					FontStyle="Italic"
+					TextAlignment="Center"
+					TextWrapping="Wrap"
+					MaxWidth="300">
+					<TextBlock.Text>
+						<MultiBinding StringFormat="The {0:0.} will {1:0.} after the timer below expires in {2:0.}min">
+							<Binding Path="Action"/>
+							<Binding Path="TimerExpireAction" StringFormat="{}{0}"/>
+							<Binding Path="Timer"/>
+						</MultiBinding>
+					</TextBlock.Text>
+				</TextBlock>
+
+				<!-- Timer bar -->
+				<ProgressBar
+					Foreground="{Binding CompanyLogoBackgroundColorShade}"
+					Value="20"
+					Height="10"
+					MaxWidth="350"
+					Margin="0,5,0,15"/>
+
+				<!-- Buttons -->
+				<StackPanel
+					Spacing="15"
+					HorizontalAlignment="Center"
+					Orientation="Horizontal">
+					<Button
+						IsVisible="{Binding MaxDelayDays}"
+						Width="90">
+						<TextBlock
+							ToolTip.Tip="{Binding MaxDelayDays, StringFormat='{}{0} days remaining'}"
+							FontWeight="Bold"
+							Text="{Binding MaxDelayDays, StringFormat='Later ({0})'}"
+							HorizontalAlignment="Center"/>
+					</Button>
+					<Button
+						Width="90"
+						Content="Continue">
+						<TextBlock
+							Text="Continue"
+							FontWeight="Bold"
+							HorizontalAlignment="Center"/>
+					</Button>
+				</StackPanel>
+			</StackPanel>
+		</Border>
+	
+	</Grid>
+</Window>

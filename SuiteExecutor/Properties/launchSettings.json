@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SuiteExecutor": {
+      "commandName": "Project",
+      "commandLineArgs": "deploy"
+    }
+  }
+}

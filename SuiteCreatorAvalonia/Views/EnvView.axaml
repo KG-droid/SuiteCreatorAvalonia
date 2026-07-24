@@ -1,0 +1,20 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+    xmlns:services="using:SuiteCreatorAvalonia.Services"
+    x:Class="SuiteCreatorAvalonia.Views.EnvView"
+    services:Help.Title="Environment"
+    services:Help.PageSummary="Set Windows environment variables as part of the suite — for example adding to PATH or defining variables an application needs. Each event controls the variable's name, value, scope and whether it is removed on uninstall."
+    x:DataType="vm:EnvViewModel">
+
+	<Design.DataContext>
+		<vm:EnvViewModel/>
+	</Design.DataContext>
+
+	<UserControl Content="{Binding IoEventViewModel}"/>
+	
+</UserControl>

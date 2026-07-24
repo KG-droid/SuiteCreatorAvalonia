@@ -1,0 +1,197 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:mi="using:Material.Icons.Avalonia"
+			 xmlns:models="using:SuiteCreatorAvalonia.Models.Package"
+			 xmlns:converter="clr-namespace:SuiteCreatorAvalonia.Converters"
+			 xmlns:services="using:SuiteCreatorAvalonia.Services"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="550"
+             x:Class="SuiteCreatorAvalonia.Views.PackageView"
+			 services:Help.Title="Packages"
+			 x:DataType="vm:PackageViewModel">
+
+	<Design.DataContext>
+		<vm:PackageViewModel/>
+	</Design.DataContext>
+
+	<UserControl.Resources>
+		<Flyout 
+			x:Key="PackageNameFlyout"
+			Placement="Bottom">
+			<StackPanel>
+				<TextBlock
+					Text="{Binding $parent[Button].Tag}"
+					HorizontalAlignment="Center"/>
+				<StackPanel
+					Orientation="Horizontal">
+					<TextBox
+						Name="NewPackageName_TextBox"
+						Classes="TextBox"
+						MinWidth="200"
+						KeyUp="AddPackage_KeyUp"
+						PlaceholderText="Package Name"/>
+					<Button
+						Classes="IconButton"
+						Tag="Plus"
+						Click="AddPackageButton_Click"
+						Foreground="{DynamicResource PlusButton}"
+						VerticalAlignment="Center"
+						CommandParameter="{Binding Text, ElementName='NewPackageName_TextBox'}"/>
+				</StackPanel>
+			</StackPanel>	
+		</Flyout>
+		<converter:PackageTypeToImageConverter x:Key="PackageTypeToImageConverter"/>
+	</UserControl.Resources>
+	
+	<Grid>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition MinWidth="165" Width="260"/>
+			<ColumnDefinition Width="*"/>
+		</Grid.ColumnDefinitions>
+		<Grid
+			ColumnDefinitions="*,Auto"
+			RowDefinitions="Auto,Auto,*"
+			Grid.Column="0">
+
+			<!-- Package List Header -->
+			<TextBlock
+				Text="Packages in Suite:"
+				Grid.Column="0"
+				Grid.Row="0"
+				FontSize="13"/>
+
+			<!-- Package List Note -->
+			<TextBlock
+				Text="Packages run in the order shown below. Drag to reorder."
+				Grid.Column="0"
+				Grid.Row="1"
+				FontSize="11"
+				FontStyle="Italic"
+				TextWrapping="Wrap"
+				Opacity="0.7"
+				Margin="0,5,0,4"/>
+
+			<!-- Package List Buttons -->
+			<StackPanel
+				Grid.Column="1"
+				Grid.Row="2"
+				Margin="0,0,10,0">
+				<Button
+					Classes="IconButton"
+					Tag="Plus"
+					services:Help.Title="Add a package"
+					services:Help.Text="Adds a new package to the suite. Pick the package type (MSI, MSIX or Other installer), give it a name, and it appears in the list ready to configure."
+					services:Help.Order="2"
+					Foreground="{DynamicResource PlusButton}">
+					<Button.Flyout>
+						<Flyout>
+							<StackPanel
+								x:Name="AddPackageButtons_StackPanel"
+								Orientation="Horizontal"
+								Spacing="1"/>
+						</Flyout>
+					</Button.Flyout>
+				</Button>
+				<Button
+					Classes="IconButton"
+					Tag="Minus"
+					services:Help.Title="Remove a package"
+					services:Help.Text="Removes the package currently selected in the list, after a confirmation."
+					services:Help.Order="3"
+					Foreground="{DynamicResource BinButton}"
+					ToolTip.Tip="Remove the selected package">
+					<Button.Flyout>
+						<Flyout 
+							Placement="Right">
+							<StackPanel
+								Margin="10,0,10,0"
+								Orientation="Horizontal">
+								<TextBlock
+									Foreground="White"
+									Text="Are you sure?"/>
+								<Button
+									Foreground="White"
+									Classes="IconButton"
+									Tag="Tick"
+									Click="RemovePackageButton_Click"
+									ToolTip.Tip="Confirm deletion"/>
+							</StackPanel>
+						</Flyout>
+					</Button.Flyout>
+					<Button.Styles>
+						<Style Selector="FlyoutPresenter">
+							<Setter Property="Background" Value="Red"/>
+							<Setter Property="CornerRadius" Value="25"/>
+							<Setter Property="Padding" Value="10,5,10,5"/>
+						</Style>
+					</Button.Styles>
+				</Button>
+			</StackPanel>
+
+			<!-- Package List -->
+			<ListBox
+				x:Name="PackageList_ListBox"
+				services:Help.Title="Package list"
+				services:Help.Text="All the packages in this suite, installed top to bottom. Select one to view and edit its install and removal details on the right."
+				services:Help.Order="1"
+				CornerRadius="5"
+				Grid.Row="2"
+				Grid.Column="0"
+				ItemsSource="{Binding PackageList}"
+				SelectedItem="{Binding SelectedPackage}"
+				VerticalAlignment="Stretch"
+				Margin="0,0,5,0">
+				<ListBox.ItemTemplate>
+					<DataTemplate
+						DataType="{x:Type models:PackageBase}">
+						<Border
+							Background="Transparent"
+							DragDrop.AllowDrop="True"
+							DragDrop.DragOver="PackageItem_DragOver"
+							DragDrop.Drop="PackageItem_Drop">
+							<StackPanel
+								Orientation="Horizontal"
+								Spacing="5">
+								<mi:MaterialIcon
+									PointerPressed="PackageItem_PointerPressed"
+									Kind="DragVertical"
+									Width="20"
+									Height="20"
+									VerticalAlignment="Center"
+									services:Help.Title="Reorder"
+									services:Help.Text="Click and hold this handle to drag the package to a new position. Packages are actioned top to bottom, so order matters."
+									ToolTip.Tip="Click and hold to drag to a new position"
+									Background="Transparent"/>
+								<UserControl
+									Width="25"
+									Height="25"
+									Content="{Binding ., Converter={StaticResource PackageTypeToImageConverter}}"/>
+								<TextBlock
+									Text="{Binding Name}"
+									FontSize="13"
+									ToolTip.Tip="{Binding Text, RelativeSource={RelativeSource Self}}"
+									VerticalAlignment="Center"/>
+							</StackPanel>
+						</Border>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>		
+		</Grid>
+		<GridSplitter
+			Grid.Column="0"
+			HorizontalAlignment="Right"
+			MinWidth="0"
+			Margin="5,15,5,0"
+			Width="3"
+			Background="{DynamicResource SystemListMediumColor}"
+			VerticalAlignment="Stretch"/>
+		
+		<!-- Package View -->
+		<UserControl
+			Content="{Binding CurrentPackageView}"
+			Grid.Column="1"/>
+	</Grid>
+	
+</UserControl>

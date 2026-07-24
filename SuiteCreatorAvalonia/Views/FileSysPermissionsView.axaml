@@ -1,0 +1,144 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:common="using:SuiteCreatorAvalonia.Models.Common"
+    mc:Ignorable="d"
+    x:Class="SuiteCreatorAvalonia.Views.FileSysPermissionsView"
+    x:DataType="vm:FileSysPermissionsViewModel">
+
+	<Design.DataContext>
+		<vm:FileSysPermissionsViewModel/>
+	</Design.DataContext>
+
+	<StackPanel>
+		<TextBlock
+			Margin="0,0,0,10"
+			Grid.Row="0"
+			Text="File/Folder Permissions"
+			FontWeight="Bold"/>
+		<StackPanel>
+			<TextBlock
+				VerticalAlignment="Center"
+				Text="Users/Groups"
+				Margin="5"/>
+			<StackPanel
+				Orientation="Horizontal">
+				<ComboBox
+					MinWidth="230"
+					HorizontalAlignment="Stretch"
+					ItemsSource="{Binding UserGroupsComboList}"
+					SelectedItem="{Binding ComboSelectedUserGroup}"
+					Margin="5,5,0,5">
+					<ComboBox.DataTemplates>
+						<DataTemplate DataType="common:PermissionGroup">
+							<TextBlock Text="{Binding FriendlyName}"/>
+						</DataTemplate>
+					</ComboBox.DataTemplates>
+				</ComboBox>
+				<Button
+					ToolTip.Tip="Add"
+					Classes="IconButton"
+					Tag="UserPlus"
+					Command="{Binding AddUserGroupCommand}"
+					Grid.Row="2"
+					Grid.Column="1"
+					Margin="5"/>
+			</StackPanel>
+			<Grid
+				ColumnDefinitions="*,Auto">
+				<ListBox
+					Grid.Column="0"
+					AutoScrollToSelectedItem="True"
+					SelectionMode="Single"
+					SelectedValue="{Binding PermissionsListSelectedValue}"
+					ItemsSource="{Binding PermissionsList}"
+					CornerRadius="7"
+					Background="Transparent"
+					BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+					BorderThickness="1"
+					FontSize="10"
+					MinHeight="100"
+					Margin="5,5,0,5">
+					<ListBox.DataTemplates>
+						<DataTemplate DataType="common:Permission">
+							<TextBlock Text="{Binding UserGroup.FriendlyName}"/>
+						</DataTemplate>
+					</ListBox.DataTemplates>
+				</ListBox>
+				<Button
+					Grid.Column="1"
+					ToolTip.Tip="Add"
+					VerticalAlignment="Top"
+					Classes="IconButton"
+					Tag="UserMinus"
+					Command="{Binding RemoveUserGroupCommand}"
+					Margin="5"/>
+			</Grid>
+		</StackPanel>
+		<StackPanel>
+			<TextBlock
+				VerticalAlignment="Center"
+				Text="Permissions"
+				Grid.Row="3"
+				Grid.Column="0"
+				Margin="5"/>
+			<StackPanel
+				Spacing="10"
+				Orientation="Horizontal"
+				Grid.Row="3"
+				Grid.Column="1"
+				Margin="5">
+				<CheckBox
+					Content="Read"
+					IsChecked="{Binding Read}"
+					IsEnabled="{Binding IsEnabled}"/>
+				<CheckBox
+					Content="ReadAndExecute"
+					IsChecked="{Binding ReadAndExecute}"
+					IsEnabled="{Binding IsEnabled}"/>
+			</StackPanel>
+			<StackPanel
+				Spacing="10"
+				Orientation="Horizontal"
+				Grid.Row="3"
+				Grid.Column="1"
+				Margin="5">
+				<CheckBox
+					Content="Modify"
+					IsChecked="{Binding Modify}"
+					IsEnabled="{Binding IsEnabled}"/>
+				<CheckBox
+					Content="FullControl"
+					IsChecked="{Binding FullControl}"
+					IsEnabled="{Binding IsEnabled}"/>
+				<CheckBox
+					Content="Write"
+					IsChecked="{Binding Write}"
+					IsEnabled="{Binding IsEnabled}"/>
+			</StackPanel>
+			<StackPanel
+				Orientation="Horizontal">
+				<TextBlock
+					VerticalAlignment="Center"
+					Text="Allow/Deny:"
+					Grid.Row="4"
+					Grid.Column="0"
+					Margin="5"/>
+				<ComboBox
+					SelectedIndex="0"
+					MinWidth="150"
+					Grid.Row="4"
+					Grid.Column="1"
+					Margin="5"
+					SelectedValue="{Binding PermissionsListSelectedValue.PermissionType}"
+					ItemsSource="{Binding AccessControlTypeList}"
+					IsEnabled="{Binding IsEnabled}">
+				</ComboBox>
+			</StackPanel>
+		</StackPanel>
+	</StackPanel>
+
+</UserControl>

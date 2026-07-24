@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup Condition="'$(OutputType)' == 'Library'">
+    <IsRidAgnostic>true</IsRidAgnostic>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+</Project>

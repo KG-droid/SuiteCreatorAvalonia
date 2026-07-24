@@ -1,0 +1,278 @@
+<Window
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:AvaloniaEdit="using:AvaloniaEdit"
+	xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
+	xmlns:enums="using:SuiteCreatorAvalonia.Enums"
+    mc:Ignorable="d"
+	d:DesignWidth="800"
+	d:DesignHeight="450"
+	ShowInTaskbar="false"
+	WindowStartupLocation="CenterOwner"
+	x:CompileBindings="True"
+	services:DialogManager.Register="{Binding}"
+	WindowDecorations="BorderOnly"
+	ExtendClientAreaToDecorationsHint="true"
+    x:Class="SuiteCreatorAvalonia.Views.PowerShellWindow"
+    x:DataType="vm:PowerShellWindowViewModel"
+	Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Width}"
+	Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Height}">
+
+	<Design.DataContext>
+		<vm:PowerShellWindowViewModel/>
+	</Design.DataContext>
+
+	<Grid
+		Margin="5">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*" MinWidth="100"/>
+			<ColumnDefinition Width="Auto" MinWidth="55"/>
+		</Grid.ColumnDefinitions>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="10*" MinHeight="130"/>
+			<RowDefinition Height="*" MinHeight="30"/>
+		</Grid.RowDefinitions>
+
+		<!-- Window Header -->
+		<TextBlock
+			Classes="FieldName"
+			Text="PowerShell Script"
+			Grid.ColumnSpan="2"
+			Grid.Row="0"
+			IsHitTestVisible="False"
+			VerticalAlignment="Center"
+			HorizontalAlignment="Center"/>
+
+		<!-- Window Top Right Controls -->
+		<StackPanel
+			Name="WindowButtons_StackPanel"
+			Grid.Row="0"
+			Grid.Column="0"
+			Grid.ColumnSpan="2"
+			VerticalAlignment="Top"
+			HorizontalAlignment="Right"
+			Orientation="Horizontal">
+			<Button
+				Classes="IconButton"
+				IsVisible="{Binding !IsFilePathVisible}"
+				Tag="FileCode"
+				Command="{Binding ScriptBrowse}"
+				ToolTip.Tip="Link to a ps1 file"
+				Margin="5"/>
+			<Button
+				Classes="IconButton"
+				Tag="FileCancel"
+				Command="{Binding UnlinkScriptCommand}"
+				ToolTip.Tip="Unlink from ps1 file"
+				IsVisible="{Binding IsFilePathVisible}"
+				Margin="5"/>
+			<Button
+				Classes="IconButton"
+				Tag="FileMultiple"
+				Command="{Binding AddSupportingFilesCommand}"
+				ToolTip.Tip="Add supporting files"
+				IsVisible="{Binding !IsRuleMode}"
+				Margin="5"/>
+			<Button
+				Click="ClosePSWindow"
+				Classes="IconButton"
+				ToolTip.Tip="Close"
+				Tag="Close"
+				Margin="5"/>
+		</StackPanel>
+
+		<!-- Settings -->
+		<Grid
+			Margin="10,0,0,0"
+			Grid.Row="1"
+			RowDefinitions="Auto, 10, Auto, 10, Auto"
+			ColumnDefinitions="Auto, 350">
+			<TextBlock
+				Text="Friendly Name:"
+				Margin="0,0,10,0"
+				Grid.Row="0"
+				Grid.Column="0"
+				IsVisible="{Binding !IsRuleMode}"/>
+			<TextBox
+				Grid.Row="0"
+				Grid.Column="1"
+				Text="{Binding ScriptName}"
+				PlaceholderText="Will be shown in logs and progress messages"
+				IsVisible="{Binding !IsRuleMode}"/>
+			<TextBlock
+				Text="Parameters:"
+				Margin="0,0,10,0"
+				Grid.Row="2"
+				Grid.Column="0"/>
+			<TextBox
+				Grid.Row="2"
+				Grid.Column="1"
+				Text="{Binding ScriptArgs}"
+				PlaceholderText="Parameters passed to the script (optional), e.g. -Silent -LogPath &quot;C:\Logs&quot;"/>
+			<TextBlock
+				Text="Context:"
+				Margin="0,0,10,0"
+				Grid.Row="4"
+				Grid.Column="0"/>
+			<ComboBox
+				Grid.Row="4"
+				Grid.Column="1"
+				ItemsSource="{helpers:EnumValues {x:Type enums:Contexts}}"
+				SelectedItem="{Binding Context}"/>
+		</Grid>
+
+		<Grid
+			Name="TextEditor_Grid"
+			RowDefinitions="Auto,*,Auto"
+			Grid.Row="2">
+
+			<!-- Play Button and Progress -->
+			<StackPanel
+				Grid.Row="0"
+				Orientation="Horizontal">
+				<Button
+					Classes="IconButton"
+					Tag="Play"
+					VerticalAlignment="Top"
+					Width="35"
+					Height="35"
+					Command="{Binding TestPowerShellScriptCommand}"
+					ToolTip.Tip="Test the PowerShell script"
+					Foreground="Green"
+					Margin="5"/>
+				<ProgressBar
+					IsVisible="{Binding IsScriptRunning}"
+					MinWidth="50"
+					VerticalAlignment="Center"
+					HorizontalAlignment="Left"
+					IsIndeterminate="true"/>
+			</StackPanel>
+
+			<!-- Script edittor -->
+			<AvaloniaEdit:TextEditor
+				Grid.Row="1"
+				VerticalAlignment="Stretch"
+				HorizontalAlignment="Stretch"
+				IsReadOnly="{Binding IsFilePathVisible}"
+				ToolTip.ServiceEnabled="{Binding IsFilePathVisible}"
+				ToolTip.Tip="Script is readonly as you have linked a file"
+				x:Name="Editor"
+				Document="{Binding ScriptDoc}"
+				BorderBrush="Gray"
+				ShowLineNumbers="True"/>
+
+			<!-- Linked Script-->
+			<Grid
+				Name="LinkedFile_Grid"
+				IsVisible="{Binding IsFilePathVisible}"
+				Margin="10"
+				Grid.Row="2"
+				ColumnDefinitions="Auto,10,*">
+				<TextBlock
+					Classes="FieldName"
+					Text="Linked Script:"
+					Grid.Column="0"/>
+				<TextBlock
+					Text="{Binding FilePath}"
+					TextWrapping="Wrap"
+					Grid.Column="2"/>
+			</Grid>
+		</Grid>
+
+		<!-- Supporting Files -->
+		<GridSplitter
+			Name="SupportingFiles_Splitter"
+			IsVisible="{Binding HasSupportingFiles}"
+			HorizontalAlignment="Right"
+			Width="3"
+			Grid.Row="2"
+			Background="{DynamicResource SystemChromeMediumLowColor}"/>
+		<GridSplitter
+			Name="ScriptOut_Splitter"
+			IsVisible="{Binding IsScriptOutputVisible}"
+			VerticalAlignment="Bottom"
+			Height="3"
+			Grid.ColumnSpan="2"
+			Grid.Row="2"
+			Background="{DynamicResource SystemChromeMediumLowColor}"/>
+		<Grid
+			Name="SupportingFiles_Grid"
+			Background="{DynamicResource SystemRegionColor}"
+			IsVisible="{Binding HasSupportingFiles}"
+			RowDefinitions="Auto,*,Auto"
+			Margin="0,0,0,10"
+			Grid.Row="2"
+			Grid.Column="1">
+
+			<!-- Support File Header and Controls -->
+			<TextBlock
+				VerticalAlignment="Center"
+				HorizontalAlignment="Left"
+				Grid.Row="0"
+				Classes="FieldName"
+				Text="Supporting Files"
+				Margin="10,0,40,0"/>
+			<Button
+				Grid.Row="0"
+				Classes="BinButton"
+				Command="{Binding RemoveSelectedSupportFilesCommand}"
+				ToolTip.Tip="Remove selected"
+				HorizontalAlignment="Right"/>
+
+			<!-- Support File Tree -->
+			<TreeView
+				ItemsSource="{Binding SupportingFiles}"
+				Grid.Row="1"
+				SelectedItems="{Binding SelectedSupportFiles}"
+				SelectionMode="Multiple"
+				Margin="0,0,15,10">
+				<TreeView.ItemTemplate>
+					<TreeDataTemplate
+						ItemsSource="{Binding SubNodes}">
+						<TextBlock
+							ToolTip.Tip="{Binding FullPath}"
+							Text="{Binding Name}"
+							/>
+					</TreeDataTemplate>
+				</TreeView.ItemTemplate>
+			</TreeView>
+
+			<TextBlock
+				TextWrapping="Wrap"
+				Grid.Row="2"
+				TextAlignment="Center"
+				Width="320">
+				The directory will be changed to this support files DIR when the script runs, so you can access files like ".\MyExampleFile.json"
+			</TextBlock>
+		</Grid>
+
+		<!-- Script Test Output-->
+		<ScrollViewer
+			Background="{DynamicResource SystemRegionColor}"
+			Name="ScriptOutput_ScrollViewer"
+			Grid.ColumnSpan="2"
+			Grid.Row="5"
+			Margin="10,0,10,0"
+			IsVisible="{Binding IsScriptOutputVisible}">
+			<Grid
+				ColumnDefinitions="Auto,10,*">
+				<TextBlock
+					Grid.Column="0"
+					Classes="FieldName"
+					Text="Script Output:"/>
+				<TextBlock
+					Grid.Column="2"
+					TextWrapping="Wrap"
+					Text="{Binding ScriptOutput}"/>
+			</Grid>
+		</ScrollViewer>
+
+	</Grid>
+
+</Window>

@@ -1,0 +1,53 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteUserPopup.ViewModels"  
+    xmlns:views="clr-namespace:SuiteUserPopup.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:labsGif="using:Avalonia.Labs.Gif"
+	xmlns:controls="using:SuiteUserPopup.Controls"
+    mc:Ignorable="d"
+	d:DesignHeight="170"
+	d:DesignWidth="400"
+    x:Class="SuiteUserPopup.Views.PopupPickReminderView"
+    x:DataType="vm:PopupPickReminderViewModel">
+
+	<Design.DataContext>
+		<vm:PopupPickReminderViewModel/>
+	</Design.DataContext>
+
+	<StackPanel>
+		<TextBlock
+			HorizontalAlignment="Center"
+			FontSize="13"
+			Margin="0,0,0,10"
+			TextWrapping="Wrap">
+			Choose a time later today when you would prefer to be reminded. 
+			This same popup will appear again, and you can choose again to remind later or to continue.
+		</TextBlock>
+		<controls:ClockTimePicker
+			SelectedTime="{Binding SelectedTime}"
+			HorizontalAlignment="Center"/>
+		<StackPanel
+			Margin="0,10,0,0"
+			HorizontalAlignment="Center"
+			Orientation="Horizontal">
+			<Button
+				x:CompileBindings="False"
+				Command="{Binding $parent[views:PopupMainView].DataContext.ShowWarningCommand}"
+				Content="Back"
+				HorizontalContentAlignment="Center"
+				Margin="10"
+				Width="120"/>
+			<Button
+				Command="{Binding OkCommand}"
+				Content="Ok"
+				Margin="10"
+				HorizontalContentAlignment="Center"
+				Width="120"/>
+		</StackPanel>
+	</StackPanel>
+
+</UserControl>

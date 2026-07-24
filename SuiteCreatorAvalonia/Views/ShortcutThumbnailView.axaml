@@ -1,0 +1,94 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+	xmlns:fly="using:SuiteCreatorAvalonia.FlyOuts"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	services:DialogManager.Register="{Binding}"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="500"
+    x:Class="SuiteCreatorAvalonia.Views.ShortcutThumbnailView"
+    x:DataType="vm:ShortcutThumbnailViewModel">
+
+	<Design.DataContext>
+		<vm:ShortcutThumbnailViewModel/>
+	</Design.DataContext>
+
+	<Grid
+		VerticalAlignment="Center"
+		HorizontalAlignment="Center">
+		
+		<Button
+			x:Name="ShortThumb_Button"
+			CornerRadius="10"
+			Margin="5"
+			HorizontalAlignment="Center"
+			VerticalAlignment="Center">
+			
+			<StackPanel>
+				<Viewbox
+					Width="50"
+					Height="50"
+					IsVisible="{Binding !HasThumbIcon}">
+					<mi:MaterialIcon
+						Kind="FileLink"/>
+				</Viewbox>
+				<Image
+					Width="50"
+					Height="50"
+					IsVisible="{Binding HasThumbIcon}"
+					Source="{Binding ThumbIcon}"/>
+				<TextBlock
+					Classes="FieldName"
+					Text="{Binding Name}"
+					MaxWidth="100"
+					HorizontalAlignment="Center"
+					TextWrapping="NoWrap"/>
+			</StackPanel>
+			
+			<Button.Flyout>
+				<Flyout Placement="BottomEdgeAlignedLeft">
+					<UserControl
+						Content="{Binding FlyoutGrid}"
+						Width="340"
+						Padding="10"/>
+				</Flyout>
+			</Button.Flyout>
+			<Button.Styles>
+				<Style Selector="Button">
+					<Setter Property="Background" Value="Transparent"/>
+				</Style>
+				<Style Selector="Button:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+				</Style>
+			</Button.Styles>
+		</Button>
+		
+		<!-- Delete Selector -->
+		<Button
+			Command="{Binding MarkForDeletionCommand}"
+			IsVisible="{Binding IsRemoveMode}"
+			CornerRadius="15"
+			Opacity="0.6"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Stretch"
+			Classes.IsMarkedForDeletion="{Binding IsMarkedForDeletion}">
+			<Button.Styles>
+				<Style Selector="Button.IsMarkedForDeletion">
+					<Setter Property="Background" Value="Red"/>
+				</Style>
+				<Style Selector="Button:pointerover.IsMarkedForDeletion /template/ ContentPresenter">
+					<Setter Property="Background" Value="DarkRed"/>
+				</Style>
+				<Style Selector="Button:not(.IsMarkedForDeletion)">
+					<Setter Property="Background" Value="Green"/>
+				</Style>
+				<Style Selector="Button:pointerover:not(.IsMarkedForDeletion) /template/ ContentPresenter">
+					<Setter Property="Background" Value="DarkGreen"/>
+				</Style>
+			</Button.Styles>
+		</Button>
+	</Grid>
+</UserControl>

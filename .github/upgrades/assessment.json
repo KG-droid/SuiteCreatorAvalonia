@@ -1,0 +1,397 @@
+{
+  "settings": {
+    "components": {
+      "code": false,
+      "binaries": false
+    },
+    "targetId": "net10.0",
+    "targetDisplayName": ".NETCoreApp,Version=v10.0"
+  },
+  "analysisStartTime": "2025-12-28T14:49:43.6904145Z",
+  "analysisEndTime": "2025-12-28T14:49:44.3054635Z",
+  "privacyModeHelpUrl": "https://go.microsoft.com/fwlink/?linkid=2270980",
+  "stats": {
+    "summary": {
+      "projects": 10,
+      "issues": 2,
+      "incidents": 2,
+      "effort": 2
+    },
+    "charts": {
+      "severity": {
+        "Mandatory": 2,
+        "Optional": 0,
+        "Potential": 0,
+        "Information": 0
+      },
+      "category": {
+        "Project": 2
+      }
+    }
+  },
+  "projects": [
+    {
+      "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\Logger\\Logger.csproj",
+      "startingProject": true,
+      "issues": 2,
+      "storyPoints": 2,
+      "properties": {
+        "appName": "Logger",
+        "projectKind": "ClassicClassLibrary",
+        "frameworks": [
+          "net481"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": false,
+        "numberOfFiles": 2,
+        "numberOfCodeFiles": 2,
+        "linesTotal": 120,
+        "linesOfCode": 120,
+        "totalApiScanned": 120,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [
+        {
+          "incidentId": "62e98d45-d3ee-4509-af99-645f5358162b",
+          "ruleId": "Project.0001",
+          "projectPath": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\Logger\\Logger.csproj",
+          "state": "Active",
+          "location": {
+            "kind": "File",
+            "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\Logger\\Logger.csproj"
+          }
+        },
+        {
+          "incidentId": "de1ecd38-de78-4884-a073-f4673fbac43c",
+          "ruleId": "Project.0002",
+          "projectPath": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\Logger\\Logger.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Current target framework: .NETFramework,Version=v4.8.1\nRecommended target framework: net10.0",
+              "protected": "Current target framework: .NETFramework,Version=v4.8.1\nRecommended target framework: net10.0"
+            },
+            "kind": "File",
+            "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\Logger\\Logger.csproj",
+            "snippet": "Current target framework: .NETFramework,Version=v4.8.1\nRecommended target framework: net10.0",
+            "protectedSnippet": "Current target framework: .NETFramework,Version=v4.8.1\nRecommended target framework: net10.0",
+            "properties": {
+              "CurrentTargetFramework": ".NETFramework,Version=v4.8.1",
+              "RecommendedTargetFramework": "net10.0"
+            }
+          }
+        }
+      ],
+      "features": []
+    },
+    {
+      "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\MSITools\\MSITools.csproj",
+      "startingProject": false,
+      "issues": 0,
+      "storyPoints": 0,
+      "properties": {
+        "appName": "MSITools",
+        "projectKind": "ClassLibrary",
+        "frameworks": [
+          "net10.0-windows10.0.22000.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 1,
+        "numberOfCodeFiles": 1,
+        "linesTotal": 637,
+        "linesOfCode": 637,
+        "totalApiScanned": 0,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [],
+      "features": []
+    },
+    {
+      "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\MSIxTools\\MSIxTools.csproj",
+      "startingProject": false,
+      "issues": 0,
+      "storyPoints": 0,
+      "properties": {
+        "appName": "MSIxTools",
+        "projectKind": "WinUI",
+        "frameworks": [
+          "net10.0-windows10.0.22000.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 1,
+        "numberOfCodeFiles": 1,
+        "linesTotal": 332,
+        "linesOfCode": 332,
+        "totalApiScanned": 0,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [],
+      "features": []
+    },
+    {
+      "path": "SuiteCreatorAvalonia.csproj",
+      "startingProject": true,
+      "issues": 0,
+      "storyPoints": 0,
+      "properties": {
+        "appName": "SuiteCreatorAvalonia",
+        "projectKind": "WinUI",
+        "frameworks": [
+          "net10.0-windows10.0.22000.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 174,
+        "numberOfCodeFiles": 144,
+        "linesTotal": 62000,
+        "linesOfCode": 16128,
+        "totalApiScanned": 0,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [],
+      "features": []
+    },
+    {
+      "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\SuiteCreatorAvalonia.Desktop\\SuiteCreatorAvalonia.Desktop.csproj",
+      "startingProject": true,
+      "issues": 0,
+      "storyPoints": 0,
+      "properties": {
+        "appName": "SuiteCreatorAvalonia.Desktop",
+        "projectKind": "WinForms",
+        "frameworks": [
+          "net10.0-windows10.0.22000.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 2,
+        "numberOfCodeFiles": 1,
+        "linesTotal": 5619,
+        "linesOfCode": 22,
+        "totalApiScanned": 0,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [],
+      "features": []
+    },
+    {
+      "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\SuiteCreatorModels\\SuiteCreatorModels.csproj",
+      "startingProject": true,
+      "issues": 0,
+      "storyPoints": 0,
+      "properties": {
+        "appName": "SuiteCreatorModels",
+        "projectKind": "WinUI",
+        "frameworks": [
+          "net10.0-windows10.0.22000.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 43,
+        "numberOfCodeFiles": 43,
+        "linesTotal": 3418,
+        "linesOfCode": 3418,
+        "totalApiScanned": 0,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [],
+      "features": []
+    },
+    {
+      "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\SuiteExecutor\\SuiteExecutor.csproj",
+      "startingProject": true,
+      "issues": 0,
+      "storyPoints": 0,
+      "properties": {
+        "appName": "SuiteExecutor",
+        "projectKind": "WinUI",
+        "frameworks": [
+          "net10.0-windows10.0.22000.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 3,
+        "numberOfCodeFiles": 2,
+        "linesTotal": 5754,
+        "linesOfCode": 157,
+        "totalApiScanned": 0,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [],
+      "features": []
+    },
+    {
+      "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\SuiteOperations\\SuiteOperations.csproj",
+      "startingProject": true,
+      "issues": 0,
+      "storyPoints": 0,
+      "properties": {
+        "appName": "SuiteOperations",
+        "projectKind": "WinUI",
+        "frameworks": [
+          "net10.0-windows10.0.22000.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 18,
+        "numberOfCodeFiles": 18,
+        "linesTotal": 2082,
+        "linesOfCode": 2082,
+        "totalApiScanned": 0,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [],
+      "features": []
+    },
+    {
+      "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\SystemTools\\SystemTools.csproj",
+      "startingProject": false,
+      "issues": 0,
+      "storyPoints": 0,
+      "properties": {
+        "appName": "SystemTools",
+        "projectKind": "ClassLibrary",
+        "frameworks": [
+          "net10.0-windows10.0.22000.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 4,
+        "numberOfCodeFiles": 4,
+        "linesTotal": 205,
+        "linesOfCode": 205,
+        "totalApiScanned": 0,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [],
+      "features": []
+    },
+    {
+      "path": "%USERPROFILE%\\GitHubRepos\\SuiteCreatorSolution\\UserTools\\UserTools.csproj",
+      "startingProject": false,
+      "issues": 0,
+      "storyPoints": 0,
+      "properties": {
+        "appName": "UserTools",
+        "projectKind": "ClassLibrary",
+        "frameworks": [
+          "net10.0-windows10.0.22000.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 1,
+        "numberOfCodeFiles": 1,
+        "linesTotal": 475,
+        "linesOfCode": 475,
+        "totalApiScanned": 0,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [],
+      "features": []
+    }
+  ],
+  "rules": {
+    "Project.0001": {
+      "id": "Project.0001",
+      "isFeature": false,
+      "description": "Project file needs to be converted to SDK-style. Modern .NET framework projects require a change in the project file format and use SDK corresponding to project flavor and functionality.",
+      "label": "Project file needs to be converted to SDK-style",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "title": "Overview of porting from .NET Framework to .NET",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265227",
+          "isCustom": false
+        },
+        {
+          "title": ".NET project SDKs",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265226",
+          "isCustom": false
+        }
+      ]
+    },
+    "Project.0002": {
+      "id": "Project.0002",
+      "isFeature": false,
+      "description": "Project\u0027s target framework(s) needs to be changed to the new target framework that you selected for this upgrade.\n\nDuring upgrade target framework will be adjusted to corresponding platform when applicable. In some cases project would result in multiple target frameworks after the upgrade if it was using features that now have their own platforms in modern .NET frameworks (windows, iOS, Android etc).",
+      "label": "Project\u0027s target framework(s) needs to be changed",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "title": "Overview of porting from .NET Framework to .NET",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265227",
+          "isCustom": false
+        },
+        {
+          "title": ".NET project SDKs",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265226",
+          "isCustom": false
+        }
+      ]
+    }
+  }
+}

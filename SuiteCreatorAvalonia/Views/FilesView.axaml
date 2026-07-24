@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:services="using:SuiteCreatorAvalonia.Services"
+             x:Class="SuiteCreatorAvalonia.Views.FilesView"
+             services:Help.Title="Files &amp; Folders"
+             services:Help.PageSummary="Deploy files and folders to the device alongside your packages. Add file or folder events, choose where they go on the target machine, and control whether they are placed during install, removed on uninstall, or left permanently."
+			 x:DataType="vm:FilesViewModel">
+
+	<Design.DataContext>
+		<vm:FilesViewModel/>
+	</Design.DataContext>
+
+	<UserControl Content="{Binding IoEventViewModel}"/>
+	
+</UserControl>

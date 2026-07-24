@@ -1,0 +1,358 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
+	xmlns:enums="using:SuiteCreatorAvalonia.Enums"
+    mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="650"
+    x:Class="SuiteCreatorAvalonia.Views.BuildView"
+	services:DialogManager.Register="{Binding}"
+	services:Help.Title="Build"
+	services:Help.PageSummary="This is where your configured suite becomes a real deployable. Fill in the product identity (manufacturer, name, version), choose the behaviour options, then press Build to produce a single executable plus a detection rule for your deployment tool."
+    x:DataType="vm:BuildViewModel">
+
+	<Design.DataContext>
+		<vm:BuildViewModel/>
+	</Design.DataContext>
+
+	<Grid
+		RowDefinitions="Auto,*">
+		<TextBlock
+			Classes="TabHeader"
+			Text="Build"
+			Grid.Row="0"/>
+		<ScrollViewer
+			Grid.Row="1"
+			Margin="5"
+			VerticalAlignment="Top"
+			HorizontalAlignment="Left"
+			HorizontalScrollBarVisibility="Disabled"
+			VerticalScrollBarVisibility="Visible">
+			<Grid 
+				Margin="0,0,25,0"
+				ColumnDefinitions="Auto,*"
+				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+				<TextBlock
+					Text="Manufacturer:"
+					Classes="FieldName"
+					Grid.Row="0"
+					Grid.Column="0"
+					VerticalAlignment="Center"
+					HorizontalAlignment="Left"/>
+				<TextBox
+					Name="SuiteBuildManufacturer_Textbox"
+					services:Help.Title="Suite identity"
+					services:Help.Text="Manufacturer, Product Name and Version identify the built suite on the device — they drive the registered entry and the generated detection rule. Version supports comparison detection (e.g. greater-or-equal), and Revision lets a newer suite build find and close older revisions."
+					services:Help.Order="1"
+					TextWrapping="NoWrap"
+					MinHeight="28"
+					Margin="0,0,0,2.5"
+					Text="{Binding Manufacturer}"
+					VerticalAlignment="Center"
+					Grid.Column="1"
+					Grid.Row="0"
+					PlaceholderText="The name of the main Manufacturer for the products in this Suite installs, like: Oracle"/>
+				<TextBlock
+					Text="Product Name:"
+					Classes="FieldName"
+					Grid.Row="1"
+					Grid.Column="0"
+					VerticalAlignment="Center"
+					HorizontalAlignment="Left"/>
+				<TextBox
+					Grid.Row="1"
+					Grid.Column="1"
+					Margin="0,2.5,0,2.5"
+					Width="600"
+					Text="{Binding Name}"
+					TextWrapping="NoWrap"
+					MinHeight="28"
+					VerticalAlignment="Center"
+					HorizontalAlignment="Left"
+					PlaceholderText="The name of the main Product in this Suite installs, like: Java"/>
+				<TextBlock
+					Text="Version:"
+					Classes="FieldName"
+					Grid.Row="2"
+					Grid.Column="0"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<TextBox
+					Text="{Binding SuiteVersion}"
+					Grid.Row="2"
+					Grid.Column="1"
+					Margin="0,2.5,0,2.5"
+					HorizontalAlignment="Left"
+					Width="101"/>
+				<TextBlock
+					TextWrapping="Wrap"
+					Grid.Row="2"
+					Grid.Column="1"
+					Margin="110,0,0,0"
+					Background="{x:Null}"
+					Foreground="#FF898989"
+					Text="This is so we can use a comparison detection, like if the Suite version is greater or equal than"/>
+				<TextBlock
+					Text="Revision:"
+					Classes="FieldName"
+					Grid.Row="3"
+					Grid.Column="0"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<Grid
+					Margin="0,2.5,0,2.5"
+					Grid.Row="3"
+					Grid.Column="1"
+					ColumnDefinitions="Auto,*">
+					<NumericUpDown
+						Grid.Column="0"
+						Minimum="1"
+						Maximum="999"
+						Value="{Binding Revision}"
+						FormatString="0"
+						HorizontalAlignment="Left"
+						VerticalAlignment="Center"
+						MinWidth="130"
+						TextAlignment="Center"/>
+					<TextBlock
+						Grid.Column="1"
+						VerticalAlignment="Center"
+						Margin="10,0,0,0"
+						TextWrapping="Wrap"
+						Foreground="#FF898989"
+						Text="This is so a suite from a newer revision can find any previous revisions and close them, if on the popup message"/>
+				</Grid>
+				<TextBlock
+					Text="Architecture:"
+					Classes="FieldName"
+					Grid.Row="4"
+					Grid.Column="0"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<ComboBox
+					Grid.Row="4"
+					Grid.Column="1"
+					Width="120"
+					Margin="0,2.5,0,2.5"
+					SelectedItem="{Binding SelectedArchitecture}"
+					ItemsSource="{helpers:EnumValues {x:Type enums:Architecture}}"/>
+				<TextBlock
+					Text="UpgradeCode:"
+					Classes="FieldName"
+					Grid.Row="5"
+					Grid.Column="0"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<StackPanel
+					services:Help.Title="Upgrade code"
+					services:Help.Text="A stable GUID that ties every version of this suite together, so newer builds can upgrade older ones. Generate it once with the button and keep it the same for the life of the suite."
+					services:Help.Order="2"
+					VerticalAlignment="Center"
+					Grid.Row="5"
+					Grid.Column="1"
+					Orientation="Horizontal"
+					Margin="0,2.5,0,2.5">
+					<TextBox
+						Text="{Binding UpgradeCode}"
+						Width="310"
+						HorizontalAlignment="Left"/>
+					<Button
+						ToolTip.Tip="Generate a new upgrade code"
+						Classes="IconButton"
+						Command="{Binding GenerateGUIDCommand}"
+						Margin="5,0,10,0"
+						VerticalAlignment="Center"
+						HorizontalAlignment="Left"
+						Tag="CodeBraces"/>
+				</StackPanel>
+				<TextBlock
+					Text="Retry on Failure:"
+					Classes="FieldName"
+					Grid.Row="8"
+					Grid.Column="0"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<Grid
+					Grid.Row="8"
+					Grid.Column="1"
+					Margin="0,2.5,0,2.5"
+					ColumnDefinitions="Auto,*">
+					<CheckBox
+						x:Name="RetryOnFailureButton"
+						IsChecked="{Binding IsRetryOnFailure}"
+						Grid.Column="0"
+						VerticalAlignment="Center"
+						HorizontalAlignment="Left"/>
+					<TextBlock
+						Grid.Column="1"
+						TextWrapping="Wrap"
+						Grid.Row="8"
+						VerticalAlignment="Center"
+						Foreground="#FF898989">
+						<Run Text="If enabled the suite will immediately retry upon failure."/>
+						<Run Text=" Make sure the suite Uninstall actually removes all traces, to give the retry a higher success rate."/>
+					</TextBlock>
+				</Grid>
+				<TextBlock
+					Text="Restart before retry:"
+					Classes="FieldName"
+					Grid.Row="9"
+					Grid.Column="0"
+					Margin="0,0,10,0"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<Grid
+					Grid.Row="9"
+					Grid.Column="1"
+					ColumnDefinitions="Auto,*">
+					<CheckBox
+						IsEnabled="{Binding ElementName=RetryOnFailureButton, Path=IsChecked}"
+						IsChecked="{Binding IsRestartBeforeRetry}"
+						Grid.Column="0"
+						HorizontalAlignment="Left" />
+					<TextBlock
+						TextWrapping="Wrap"
+						Grid.Row="9"
+						Grid.Column="1"
+						Foreground="#FF898989"
+						VerticalAlignment="Center">
+						<Run Text="Only really needed if the app uninstall requires a restart (Requires Retry on Failure)."/>
+						<Run Text=" The device restarts 60 seconds after the failure with no warning from this option itself — if you want to warn the user first, add a Popup on the Popup tab to cover it."/>
+					</TextBlock>
+				</Grid>
+				<TextBlock
+					Text="Keep Cache:"
+					Classes="FieldName"
+					Grid.Row="10"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<Grid
+					Grid.Row="10"
+					Grid.Column="1"
+					ColumnDefinitions="Auto,*">
+					<CheckBox
+						IsChecked="{Binding IsKeepCache}"
+						Grid.Column="0"
+						HorizontalAlignment="Left"/>
+					<TextBlock
+						TextWrapping="Wrap"
+						Text="Leaves the cache after successful installation (Do not use if the package contains confidential info like passwords)"
+						Grid.Column="1"
+						Background="{x:Null}"
+						Foreground="#FF898989"
+						VerticalAlignment="Center"/>
+				</Grid>
+				<TextBlock
+					Text="Refresh ENV:"
+					Classes="FieldName"
+					Grid.Row="11"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<Grid
+					Grid.Row="11"
+					Grid.Column="1"
+					ColumnDefinitions="Auto,*">
+					<CheckBox
+						IsChecked="{Binding IsRefreshEnv}"
+						Grid.Column="0"
+						HorizontalAlignment="Left"/>
+					<TextBlock
+						TextWrapping="Wrap"
+						Text="Refreshes the Windows ENV variables, and the Desktop icons (This process will restart the Windows Explorer)"
+						Grid.Column="1"
+						Background="{x:Null}"
+						Foreground="#FF898989"
+						VerticalAlignment="Center"/>
+				</Grid>
+				<TextBlock
+					Text="Fail Safe:"
+					Classes="FieldName"
+					Grid.Row="12"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<Grid
+					Grid.Row="12"
+					Grid.Column="1"
+					ColumnDefinitions="Auto,*">
+					<CheckBox
+						IsChecked="{Binding IsFailSafe}"
+						Grid.Column="0"
+						HorizontalAlignment="Left"/>
+					<TextBlock
+						TextWrapping="Wrap"
+						Grid.Column="1"
+						Background="{x:Null}"
+						Foreground="#FF898989"
+						VerticalAlignment="Center">
+						<Run Text="Create a scheduled task before the suite actions start, so if the device is restarted during the suite,"/>
+						<Run Text=" or the suite is force closed somehow, it will restart from the beginning again"/>
+						<Run Text="the next startup, or logon. If the user log off on the Popup tab is set to Skip install, then the suite will start on logon, not startup. "/>
+						<Run Text="This option is mainly for packages where the app must be installed at all times, or can cause significant issues if the app is missing."/>
+					</TextBlock>
+				</Grid>
+				<TextBlock
+					Text="Reverse Uninstall:"
+					Classes="FieldName"
+					Grid.Row="13"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<Grid
+					Grid.Row="13"
+					Grid.Column="1"
+					ColumnDefinitions="Auto,*">
+					<CheckBox
+						IsChecked="{Binding IsReverseUninstall}"
+						Grid.Row="13"
+						Grid.Column="0"
+						HorizontalAlignment="Left"/>
+					<TextBlock
+						TextWrapping="Wrap"
+						Text="Reverses the order of the Packages uninstall when you run the suite as a removal or rollback"
+						Grid.Column="1"
+						Foreground="#FF898989"
+						VerticalAlignment="Center"/>
+				</Grid>
+				<StackPanel
+					Margin="0,20,0,0"
+					VerticalAlignment="Center"
+					HorizontalAlignment="Center"
+					Grid.Row="16"
+					Grid.ColumnSpan="2">
+					<Button
+						CornerRadius="8"
+						Name="SuiteBuild_Button"
+						services:Help.Title="Build the suite"
+						services:Help.Text="Validates your whole configuration and builds the suite into a single executable. Any validation problems appear in a panel at the bottom of the window with links to fix them; on success you get the build folder and the detection rule to copy into your deployment tool."
+						services:Help.Order="3"
+						Command="{Binding BuildSuiteCommand}"
+						Foreground="#FF32A000"
+						Focusable="False"
+						BorderThickness="3"
+						Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+						HorizontalAlignment="Center"
+						Width="100">
+						<StackPanel
+							Orientation="Horizontal"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center">
+							<mi:MaterialIcon
+								Kind="CubeSend"
+								Width="30"
+								Height="30"/>
+							<TextBlock
+								Text="Build"
+								FontWeight="Bold"
+								VerticalAlignment="Center"
+								HorizontalAlignment="Center"/>
+						</StackPanel>
+					</Button>
+				</StackPanel>
+			</Grid>
+		</ScrollViewer>
+	</Grid>
+	
+</UserControl>

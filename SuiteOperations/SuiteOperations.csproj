@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0-windows10.0.22000.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Platforms>AnyCPU;x64</Platforms>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Version>1.0.1</Version>
+        <AssemblyVersion>1.0.1</AssemblyVersion>
+        <FileVersion>1.0.1</FileVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" />
+		<PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.10" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\MSITools\MSITools.csproj" />
+		<ProjectReference Include="..\MSIxTools\MSIxTools.csproj" />
+		<ProjectReference Include="..\SuiteCreatorModels\SuiteCreatorModels.csproj" />
+		<ProjectReference Include="..\SystemTools\SystemTools.csproj" />
+		<ProjectReference Include="..\UserTools\UserTools.csproj" />
+	</ItemGroup>
+
+</Project>

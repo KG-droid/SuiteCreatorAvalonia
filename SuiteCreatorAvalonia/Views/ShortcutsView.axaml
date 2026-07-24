@@ -1,0 +1,120 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+	xmlns:enums="using:SuiteCreatorAvalonia.Enums"
+	xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
+	xmlns:events="using:SuiteCreatorAvalonia.Models.Events"
+	xmlns:conv="clr-namespace:SuiteCreatorAvalonia.Converters"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+    xmlns:services="using:SuiteCreatorAvalonia.Services"
+    x:Class="SuiteCreatorAvalonia.Views.ShortcutsView"
+    services:Help.Title="Shortcuts"
+    services:Help.PageSummary="Create desktop or start menu shortcuts as part of the suite. Each shortcut event defines the target, icon and location, and whether the shortcut is removed on uninstall."
+    x:DataType="vm:ShortcutsViewModel">
+
+	<Design.DataContext>
+		<vm:ShortcutsViewModel/>
+	</Design.DataContext>
+	
+	<Grid
+		RowDefinitions="Auto,*"
+		ColumnDefinitions="Auto,*,Auto">
+		<TextBlock
+			Classes="TabHeader"
+			Text="Shortcuts"
+			Grid.ColumnSpan="2"
+			Grid.Column="0"/>
+		<Border
+			Margin="0,0,45,0"
+			CornerRadius="7"
+			BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+			BorderThickness="2"
+			Grid.RowSpan="2"
+			Grid.Column="1"
+			Grid.Row="1">
+			<Grid
+				RowDefinitions="*,Auto">
+				<ScrollViewer>
+					<UserControl Content="{Binding ShortsItemsCtrl}"/>
+				</ScrollViewer>
+				<Button
+					Classes="IconButton"
+					Content="Add"
+					Tag="PlusCircle"
+					Grid.Row="1"
+					Width="50"
+					Height="50"
+					ToolTip.Tip="Add a new shortcut event"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Command="{Binding AddNewShortcutCommand}"/>
+				<Button
+					Width="50"
+					Height="50"
+					Tag="Bin"
+					ToolTip.Placement="Right"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Bottom"
+					Grid.Row="1"
+					IsVisible="{Binding !IsRemovesEnabled}"
+					ToolTip.Tip="Toggle remove mode"
+					Foreground="{DynamicResource BinButton}"
+					Command="{Binding ToggleRemovesCommand}"
+					Classes="BinButton"/>
+				<Button
+					Width="50"
+					Height="50"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Bottom"
+					Grid.Row="1"
+					IsVisible="{Binding IsRemovesEnabled}"
+					Tag="Tick"
+					ToolTip.Tip="Confirm Removes"
+					Foreground="{DynamicResource BinButton}"
+					Command="{Binding RemoveShortcutsCommand}"
+					Classes="IconButton">
+					<Button.CommandParameter>
+						<sys:Boolean>False</sys:Boolean>
+					</Button.CommandParameter>
+				</Button>
+				<Button
+					x:Name="ClearAll_Button"
+					Width="45"
+					Height="45"
+					Grid.Row="1"
+					HorizontalAlignment="Right"
+					VerticalAlignment="Bottom"
+					Tag="Clear"
+					ToolTip.Tip="Remove all Shortcuts"
+					Foreground="{DynamicResource BinButton}"
+					Classes="IconButton">
+					<Button.Flyout>
+						<Flyout
+							FlyoutPresenterClasses="Warning"
+							Placement="Left">
+							<StackPanel
+								Margin="10,3,10,0"
+								Orientation="Horizontal">
+								<TextBlock
+									Foreground="White"
+									Text="Are you sure you want to remove all Shortcuts?"/>
+								<Button
+									Tag="Tick"
+									Click="ClearConfirmButton_Click"
+									ToolTip.Tip="Confirm"
+									Foreground="White"
+									Classes="IconButton"/>
+							</StackPanel>
+						</Flyout>
+					</Button.Flyout>
+				</Button>
+			</Grid>
+		</Border>
+	</Grid>
+
+</UserControl>

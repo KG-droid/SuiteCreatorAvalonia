@@ -1,0 +1,218 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:fc="using:FluentAvalonia.UI.Controls"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels.RuleBuilder"
+	xmlns:views="clr-namespace:SuiteCreatorAvalonia.Views.RuleBuilder"
+	xmlns:datatemplates="clr-namespace:SuiteCreatorAvalonia.IDataTemplates"
+	mc:Ignorable="d" 
+	d:DesignWidth="800"
+	d:DesignHeight="450"
+	x:DataType="vm:RuleBuilderViewModel" 
+	x:Class="SuiteCreatorAvalonia.Views.RuleBuilder.RuleBuilderView">
+
+	<Design.DataContext>
+		<vm:RuleBuilderViewModel/>
+	</Design.DataContext>
+
+	<Grid
+		RowDefinitions="Auto,*,10">
+		<ScrollViewer
+			VerticalScrollBarVisibility="Auto" 
+			HorizontalScrollBarVisibility="Auto" 
+			Grid.Row="0">
+			<StackPanel>
+				<UserControl
+					Content="{Binding RuleItemsControl}"/>
+				<StackPanel
+					Name="RulePicker_StackPanel"
+					Orientation="Vertical"
+					Spacing="20">
+					<Canvas
+						x:Name="RuleTypePicker_Canvas"
+						Background="Transparent"
+						PointerMoved="AdditionTypePicker_PointerMove"
+						PointerExited="AdditionTypePicker_PointerExited"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Top">
+						<Button
+							x:Name="AddRule_Button"
+							Foreground="Green"
+							Width="50"
+							Height="50"
+							Classes="IconButton"
+							Tag="PlusCircle"
+							Command="{Binding ToggleRuleTypePickerCommand}"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"/>
+						<Button
+							Tag="Group"
+							Classes="Picker"
+							IsVisible="{Binding IsRuleTypePickerOpen}"
+							Width="10"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"
+							Height="10"
+							Command="{Binding AddNewItemCommand}"
+							CommandParameter="Group">
+							<Viewbox>
+								<mi:MaterialIcon 
+									Kind="Group"/>
+							</Viewbox>
+						</Button>
+						<Button
+							Tag="OR"
+							Classes="Picker"
+							IsVisible="{Binding IsRuleTypePickerOpen}"
+							Width="15"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"
+							Height="15"
+							FontWeight="ExtraBold"
+							Padding="-1"
+							Command="{Binding AddNewItemCommand}"
+							CommandParameter="OR">
+							<Viewbox>
+								<TextBlock
+									Text="OR"/>
+							</Viewbox>
+						</Button>
+						<Button
+							Tag="Registry"
+							Classes="Picker"
+							IsVisible="{Binding IsRuleTypePickerOpen}"
+							Width="15"
+							Height="15"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"
+							Command="{Binding AddNewItemCommand}"
+							CommandParameter="Registry">
+							<Viewbox>
+								<Image Source="avares://SuiteCreatorAvalonia/Assets/Images/RegEditIcon.png"/>
+							</Viewbox>
+						</Button>
+						<Button
+							Tag="File"
+							Classes="Picker"
+							IsVisible="{Binding IsRuleTypePickerOpen}"
+							Width="15"
+							Height="15"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"
+							Command="{Binding AddNewItemCommand}"
+							CommandParameter="File">
+							<Viewbox>
+								<mi:MaterialIcon 
+									Kind="FileText" 
+									Foreground="Orange"/>
+							</Viewbox>
+						</Button>
+						<Button
+							Tag="MSI"
+							Classes="Picker"
+							IsVisible="{Binding IsRuleTypePickerOpen}"
+							Width="15"
+							Height="15"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"
+							Command="{Binding AddNewItemCommand}"
+							CommandParameter="MSI">
+							<Viewbox>
+								<Image Source="avares://SuiteCreatorAvalonia/Assets/Images/MSILogo.png"/>
+							</Viewbox>
+						</Button>
+						<Button
+							Tag="MSIx"
+							Classes="Picker"
+							IsVisible="{Binding IsRuleTypePickerOpen}"
+							Width="15"
+							Height="15"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"
+							Command="{Binding AddNewItemCommand}"
+							CommandParameter="MSIx">
+							<Viewbox>
+								<Image Source="avares://SuiteCreatorAvalonia/Assets/Images/MSIxLogo.png"/>
+							</Viewbox>
+						</Button>
+						<Button
+							Tag="PowerShell"
+							Classes="Picker"
+							IsVisible="{Binding IsRuleTypePickerOpen}"
+							Width="15"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"
+							Height="15"
+							Command="{Binding AddNewItemCommand}"
+							CommandParameter="PowerShell">
+							<Viewbox>
+								<Image Source="avares://SuiteCreatorAvalonia/Assets/Images/PowerShell5Logo.png"/>
+							</Viewbox>
+						</Button>
+					</Canvas>
+					<TextBlock
+						x:Name="PickerDescription_TextBlock"
+						IsVisible="{Binding IsRuleTypePickerOpen}"
+						Text="Add an MSI Rule"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Top"
+						Margin="0,-10,0,0"/>
+				</StackPanel>
+			</StackPanel>
+		</ScrollViewer>
+		<Button
+			Grid.Row="1"
+			Grid.RowSpan="4"		
+			Classes="IconButton"
+			Tag="Delete"
+			ToolTip.Tip="Toggle remove mode" 
+			HorizontalAlignment="Left" 
+			VerticalAlignment="Bottom"
+			Margin="10,0,0,5" 
+			Command="{Binding ToggleRemoveModeCommand}"
+			Foreground="{DynamicResource BinButton}"
+			Width="50" 
+			Height="50"/>
+		<Button
+			Grid.Row="1"
+			Grid.RowSpan="4"
+			x:Name="SuiteConditionBuilderClear_Button"
+			Foreground="{DynamicResource BinButton}"
+			Classes="IconButton"
+			ToolTip.Tip="Clear the builder"
+			Tag="CloseCircle"
+			HorizontalAlignment="Right"
+			VerticalAlignment="Bottom"
+			Height="50"
+			Width="50"
+			Margin="0,0,10,5">
+			<Button.Flyout>
+				<Flyout
+					Placement="Left"
+					FlyoutPresenterClasses="Warning">
+					<StackPanel
+						Margin="10,3,10,0"
+						Orientation="Horizontal">
+						<TextBlock
+							FontWeight="Bold"
+							Text="Confirm:"
+							Foreground="White"
+							VerticalAlignment="Center"
+							HorizontalAlignment="Center"/>
+						<Button
+							Foreground="White"
+							Classes="IconButton"
+							Tag="Check"
+							Click="Clear_Click"
+							VerticalAlignment="Center"
+							HorizontalAlignment="Center"/>
+					</StackPanel>
+				</Flyout>
+			</Button.Flyout>
+		</Button>
+	</Grid>
+
+</UserControl>

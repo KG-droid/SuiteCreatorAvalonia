@@ -1,0 +1,109 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:controls="using:SuiteUserPopup.Controls"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteUserPopup.ViewModels"  
+	xmlns:views="clr-namespace:SuiteUserPopup.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:labsGif="using:Avalonia.Labs.Gif"
+    mc:Ignorable="d"
+	d:DesignHeight="210"
+	d:DesignWidth="330"
+    x:Class="SuiteUserPopup.Views.PopupWarningView"
+    x:DataType="vm:PopupWarningViewModel">
+
+	<Design.DataContext>
+		<vm:PopupWarningViewModel/>
+	</Design.DataContext>
+
+	<StackPanel>
+
+		<!-- Main Warning text -->
+		<TextBlock
+			FontSize="13"
+			TextWrapping="Wrap"
+			HorizontalAlignment="Center"
+			Text="{Binding MainText}"
+			Margin="0,0,0,5"/>
+
+		<!-- Apps to close -->
+		<Panel
+			IsVisible="{Binding AppsToCloseControls.Count}"
+			Height="70">
+			<controls:ScrollSelector
+				Orientation="Horizontal"
+				Items="{Binding AppsToCloseControls}"/>
+		</Panel>
+
+		<!-- Timer warning-->
+		<TextBlock
+			Name="SkippableWarning_TextBlock"
+			IsVisible="{Binding MaxDelayDays}"
+			HorizontalAlignment="Center"
+			FontSize="13"
+			FontStyle="Italic"
+			TextAlignment="Center"
+			TextWrapping="Wrap">
+			<TextBlock.Text>
+				<MultiBinding StringFormat="If no choice is made, the {0:0.} will {1:0.} after the timer below expires in {2:0.}min">
+					<Binding Path="Action"/>
+					<Binding Path="TimerExpireAction" StringFormat="{}{0}"/>
+					<Binding Path="Timer"/>
+				</MultiBinding>
+			</TextBlock.Text>
+		</TextBlock>
+
+		<TextBlock
+			IsVisible="{Binding !IsVisible, ElementName=SkippableWarning_TextBlock}"
+			FontSize="13"
+			FontStyle="Italic"
+			TextAlignment="Center"
+			TextWrapping="Wrap">
+			<TextBlock.Text>
+				<MultiBinding StringFormat="The {0:0.} will {1:0.} after the timer below expires in {2:0.}min">
+					<Binding Path="Action"/>
+					<Binding Path="TimerExpireAction" StringFormat="{}{0}"/>
+					<Binding Path="Timer"/>
+				</MultiBinding>
+			</TextBlock.Text>
+		</TextBlock>
+
+		<!-- Timer bar -->
+		<ProgressBar
+			Foreground="{DynamicResource CompanyLogoBackgroundBrush}"
+			Value="{Binding ProgressValue}"
+			Maximum="{Binding ProgressMax}"
+			Height="10"
+			Margin="5,5,5,10"/>
+
+		<!-- Buttons -->
+		<StackPanel
+			Spacing="15"
+			HorizontalAlignment="Center"
+			Orientation="Horizontal">
+			<Button
+				Command="{Binding $parent[views:PopupMainView].((vm:PopupMainViewModel)DataContext).ShowPickReminderCommand}"
+				IsVisible="{Binding MaxDelayDays}"
+				Width="90">
+				<TextBlock
+					ToolTip.Tip="{Binding MaxDelayDays, StringFormat='{}{0} days remaining'}"
+					ToolTip.Placement="Right"
+					FontWeight="Bold"
+					Text="{Binding MaxDelayDays, StringFormat='Later ({0})'}"
+					HorizontalAlignment="Center"/>
+			</Button>
+			<Button
+				Width="90"
+				Command="{Binding ContinueCommand}">
+				<TextBlock
+					Text="Continue"
+					FontWeight="Bold"
+					HorizontalAlignment="Center"/>
+			</Button>
+		</StackPanel>
+
+	</StackPanel>
+
+</UserControl>

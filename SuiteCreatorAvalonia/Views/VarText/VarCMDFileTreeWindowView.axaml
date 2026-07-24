@@ -1,0 +1,31 @@
+<Window
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+	d:DesignWidth="800" 
+	d:DesignHeight="450"
+	ShowInTaskbar="false"
+	WindowStartupLocation="Manual"
+	x:CompileBindings="True"
+	CanResize="False"
+	services:DialogManager.Register="{Binding}"
+	WindowDecorations="None"
+	ExtendClientAreaToDecorationsHint="true"
+    x:Class="SuiteCreatorAvalonia.Views.VarCMDFileTreeWindowView"
+    x:DataType="vm:VarCMDFileTreeWindowViewModel"
+	Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Width}"
+	Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Height}">
+
+	<Design.DataContext>
+		<vm:VarCMDFileTreeWindowViewModel/>
+	</Design.DataContext>
+
+	<UserControl
+		x:Name="FileTreeUserControl"
+		Content="{Binding FileTreeVM}"/>
+	
+</Window>

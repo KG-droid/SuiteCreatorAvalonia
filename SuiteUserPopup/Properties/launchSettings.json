@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SuiteUserPopup": {
+      "commandName": "Project",
+      "commandLineArgs": "--config \"C:\\Users\\Keir\\Downloads\\TestSuite-Build\\Popup\\popconfig.json\" --CompanyLogo \"C:\\Users\\Keir\\Downloads\\TestSuite-Build\\Popup\\CompanyLogo.gif\" --SuiteLogo \"C:\\Users\\Keir\\Downloads\\TestSuite-Build\\Popup\\SuiteLogo.png\""
+    }
+  }
+}

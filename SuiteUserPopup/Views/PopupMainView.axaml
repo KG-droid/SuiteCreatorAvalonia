@@ -1,0 +1,82 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteUserPopup.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:labsGif="using:Avalonia.Labs.Gif"
+    mc:Ignorable="d"
+	d:DesignHeight="240"
+	d:DesignWidth="330"
+    x:Class="SuiteUserPopup.Views.PopupMainView"
+    x:DataType="vm:PopupMainViewModel">
+
+	<Design.DataContext>
+		<vm:PopupMainViewModel/>
+	</Design.DataContext>
+
+	<Grid>
+
+		<!-- App name, version and action -->
+		<StackPanel
+			Name="Title_StackPanel"
+			Margin="15">
+			<Grid
+				ColumnDefinitions="Auto,Auto,*"
+				RowDefinitions="Auto,Auto"
+				Margin="0,0,0,10">
+				<Image
+					Grid.Column="0"
+					Grid.RowSpan="2"
+					Source="{Binding Icon}"
+					Width="40"
+					Height="40"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Margin="0,0,10,0"/>
+				<TextBlock
+					Grid.Column="1"
+					VerticalAlignment="Center"
+					HorizontalAlignment="Left"
+					FontSize="14"
+					FontWeight="Bold"
+					TextWrapping="NoWrap"
+					Text="{Binding Name}"/>
+				<TextBlock
+					Grid.Column="1"
+					Grid.Row="1"
+					VerticalAlignment="Top"
+					HorizontalAlignment="Left"
+					FontSize="10"
+					TextWrapping="NoWrap"
+					Text="{Binding Version, StringFormat='Version: {0}'}"/>
+				<StackPanel
+					Orientation="Horizontal"
+					VerticalAlignment="Center"
+					HorizontalAlignment="Right"
+					Spacing="5"
+					Grid.Column="2"
+					Grid.RowSpan="2">
+					<TextBlock
+						FontSize="13"
+						FontWeight="Bold"
+						VerticalAlignment="Center"
+						TextWrapping="NoWrap"
+						Text="{Binding Action}"/>
+					<mi:MaterialIcon
+						Width="23"
+						Height="23"
+						VerticalAlignment="Center"
+						Kind="{Binding ActionIconKind}"/>
+				</StackPanel>
+			</Grid>
+
+			<TransitioningContentControl
+				Content="{Binding TransitioningView}"/>
+
+		</StackPanel>
+
+	</Grid>
+
+</UserControl>

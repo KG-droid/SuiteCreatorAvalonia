@@ -1,0 +1,21 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:eventcards="using:SuiteCreatorAvalonia.ViewModels.EventCards"
+    mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+    xmlns:services="using:SuiteCreatorAvalonia.Services"
+    x:Class="SuiteCreatorAvalonia.Views.CertsView"
+    services:Help.Title="Certs"
+    services:Help.PageSummary="Install certificates onto the device as part of the suite. Add a certificate event, pick the certificate file and the store it should go into, and choose whether it is removed on uninstall."
+    x:DataType="vm:CertsViewModel">
+
+	<Design.DataContext>
+		<vm:CertsViewModel/>
+	</Design.DataContext>
+
+	<UserControl Content="{Binding IoEventViewModel}"/>
+
+</UserControl>

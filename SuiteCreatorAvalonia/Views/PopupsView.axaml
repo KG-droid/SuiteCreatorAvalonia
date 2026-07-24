@@ -1,0 +1,669 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+	xmlns:AvaloniaEdit="using:AvaloniaEdit"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:mibase="using:Material.Icons"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
+	xmlns:converters="using:SuiteCreatorAvalonia.Converters"
+	xmlns:eventCommon="using:SuiteCreatorAvalonia.Models.Common"
+	services:DialogManager.Register="{Binding}"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+    mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="1000"
+    x:Class="SuiteCreatorAvalonia.Views.PopupsView"
+    services:Help.Title="Popups"
+    services:Help.PageSummary="Configure the popups end users see while the suite runs — the messages, your company logo, and options like letting users defer the install with a timer. Use the sample window to preview exactly what users will see."
+    x:DataType="vm:PopupsViewModel">
+
+	<UserControl.Resources>
+		<converters:AnyTrueConverter x:Key="AnyTrue" />
+	</UserControl.Resources>
+
+	<Design.DataContext>
+		<vm:PopupsViewModel/>
+	</Design.DataContext>
+
+	<UserControl.Styles>
+		<Style Selector="Button.TextIconBtn /template/ ContentPresenter">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Margin" Value="10"/>
+		</Style>
+		<Style Selector="Button.TextIconBtn:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="RenderTransform">
+				<Setter.Value>
+					<ScaleTransform ScaleX="1.1" ScaleY="1.1"/>
+				</Setter.Value>
+			</Setter>
+		</Style>
+	</UserControl.Styles>
+
+	<Grid
+		RowDefinitions="Auto,Auto,*"
+		Margin="0,0,10,5">
+		<TextBlock
+			Classes="TabHeader"
+			Text="Popups"
+			Grid.Row="0"/>
+		<Grid
+			Name="PopupEnables_Grid"
+			Grid.Row="1"
+			ColumnDefinitions="Auto,10,Auto,10,*"
+			RowDefinitions="Auto,10,Auto,10,Auto">
+			
+			<!-- UserVisible Progress -->
+			<TextBlock
+				Text="User visible install progress:"
+				Classes="FieldName"
+				Grid.Column="0"
+				Grid.Row="0"
+				HorizontalAlignment="Left"
+				VerticalAlignment="Center"/>
+			<CheckBox
+				Name="SuiteProgressEnable_Checkbox"
+				IsChecked="{Binding ShowProgress}"
+				Grid.Column="2"
+				Grid.Row="0"
+				HorizontalAlignment="Left"
+				VerticalAlignment="Center"/>
+			<TextBlock
+				Text="Displays overall Suite installation progress to the user. Title Appname and Version taken from Suite exe name field on the Build tab, if install warning is disabled."
+				VerticalAlignment="Center"
+				HorizontalAlignment="Left"
+				Grid.Column="4"
+				Grid.Row="0"
+				TextWrapping="Wrap"/>
+
+			<!-- Enable Warning Popup -->
+			<TextBlock
+				Text="Enable warning Popup:"
+				Classes="FieldName"
+				Grid.Column="0"
+				Grid.Row="2"
+				HorizontalAlignment="Left"
+				VerticalAlignment="Center"/>
+			<CheckBox
+				Name="SuitePopupEnable_Checkbox"
+				IsChecked="{Binding ShowPopupWarning}"
+				Grid.Column="2"
+				Grid.Row="2"
+				HorizontalAlignment="Left"
+				VerticalAlignment="Center"/>
+			<TextBlock
+				Text="Enables a user interactable Popup to warn them the suite is going to run, and optionally allow them to delay it"
+				TextWrapping="Wrap"
+				Grid.Column="4"
+				Grid.Row="2"
+				HorizontalAlignment="Left"
+				VerticalAlignment="Center"/>
+		</Grid>
+
+		<!-- Config View -->
+		<ScrollViewer
+			Name="PopupConfig_ScrollViewer"
+			Grid.Row="2"
+			HorizontalScrollBarVisibility="Disabled"
+			VerticalScrollBarVisibility="Visible">
+
+			<Grid
+				RowDefinitions="Auto,Auto">
+
+				<StackPanel
+					Margin="0,0,25,0"
+					Spacing="10"
+					Grid.Row="0"
+					IsVisible="{Binding IsChecked, ElementName=SuitePopupEnable_Checkbox}">
+
+					<!-- Popup Controls -->	
+					<Grid
+						RowDefinitions="Auto,Auto,Auto"
+						ColumnDefinitions="Auto,Auto,10,*">
+					
+						<!-- Popup Preview controls -->
+						<TextBlock
+							Grid.Row="0"
+							Grid.Column="0"
+							Text="Popup Preview:"
+							Classes="FieldName"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<CheckBox
+							Name="PopupPreview_CheckBox"
+							IsChecked="{Binding ShowPopupPreview}"
+							Grid.Column="1"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<StackPanel
+							IsVisible="{Binding IsChecked, ElementName=PopupPreview_CheckBox}"
+							Grid.Row="0"
+							Grid.Column="3"
+							Orientation="Horizontal">
+							<TextBlock
+								Grid.Row="0"
+								Grid.Column="0"
+								Text="Switch previews:"
+								HorizontalAlignment="Left"
+								VerticalAlignment="Center"/>
+							<Button
+								Classes="IconButton"
+								Click="SwitchPopupView_Click"
+								Tag="SwapHorizontal"/>
+							<TextBlock
+								Grid.Row="0"
+								Grid.Column="0"
+								Text="Switches between the Deployment and Removal/Rollback Popup previews"
+								HorizontalAlignment="Left"
+								VerticalAlignment="Center"/>
+						</StackPanel>
+
+						<!-- Link to Proc Closures -->
+						<TextBlock
+							Grid.Row="1"
+							Grid.Column="0"
+							Text="Link to Process Closures:         "
+							Classes="FieldName"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<CheckBox
+							Grid.Row="1"
+							Grid.Column="1"
+							IsChecked="{Binding LinkToProcClosures}"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<TextBlock
+							Grid.Row="1"
+							Grid.Column="3"
+							Text="Only shows popup when processes on the ProcessClosure tab are running, and the popup advises which will be closed"
+							TextWrapping="Wrap"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+			
+						<!-- PS Condition -->
+						<TextBlock
+							Grid.Row="2"
+							Grid.Column="0"
+							Text="Set Popup Condition:"
+							Classes="FieldName"
+							VerticalAlignment="Center"
+							Margin="0,0,44,0"/>
+						<CheckBox
+							Grid.Row="2"
+							Grid.Column="1"
+							Name="SuitePopupCondition_Checkbox"
+							IsChecked="{Binding HasPopupCondition}"/>
+						<TextBlock
+							Grid.Row="2"
+							Grid.Column="3"
+							TextWrapping="Wrap"
+							VerticalAlignment="Center"
+							Text="Enables you to specify a PowerShell script, where if it comes back as True then the popup will be enabled, else it will be disabled. If the script fails, it will default to enabled. The Script must Write-Output $True and $False only, not a null or any other value."/>
+					</Grid>
+
+					<!-- PS Condition AvalonText -->
+					<Grid
+						Name="PopupConditionPS_Grid"
+						IsVisible="{Binding #SuitePopupCondition_Checkbox.IsChecked}"
+						Grid.Row="2"
+						Margin="10,0,0,20"
+						ColumnDefinitions="*,Auto">
+						<Border
+							Grid.Column="0"
+							BorderBrush="Gray"
+							BorderThickness="1"
+							CornerRadius="7">
+							<AvaloniaEdit:TextEditor
+								x:Name="PSCondition_TextEditor"
+								Document="{Binding PSCondition}"
+								Margin="10"
+								Grid.Row="2"
+								Grid.Column="1"
+								SyntaxHighlighting="PowerShell"
+								ShowLineNumbers="True"/>
+						</Border>
+						<Button
+							Grid.Column="1"
+							Classes="IconButton"
+							Tag="PowerShell"
+							ToolTip.Tip="Import a Powershell file"
+							VerticalAlignment="Top"
+							Foreground="#2fa1c4"/>
+					</Grid>
+
+					<!-- Suite start warning Progress -->
+					<Grid
+						Margin="0,0,0,10"
+						Grid.Row="4"
+						ColumnDefinitions="Auto,*,15,*">
+
+						<TextBlock
+							Text="MessageText:"
+							Classes="FieldName"
+							Margin="0,0,70,0"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+					
+						<!-- Install/upgrade Popup -->
+						<Button
+							Classes="TextIconBtn"
+							IsVisible="{Binding !IsVisible, ElementName=InstallPop_Grid}"
+							ToolTip.Tip="Add Install/Deployment Popup"
+							VerticalAlignment="Center"
+							HorizontalAlignment="Center"
+							Command="{Binding AddInstallPopCommand}"
+							Grid.Column="1">
+							<StackPanel
+								Spacing="3">
+								<mi:MaterialIcon
+									Foreground="{DynamicResource PlusButton}"
+									Width="40"
+									Height="40"
+									Kind="PlusCircle"/>
+								<TextBlock>Add Install Popup</TextBlock>
+							</StackPanel>
+						</Button>
+						<Grid
+							Name="InstallPop_Grid"
+							IsVisible="{Binding HasInstallPopup}"
+							RowDefinitions="Auto,Auto,Auto"
+							Grid.Column="1">
+							<TextBlock
+								Text="Deployment:"
+								Classes="FieldName"
+								Grid.Row="0"
+								HorizontalAlignment="Left"
+								VerticalAlignment="Center"/>
+							<Button
+								Grid.Row="0"
+								Foreground="{DynamicResource BinButton}"
+								ToolTip.Tip="Remove Install/Deployment Popup"
+								VerticalAlignment="Center"
+								HorizontalAlignment="Right"
+								Classes="IconButton"
+								Command="{Binding RemoveInstallPopCommand}"
+								Tag="Minus"/>
+							<Border
+								Grid.Row="1"
+								BorderBrush="#FF838383"
+								BorderThickness="1"
+								CornerRadius="7">
+								<AvaloniaEdit:TextEditor
+									Margin="5"
+									Document="{Binding InstallTxt}"
+									BorderBrush="Gray"
+									MinHeight="100"/>
+							</Border>
+							<Grid
+								ColumnDefinitions="Auto,*,Auto"
+								Margin="0,5,0,0"
+								Grid.Row="3">
+								<TextBlock
+									Grid.Column="0"
+									Classes="FieldName"
+									Margin="0,0,5,0"
+									Text="Action:"/>
+								<TextBox
+									Grid.Column="1"
+									Text="{Binding InstAction}"/>
+								<ComboBox
+									Grid.Column="2"
+									SelectedItem="{Binding SelectedDeployIconKind}"
+									ItemsSource="{Binding ApplicableIconKinds}"
+									VerticalAlignment="Center">
+									<ComboBox.ItemTemplate>
+										<DataTemplate>
+											<mi:MaterialIcon
+												Margin="5,2,5,0"
+												Width="20"
+												Height="20"
+												Kind="{Binding}"/>
+										</DataTemplate>
+									</ComboBox.ItemTemplate>
+								</ComboBox>
+							</Grid>
+						</Grid>
+					
+						<!-- Rollback/Remove Text -->
+						<Button
+							Classes="TextIconBtn"
+							IsVisible="{Binding !IsVisible, ElementName=RemovePop_Grid}"
+							ToolTip.Tip="Add Rollback/Remove Popup"
+							VerticalAlignment="Center"
+							HorizontalAlignment="Center"
+							Grid.Column="3"
+							Command="{Binding AddUninstallPopCommand}">
+							<StackPanel
+								Spacing="3">
+								<mi:MaterialIcon
+									Foreground="{DynamicResource PlusButton}"
+									Width="40"
+									Height="40"
+									Kind="PlusCircle"/>
+								<TextBlock>Add Remove Popup</TextBlock>
+							</StackPanel>
+						</Button>
+						<Grid
+							Name="RemovePop_Grid"
+							IsVisible="{Binding HasUninstallPopup}"
+							RowDefinitions="Auto,Auto,Auto"
+							Grid.Column="3">
+							<TextBlock
+								Grid.Row="0"
+								Text="Removal/Rollback:"
+								Classes="FieldName"
+								HorizontalAlignment="Left"
+								VerticalAlignment="Center"/>
+							<Button
+								Foreground="{DynamicResource BinButton}"
+								ToolTip.Tip="Remove Rollback/Remove Popup"
+								VerticalAlignment="Center"
+								HorizontalAlignment="Right"
+								Command="{Binding RemoveUninstallPopCommand}"
+								Classes="IconButton"
+								Tag="Minus"/>
+							<Border
+								Grid.Row="1"
+								BorderBrush="#FF838383"
+								BorderThickness="1"
+								CornerRadius="7">
+								<AvaloniaEdit:TextEditor
+									Document="{Binding UninstallTxt}"
+									Margin="5"
+									MinHeight="100"/>
+							</Border>
+							<Grid
+								ColumnDefinitions="Auto,*,Auto"
+								Margin="0,5,0,0"
+								Grid.Row="3">
+								<TextBlock
+									Grid.Column="0"
+									Classes="FieldName"
+									Margin="0,0,5,0"
+									Text="Action:"/>
+								<TextBox
+									Grid.Column="1"
+									Text="{Binding UninstAction}"/>
+								<ComboBox
+									Grid.Column="2"
+									SelectedItem="{Binding SelectedRemoveIconKind}"
+									ItemsSource="{Binding ApplicableIconKinds}"
+									VerticalAlignment="Center">
+									<ComboBox.ItemTemplate>
+										<DataTemplate>
+											<mi:MaterialIcon
+												Margin="5,2,5,0"
+												Width="20"
+												Height="20"
+												Kind="{Binding}"/>
+										</DataTemplate>
+									</ComboBox.ItemTemplate>
+								</ComboBox>
+							</Grid>
+						</Grid>
+					
+					</Grid>
+
+					<!-- Popup Settings -->
+					<Grid
+						Name="Settings_Grid"
+						RowDefinitions="Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto"
+						ColumnDefinitions="Auto,10,Auto,10,*"
+						Grid.Row="6">
+					
+						<!-- Timer -->
+						<TextBlock
+							Text="Timer:"
+							Classes="FieldName"
+							VerticalAlignment="Center"
+							Grid.Column="0"
+							Grid.Row="0"/>
+						<NumericUpDown
+							Grid.Column="2"
+							Grid.Row="0"
+							HorizontalAlignment="Left"
+							FormatString="0"
+							Width="150"
+							Minimum="10"
+							Value="{Binding Timer}"
+							VerticalAlignment="Center"/>
+						<TextBlock
+							Text="Time in minutes, that the user has to make a choice (assuming a user is logged in)*"
+							Foreground="#FF838383"
+							Grid.Column="4"
+							Grid.Row="0"
+							VerticalAlignment="Center"/>
+
+						<!-- Timer Expire Action-->
+						<TextBlock
+							Text="Timer Expire Action:"
+							Classes="FieldName"
+							Grid.Column="0"
+							Grid.Row="2"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<ComboBox
+							Grid.Column="2"
+							Grid.Row="2"
+							Width="150"
+							HorizontalAlignment="Left"
+							ItemsSource="{helpers:EnumValues {x:Type eventCommon:PopupAction}}"
+							SelectedItem = "{Binding TimerExpireAction}"
+							VerticalAlignment="Center"/>
+						<TextBlock
+							Grid.Column="4"
+							Grid.Row="2"
+							Text="What action the suite will take if/when the timer expires"
+							Foreground="#FF838383"
+							VerticalAlignment="Center"/>
+
+						<!-- Max Delay -->
+						<TextBlock
+							Text="Max Delay Days:"
+							Classes="FieldName"
+							Grid.Column="0"
+							Grid.Row="4"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<NumericUpDown
+							Name="SuitePopupMaxDelayDays_NumberBox"
+							Grid.Column="2"
+							Grid.Row="4"
+							Width="150"
+							Value="{Binding DelayDays}"
+							FormatString="0"
+							Minimum="0"
+							VerticalAlignment="Center"/>
+						<TextBlock
+							Text="The maximum number of days in which the user can delay the deployment **"
+							Foreground="#FF838383"
+							Grid.Column="4"
+							Grid.Row="4"
+							VerticalAlignment="Center"/>
+
+						<!-- Log off action -->
+						<TextBlock
+							Text="User Logged off action:"
+							Classes="FieldName"
+							Grid.Column="0"
+							Grid.Row="6"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<ComboBox
+							Name="SuitePopupLoggedOffAction_Combobox"
+							Grid.Column="2"
+							Grid.Row="6"
+							Width="150"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"
+							ItemsSource="{helpers:EnumValues {x:Type eventCommon:PopupAction}}"
+							SelectedItem="{Binding LoggedOffAction}"/>
+						<TextBlock
+							Grid.Column="4"
+							Grid.Row="6"
+							TextWrapping="Wrap"
+							Text="The action to take if the deployment runs when no users are logged on"
+							Foreground="#FF838383"
+							VerticalAlignment="Center"/>
+
+						<!-- Locked action -->
+						<TextBlock
+							Text="Locked Device action:"
+							Classes="FieldName"
+							Grid.Column="0"
+							Grid.Row="8"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<ComboBox
+							Grid.Column="2"
+							Grid.Row="8"
+							Width="150"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"
+							ItemsSource="{helpers:EnumValues {x:Type eventCommon:PopupAction}}"
+							SelectedItem="{Binding LockedAction}"/>
+						<TextBlock
+							Grid.Column="4"
+							Grid.Row="8"
+							Text="The action to take if the deployment runs when a user is logged in but the screen is locked/sleep***"
+							TextWrapping="Wrap"
+							Foreground="#FF838383"
+							VerticalAlignment="Center"/>
+
+						<!-- ESP action -->
+						<TextBlock
+							Text="ESP action:"
+							Classes="FieldName"
+							Grid.Column="0"
+							Grid.Row="10"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<ComboBox
+							Width="150"
+							Grid.Column="2"
+							Grid.Row="10"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"
+							ItemsSource="{helpers:EnumValues {x:Type eventCommon:PopupAction}}"
+							SelectedItem="{Binding EspAction}"/>
+						<TextBlock
+							Grid.Column="4"
+							Grid.Row="10"
+							TextWrapping="Wrap"
+							Text="The action to take if the deployment runs during ESP (Device initial setup)"
+							Foreground="#FF838383"
+							VerticalAlignment="Center"/>
+					
+					</Grid>
+				</StackPanel>	
+		
+				<StackPanel 
+					Grid.Row="1">
+					<StackPanel.IsVisible>
+						<MultiBinding Converter="{StaticResource AnyTrue}">
+							<Binding ElementName="SuiteProgressEnable_Checkbox" Path="IsChecked"/>
+							<Binding ElementName="SuitePopupEnable_Checkbox" Path="IsChecked"/>
+						</MultiBinding>
+					</StackPanel.IsVisible>
+
+					<!-- Company Logo -->
+					<Grid
+						ColumnDefinitions="Auto, 40, Auto">
+						<TextBlock
+							TextWrapping="Wrap"
+							MaxWidth="120"
+							Grid.Column="0"
+							Grid.Row="12"
+							Text="Company Logo &amp; Background Color:"
+							VerticalAlignment="Center"
+							HorizontalAlignment="Left"
+							FontWeight="DemiBold"/>
+						<UserControl 
+							Grid.Column="2"
+							Grid.Row="12"
+							Content="{Binding CompanyLogoPicker}"/>
+					</Grid>
+
+					<!-- Suite Logo -->
+					<Grid
+						ColumnDefinitions="Auto, 90, Auto">
+						<TextBlock
+							TextWrapping="Wrap"
+							Grid.Column="0"
+							Grid.Row="0"
+							Text="Suite Logo:"
+							VerticalAlignment="Center"
+							HorizontalAlignment="Left"
+							FontWeight="DemiBold"/>
+						<StackPanel
+							Orientation="Horizontal"
+							Grid.Column="2">
+							<Button
+								Classes="PicTile"
+								ToolTip.Tip="Change Logo"
+								Command="{Binding ChangeSuiteLogoCommand}">
+								<Image
+									Source="{Binding SuiteLogo}"/>
+							</Button>
+							<Button
+								Name="ChangeSuiteLogo_Button"
+								Classes="IconButton"
+								Tag="Restart"
+								Grid.Column="3"
+								Grid.Row="14"
+								Width="40"
+								Height="40"
+								ToolTip.Tip="Reset Suite Logo"
+								Command="{Binding SetDefaultSuiteLogoCommand}"/>
+							<Popup
+								IsOpen="{Binding SuiteLogoError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+								IsLightDismissEnabled="True"
+								Placement="RightEdgeAlignedTop"
+								PlacementTarget="{Binding ElementName=ChangeSuiteLogo_Button}"
+								Closed="ChangeSuiteLogoPopup_Closed">
+								<Border
+									Background="Red"
+									Padding="12,10,15,10"
+									CornerRadius="23">
+									<StackPanel
+										Orientation="Horizontal"
+										Spacing="5">
+										<mi:MaterialIcon
+											Kind="AlertCircle"
+											Foreground="White"
+											Width="24"
+											Height="24"/>
+										<TextBlock
+											Foreground="White"
+											Text="{Binding SuiteLogoError}"/>
+									</StackPanel>
+								</Border>
+							</Popup>
+						</StackPanel>
+					</Grid>
+
+					<!-- Advisory footer text -->
+					<TextBlock
+						IsVisible="{Binding ElementName='SuitePopupEnable_Checkbox', Path=IsChecked}"
+						Margin="10,15,0,0"
+						TextWrapping="Wrap"
+						Grid.Row="8"
+						Foreground="#FF838383">
+						<Run Text="* If the device goes to sleep/lock screen during the timer, then the suite will use the action on the &quot;Locked Device Action&quot; dropdown to decide what to do"/>
+						<LineBreak/>
+						<LineBreak/>
+						<Run Text="** Once the user has delayed the deployment to the maximum, they are warned, then the following day they can no longer skip,"/>
+						<Run Text="and will be given a final timer to the duration you set for the Timer. If they restart to attempt to avoid it, then the deployment will run silently on next startup"/>
+						<LineBreak/>
+						<LineBreak/>
+						<Run Text="***"/>
+						<Run Text="This also determines the action to take if the device goes to sleep/locked screen during the Timer"/>
+						<Run Text="(Normally when the user has left the device, after the Timer has started)"/>
+					</TextBlock>
+				</StackPanel>
+			</Grid>
+		</ScrollViewer>
+	</Grid>
+	
+</UserControl>

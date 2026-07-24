@@ -1,0 +1,456 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:local="clr-namespace:SuiteCreatorAvalonia.Views"
+	xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
+	xmlns:package="using:SuiteCreatorAvalonia.Models.Package"
+	xmlns:enums="using:SuiteCreatorAvalonia.Enums"
+	xmlns:common="using:SuiteCreatorAvalonia.Models.Common"
+	xmlns:services="clr-namespace:SuiteCreatorAvalonia.Services"
+	mc:Ignorable="d"
+	d:DesignWidth="800"
+	d:DesignHeight="650"
+	x:Class="SuiteCreatorAvalonia.Views.PackageOtherRemoveDetailsView"
+	x:DataType="vm:PackageOtherRemoveDetailsViewModel"
+	services:DialogManager.Register="{Binding}">
+
+	<Design.DataContext>
+		<vm:PackageOtherRemoveDetailsViewModel/>
+	</Design.DataContext>
+
+	<TabControl
+		Margin="0,0,-12,0"
+		SelectedIndex="0">
+		<TabItem
+			Name="DetailsTab"
+			Header="Details"
+			FontSize="13">
+			<ScrollViewer>
+				<StackPanel
+					Margin="0,0,20,0"
+					Spacing="5"
+					services:Help.Title="Other removal package details"
+					services:Help.Order="4"
+					services:Help.PageSummary="This package type only removes something (an existing MSI, a command line, or a PowerShell script) — it isn't installed by this suite, so like other 'Other' packages there's no install command or auto-detected removal here. Configure the removal method and the Detection Rules that tell the suite whether it's still present to remove."
+					services:Help.Text="This package type only removes something (an existing MSI, a command line, or a PowerShell script) — it isn't installed by this suite, so like other 'Other' packages there's no install command or auto-detected removal here. Configure the removal method and the Detection Rules that tell the suite whether it's still present to remove.">
+
+					<!--Package Name-->
+					<TextBlock
+						Text="Package Name:"/>
+					<TextBox
+						x:Name="PkgName_TextBox"
+						Text="{Binding Name}"/>
+
+					<!--Requirement Rules-->
+					<StackPanel
+						Orientation="Horizontal">
+						<TextBlock
+							Grid.Row="1"
+							Grid.Column="0"
+							VerticalAlignment="Center"
+							Text="Requirement:"
+							Margin="0,0,10,0"/>
+						<ToggleSwitch
+							Grid.Row="1"
+							Grid.Column="2"
+							Grid.ColumnSpan="3"
+							Name="Requirement_ToggleSwitch"
+							IsChecked="{Binding HasRequirements}"
+							VerticalAlignment="Center"
+							OffContent=""
+							OnContent=""/>
+						<TextBlock
+							Grid.Row="1"
+							Grid.Column="4"
+							FontSize="{DynamicResource InfoFontSize}"
+							FontStyle="Italic"
+							TextWrapping="Wrap"
+							Text="Add a rule/s to determine whether this package should run or not"/>
+					</StackPanel>
+
+					<Expander
+						IsVisible="{Binding IsChecked, ElementName=Requirement_ToggleSwitch}"
+						Background="Transparent"
+						Header="Requirement Rules"
+						HorizontalAlignment="Stretch">
+						<UserControl
+							Content="{Binding RequirementRuleBuilder}"/>
+					</Expander>
+
+					<!--Detection Rules-->
+					<Expander
+						x:Name="Detection_Expander"
+						Background="Transparent"
+						Header="Detection Rules"
+						HorizontalAlignment="Stretch">
+						<UserControl
+							Content="{Binding DetectionBuilder}"/>
+					</Expander>
+
+					<!--Visual divider-->
+					<Border
+						Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+						Margin="5"
+						CornerRadius="3"
+						Height="3"/>
+
+					<!--Remove Type-->
+					<StackPanel
+						Margin="0,5,0,0"
+						Orientation="Horizontal">
+						<TextBlock
+							VerticalAlignment="Center"
+							Grid.Column="0"
+							Text="Remove Type:"
+							Margin="0,0,10,0"/>
+						<ComboBox
+							Name="RemoveType_ComboBox"
+							SelectionChanged="RemoveType_SelectedItemChanged"
+							VerticalAlignment="Center"
+							Grid.Column="0"
+							SelectedItem="{Binding SelectedRemoveType}"
+							ItemsSource="{helpers:EnumValues {x:Type package:OtherRemovalType}}"/>
+						<Button
+							x:Name="AddRemoveAnotherCMD_Button"
+							Command="{Binding AddRemoveCMDCommand}"
+							Width="35"
+							Height="35"
+							VerticalAlignment="Center"
+							Grid.Column="1"
+							Classes="IconButton"
+							Tag="Plus"
+							Foreground="{DynamicResource PlusButton}"
+							ToolTip.Tip="Add another remove command"/>
+					</StackPanel>
+
+					<!--Remove MSI-->
+					<Grid
+						x:Name="RemoveMSI_Grid"
+						IsVisible="False"
+						Margin="0,0,0,10"
+						ColumnDefinitions="*,Auto"
+						RowDefinitions="Auto,Auto">
+						<DataGrid
+							x:Name="MSIRemoves_DataGrid"
+							ItemsSource="{Binding RemoveMSIs}"
+							SelectionMode="Single"
+							SelectedItem="{Binding SelectedRemoveMSIs}"
+							Grid.Column="0"
+							AutoGenerateColumns="false">
+							<DataGrid.Columns>
+								<DataGridTemplateColumn
+									Header="Type &amp; Code"
+									Width="1.2*">
+									<DataTemplate>
+										<Grid
+											ColumnDefinitions="Auto,*">
+											<!-- ToggleSwitch -->
+											<ToggleSwitch
+                                                Name="MSIRemoveRow_ToggleSwitch"
+												Grid.Column="0"
+                                                OnContent="Product"
+                                                OffContent="Family"
+												GotFocus="MSIRemoveDGCtrl_GotFocus"
+                                                IsChecked="{Binding IsProductRemoval}"
+												Margin="0,0,5,0"/>
+											<TextBox
+												Grid.Column="1"
+												GotFocus="MSIRemoveDGCtrl_GotFocus"
+                                                IsVisible="{Binding IsChecked, ElementName=MSIRemoveRow_ToggleSwitch}"
+                                                PlaceholderText="Product Code"
+                                                Text="{Binding Code}" />
+											<TextBox
+												Grid.Column="1"
+												GotFocus="MSIRemoveDGCtrl_GotFocus"
+												IsVisible="{Binding !IsChecked, ElementName=MSIRemoveRow_ToggleSwitch}"
+												PlaceholderText="Upgrade Code"
+												Text="{Binding Code}" />
+										</Grid>
+									</DataTemplate>
+								</DataGridTemplateColumn>
+								<DataGridTemplateColumn
+									Header="Log Path"
+									Width="*">
+									<DataTemplate>
+										<TextBox
+											GotFocus="MSIRemoveDGCtrl_GotFocus"
+											Grid.Column="1"
+											PlaceholderText="Optional log file path"
+											Text="{Binding LogPath}" />
+									</DataTemplate>
+								</DataGridTemplateColumn>
+								<DataGridTemplateColumn
+									Header="Additional switches"
+									Width="*">
+									<DataTemplate>
+										<TextBox
+											GotFocus="MSIRemoveDGCtrl_GotFocus"
+											Grid.Column="1"
+											PlaceholderText="e.g MyProperty=Hello etc"
+											Text="{Binding AdditionalParams}" />
+									</DataTemplate>
+								</DataGridTemplateColumn>
+							</DataGrid.Columns>
+						</DataGrid>
+						<StackPanel
+							Grid.Column="1"
+							Grid.Row="0">
+							<Button
+								Classes="IconButton"
+								Tag="Plus"
+								Command="{Binding AddMSIRemovalCommand}"
+								ToolTip.Tip="Add MSI product to uninstall"
+								Foreground="{DynamicResource PlusButton}"/>
+							<Button
+								Classes="IconButton"
+								Tag="Minus"
+								Command="{Binding RemoveMSIRemovalCommand}"
+								ToolTip.Tip="Remove selected product from the list"
+								Foreground="{DynamicResource BinButton}"/>
+						</StackPanel>
+
+						<TextBlock
+							Grid.Row="1"
+							Margin="0,5,0,0"
+							FontStyle="Italic"
+							FontSize="{DynamicResource InfoFontSize}"
+							Text=" Automatically applies the /q silent switch, and restarts are controlled via the toggle below"/>
+					</Grid>
+
+					<!--Remove Regex-->
+					<Grid
+						x:Name="RemoveRegex_Grid"
+						IsVisible="False"
+						Margin="0,0,0,10"
+						RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+						ColumnDefinitions="Auto,*,Auto,*">
+						<TextBlock
+							Grid.Column="0"
+							Text="Manufacturer:"
+							Margin="0,0,10,0"/>
+						<TextBox
+							Text="{Binding RegexVendor}"
+							PlaceholderText="No Regex provided"
+							Grid.Column="1"/>
+						<TextBlock
+							Grid.Column="2"
+							Text="Product Name:"
+							Margin="10,0,10,0"/>
+						<TextBox
+							Text="{Binding RegexProductName}"
+							PlaceholderText="No Regex provided"
+							Grid.Column="3"/>
+						<TextBlock
+							Grid.Column="0"
+							Grid.Row="1"
+							Text="Parameters:"/>
+						<TextBox
+							Grid.Row="1"
+							Text="{Binding RegexRemoveParams}"
+							PlaceholderText="No optional parameters provided to run with the matching product removals"
+							Grid.Column="1"
+							Grid.ColumnSpan="3"/>
+						<TextBlock
+							Text=" Use Regex to find and remove products based on Manufacturer and Product Name"
+							FontStyle="Italic"
+							FontSize="{DynamicResource InfoFontSize}"
+							Grid.ColumnSpan="4"
+							Grid.Row="2"/>
+						<TextBlock
+							Text=" Uses the remove command on the uninstall reg key if present, otherwise the MSI GUID will be used"
+							FontStyle="Italic"
+							FontSize="{DynamicResource InfoFontSize}"
+							Grid.ColumnSpan="4"
+							Grid.Row="3"/>
+						<TextBlock
+							Text=" This feature will not work for non MSI installations, that don't list an uninstall command on the uninstall reg key"
+							FontStyle="Italic"
+							FontSize="{DynamicResource InfoFontSize}"
+							Grid.ColumnSpan="4"
+							Grid.Row="4"/>
+					</Grid>
+
+					<!--Remove CMD-->
+					<UserControl
+						x:Name="RemoveCMD_Control"
+						Content="{Binding RemoveCMDsItemsControl}"/>
+
+					<!--Remove PowerShell-->
+					<StackPanel
+						x:Name="RemovePS_Panel"
+						IsVisible="False"
+						Spacing="5">
+						<TextBlock
+							Text="PowerShell Script:"/>
+						<Grid
+							HorizontalAlignment="Stretch"
+							ColumnDefinitions="*,Auto">
+							<ComboBox
+								Grid.Column="0"
+								HorizontalAlignment="Stretch"
+								VerticalAlignment="Center"
+								ItemsSource="{Binding PowerShellFiles}"
+								SelectedItem="{Binding SelectedPowerShellFile}"
+								DisplayMemberBinding="{Binding Name}"
+								PlaceholderText="Select a .ps1 file from the package files"/>
+							<Button
+								Grid.Column="1"
+								Margin="5,0,0,0"
+								Classes="IconButton"
+								Tag="FolderOpen"
+								VerticalAlignment="Center"
+								Command="{Binding BrowsePowerShellScriptCommand}"
+								ToolTip.Tip="Browse for a PowerShell script to add to the package"/>
+						</Grid>
+						<TextBox
+							Text="{Binding PowerShellScriptArgs}"
+							PlaceholderText="Parameters passed to the script (optional), e.g. -Silent -LogPath &quot;C:\Logs&quot;"/>
+						<TextBlock
+							FontStyle="Italic"
+							FontSize="{DynamicResource InfoFontSize}"
+							Text=" Select a .ps1 script from your package files, or browse to add one. The script will be run during the removal phase."/>
+					</StackPanel>
+
+					<!--Settings-->
+					<Grid
+						RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+						ColumnDefinitions="Auto,10,*">
+						<!-- Restart Behavior -->
+						<TextBlock
+							Grid.Row="0"
+							Grid.Column="0"
+							Text="Restart Behavior:"/>
+						<ComboBox
+							Grid.Row="0"
+							Grid.Column="3"
+							SelectedItem="{Binding RestartBehavior}"
+							ItemsSource="{helpers:EnumValues {x:Type enums:RestartBehavior}}"/>
+
+						<!-- Context -->
+						<TextBlock
+							Grid.Row="1"
+							Grid.Column="0"
+							Text="Context:"/>
+						<ToggleSwitch
+							Grid.Row="1"
+							Grid.Column="2"
+							IsChecked="{Binding IsUserContext}"
+							OnContent="User (Runs for each logged on user on the device)"
+							OffContent="System"/>
+						
+						<!-- Secure CMD -->
+						<TextBlock
+							Grid.Row="2"
+							Grid.Column="0"
+							Text="Secure CMD:"/>
+						<ToggleSwitch
+							Grid.Row="2"
+							Grid.Column="2"
+							IsChecked="{Binding IsSecureCMD}"
+							OnContent="Command lines will not be written to the suite log"
+							OffContent="Command lines will be written to the suite log"/>
+
+						<!-- Legacy Long file path support -->
+						<TextBlock
+							Grid.Column="0"
+							Grid.Row="3"
+							VerticalAlignment="Center"
+							Text="Legacy File Path:"/>
+						<StackPanel
+							Orientation="Horizontal"
+							Grid.Column="2"
+							Grid.Row="3">
+							<ToggleSwitch
+								IsChecked="{Binding LegacyLongFilePath}"
+								VerticalAlignment="Center"
+								Margin="0,0,-5,0"
+								OffContent=""
+								OnContent=" "/>
+							<TextBlock
+								MaxWidth="570"
+								TextWrapping="Wrap"
+								Text="Add support for legacy installers that dont support long file paths, creates a virtual drive and runs the installer from there."/>
+						</StackPanel>
+
+						<!--Custom Exit Codes-->
+						<TextBlock
+							Grid.Row="4"
+							Grid.Column="0"
+							Text="Custom Exit Codes:"/>
+						<ToggleSwitch
+							Name="CustomExit_ToggleSwitch"
+							IsChecked="{Binding IsCustomExitCodes}"
+							Grid.Row="4"
+							Grid.Column="2"
+							OnContent=""
+							OffContent=""/>
+						<Grid
+							Grid.Row="5"
+							Grid.Column="0"
+							Grid.ColumnSpan="3"
+							IsVisible="{Binding IsChecked, ElementName='CustomExit_ToggleSwitch'}"
+							ColumnDefinitions="Auto,Auto">
+							<DataGrid
+								SelectionMode="Extended"
+								AutoGenerateColumns="False"
+								ItemsSource="{Binding CustomReturnCodes}"
+								MinWidth="100"
+								Grid.Column="0">
+								<DataGrid.Columns>
+									<DataGridTextColumn
+										Header="ExitCode"
+										Binding="{Binding Code}"/>
+									<DataGridTemplateColumn
+										Header="Action">
+										<DataGridTemplateColumn.CellTemplate>
+											<DataTemplate>
+												<ComboBox
+													SelectedItem="{Binding Action}"
+													ItemsSource="{helpers:EnumValues {x:Type common:ActionType}}"/>
+											</DataTemplate>
+										</DataGridTemplateColumn.CellTemplate>
+									</DataGridTemplateColumn>
+								</DataGrid.Columns>
+							</DataGrid>
+							<StackPanel
+								Grid.Column="1">
+								<Button
+									Classes="IconButton"
+									Tag="Plus"
+									Command="{Binding AddCustomReturnCodeCommand}"
+									Foreground="{DynamicResource PlusButton}"/>
+								<Button
+									Classes="IconButton"
+									Tag="Bin"
+									Command="{Binding RemoveCustomReturnCodeCommand}"
+									Foreground="{DynamicResource BinButton}"/>
+							</StackPanel>
+						</Grid>
+					</Grid>
+				</StackPanel>
+			</ScrollViewer>
+		</TabItem>
+		<TabItem
+			Name="FilesTab"
+			Header="Files"
+			FontSize="13">
+			<Grid
+				RowDefinitions="Auto,*">
+				<TextBlock
+					HorizontalAlignment="Center"
+					Grid.Row="0"
+					Margin="0,0,0,20"
+					Classes="FieldName"
+					Text="Add files here for use in the command lines (optional)"/>
+				<UserControl
+					Grid.Row="1"
+					Content="{Binding FileTreeVM}"/>
+			</Grid>
+		</TabItem>
+	</TabControl>
+
+</UserControl>

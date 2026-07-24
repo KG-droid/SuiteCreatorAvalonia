@@ -1,0 +1,307 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:ai="using:Avalonia.Interactivity"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	xmlns:local="clr-namespace:SuiteCreatorAvalonia.Converters;assembly=SuiteCreatorAvalonia"
+	services:DialogManager.Register="{Binding}"
+    mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
+    x:Class="SuiteCreatorAvalonia.Views.MainView"
+	Padding="5"
+	Background="{DynamicResource SystemAccentColor}"
+	PointerPressed="OnPointerPressed"
+	x:DataType="vm:MainViewModel">
+
+	<Design.DataContext>
+		<vm:MainViewModel/>
+	</Design.DataContext>
+
+	<Grid
+		RowDefinitions="Auto,*">
+		<Border
+			Grid.Row="0"
+			DoubleTapped="TitleDoubleTapped"
+			CornerRadius="7,7,0,0"
+			PointerPressed="MoveWindowOnPress"
+			Background="{DynamicResource SystemAccentColor}"/>
+
+		<!-- Top Left Toolbar -->
+		<StackPanel
+			Grid.Row="0"
+			services:Help.TourTag="ProjectToolbar"
+			Spacing="10"
+			Orientation="Horizontal"
+			HorizontalAlignment="Left"
+			VerticalAlignment="Center"
+			Margin="13,5,0,5">
+			<Image
+				Source="/Assets/Images/SuiteCreatorLogo.ico"
+				Width="25"
+				Height="25"/>
+			<Button
+				Classes="WindowBtn"
+				ToolTip.Tip="Open Suite Project"
+				Command="{Binding OpenProjectCommand}"
+				Tag="FolderOpen"/>
+			<Button
+				Classes="WindowBtn"
+				ToolTip.Tip="Save"
+				Command="{Binding SaveProjectCommand}"
+				Tag="ContentSave"/>
+			<Button
+				Classes="WindowBtn"
+				ToolTip.Tip="Save as Copy"
+				Command="{Binding SaveAsProjectCommand}"
+				Tag="ContentCopy"/>
+			<Button
+				Classes="WindowBtn"
+				ToolTip.Tip="New Project"
+				Command="{Binding NewProjectCommand}"
+				Tag="PackageVariantClosedPlus"/>
+			<Button
+				Classes="WindowBtn"
+				ToolTip.Tip="Import an existing Suite"
+				Command="{Binding ImportProjectCommand}"
+				Tag="FileImport"/>
+		</StackPanel>
+
+		<!-- Window Title -->
+		<TextBlock
+			IsHitTestVisible="False"
+			FontWeight="Bold"
+			Grid.Row="0"
+			Text="{Binding SuiteTitle}"
+			HorizontalAlignment="Center"
+			VerticalAlignment="Center"/>
+
+		<!-- Help menu (right of title, clear of the window caption buttons) -->
+		<Button
+			Classes="WindowBtn"
+			services:Help.TourTag="HelpButton"
+			ToolTip.Tip="Help"
+			Grid.Row="0"
+			Height="35"
+			Width="35"
+			HorizontalAlignment="Right"
+			VerticalAlignment="Top"
+			Margin="0,-5,185,0"
+			Tag="HelpCircleOutline">
+			<Button.Flyout>
+				<MenuFlyout Placement="BottomEdgeAlignedRight">
+					<MenuItem
+						Header="Help on this Page"
+						Command="{Binding HelpOnPageCommand}"/>
+					<MenuItem
+						Header="What's This? (point at a control)"
+						Command="{Binding WhatsThisCommand}"/>
+					<MenuItem
+						Header="Getting Started Tour"
+						Command="{Binding GettingStartedTourCommand}"/>
+					<Separator/>
+					<MenuItem
+						Header="About Suite Creator"
+						Command="{Binding ShowAboutCommand}"/>
+				</MenuFlyout>
+			</Button.Flyout>
+		</Button>
+
+		<!-- Left hand Nav panel -->
+		<SplitView
+			Grid.Row="1"
+			x:Name="MainSuiteSplitView"
+			IsPaneOpen="{Binding IsPaneOpen}"
+			DisplayMode="CompactInline"
+			OpenPaneLength="180"
+			PaneBackground="Transparent"
+			CompactPaneLength="60">
+			<SplitView.Pane>
+				<Grid
+					x:Name="SplitViewPaneGrid"
+					services:Help.TourTag="NavPane"
+					Background="{DynamicResource SystemControlBackgroundAccentBrush}"
+					RowDefinitions="Auto,*,Auto,Auto"
+					PointerEntered="ToggleSplitPane"
+					PointerExited="ToggleSplitPane">
+					<Button
+						Padding="0"
+						Tag="Menu"
+						Grid.Row="0"
+						Height="40"
+						Background="Transparent"
+						HorizontalAlignment="Stretch"
+						Command="{Binding TogglePaneManualControl}"
+						ToolTip.Tip="Revert to manual pane control">
+						<mi:MaterialIcon
+							Kind="Menu"
+							Height="30"
+							Width="30"
+							Margin="10,0,0,0"
+							HorizontalAlignment="Left"/>
+					</Button>
+					<ScrollViewer
+						x:Name="MainSuiteSplitViewPaneScrollViewer"
+						Grid.Row="1"
+						AllowAutoHide="{Binding IsAllowPaneScrollAutoHide}">
+						<ItemsControl
+							x:Name="UnPinnedSplitViewPaneItemsControl"
+							ItemsSource="{Binding ToggleButtons}">
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<ContentPresenter Content="{Binding Content}" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</ScrollViewer>
+					<Border
+						Background="LightGray"
+						Grid.Row="2"
+						Height="3"
+						Margin="5,6,5,0"
+						CornerRadius="5"/>
+					<ItemsControl
+						x:Name="PinnedSplitViewPaneItemsControl"
+						Grid.Row="3"
+						ItemsSource="{Binding PinnedToggleButtons}">
+						<ItemsControl.ItemTemplate>
+							<DataTemplate>
+								<ContentPresenter Content="{Binding Content}" />
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</Grid>
+			</SplitView.Pane>
+
+			<!-- Right pane Main content-->
+			<SplitView.Content>
+				<Border
+					CornerRadius="7"
+					Background="{DynamicResource SystemRegionColor}">
+					<Grid>
+						<Grid.RowDefinitions>
+							<RowDefinition Height="*"/>
+							<RowDefinition Height="Auto" MaxHeight="200"/>
+						</Grid.RowDefinitions>
+						<!-- Main content-->
+						<TransitioningContentControl
+							x:Name="PageContentControl"
+							services:Help.TourTag="PageArea"
+							Grid.Row="0"
+							Content="{Binding CurrentTabView}"
+							Margin="15,15,0,7"/>
+
+						<Button
+							x:Name="ShowBuildResults_Button"
+							IsVisible="False"
+							Classes="IconButton"
+							Tag="ChevronUp"
+							VerticalAlignment="Bottom"
+							HorizontalAlignment="Right"
+							ToolTip.Tip="Show Build Results"/>
+						<Button
+							x:Name="ShowBuildErrors_Button"
+							IsVisible="False"
+							Classes="IconButton"
+							Tag="ChevronUp"
+							VerticalAlignment="Bottom"
+							HorizontalAlignment="Right"
+							ToolTip.Tip="Show Build Errors"/>
+						<GridSplitter
+							x:Name="BuildResultsErr_GridSplitter"
+							IsVisible="{Binding BuildSplitterVisible}"
+							MinHeight="3"
+							Height="3"
+							Background="{DynamicResource SystemListMediumColor}"
+							VerticalAlignment="Top"
+							Grid.Row="1"/>
+
+						<!-- Build Validation errors-->
+						<Grid
+							x:Name="BuildValidationErrors_Grid"
+							IsVisible="{Binding BuildErrorsPanelVisible}"
+							HorizontalAlignment="Stretch"
+							Margin="20,15,20,10"
+							Grid.Row="1">
+							<StackPanel>
+								<Grid>
+									<TextBlock
+										Margin="0,5,0,0"
+										Text="Build Validation Failures:"
+										VerticalAlignment="Center"/>
+									<Button
+										Classes="IconButton"
+										Command="{Binding HideBuildErrorsCommand}"
+										Tag="ChevronDown"
+										VerticalAlignment="Center"
+										HorizontalAlignment="Right"
+										Margin="0,-15,-20,0"
+										ToolTip.Tip="Hide validation errors"/>
+								</Grid>
+								<ScrollViewer
+									MaxHeight="140">
+									<UserControl
+										Content="{Binding BuildValidationErrorsItemsControl}"/>
+								</ScrollViewer>
+							</StackPanel>
+						</Grid>
+
+						<!-- Build Success -->
+						<Grid
+							x:Name="BuildSuccess_Grid"
+							IsVisible="{Binding BuildSuccessPanelVisible}"
+							Margin="20"
+							HorizontalAlignment="Stretch"
+							Grid.Row="1">
+							<Button
+								Command="{Binding HideBuildSuccessCommand}"
+								Classes="IconButton"
+								Tag="ChevronDown"
+								VerticalAlignment="Top"
+								HorizontalAlignment="Right"
+								Margin="0,-15,-20,0"
+								ToolTip.Tip="Hide build results"/>
+							<StackPanel>
+								<StackPanel
+									Orientation="Horizontal">
+									<TextBlock
+										Text="{Binding BuildCompleteDateTimeStr}"/>
+									<TextBlock
+										Text=" -- Build Succeeded"/>
+									<HyperlinkButton
+										Command="{Binding OpenBuildFolder}"
+										HorizontalAlignment="Right"
+										Content="Open Build Folder"/>
+								</StackPanel>
+								<TextBlock
+									IsVisible="{Binding DetectionRule, 
+										Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+									Text="Suite Detection:"
+									Classes="FieldName"
+									Grid.Row="15"
+									Grid.Column="0"
+									VerticalAlignment="Center"
+									HorizontalAlignment="Left"/>
+								<TextBox
+									IsVisible="{Binding DetectionRule, 
+										Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+									Text="{Binding DetectionRule}"
+									Grid.Row="15"
+									Grid.Column="1"
+									Margin="0,2.5,0,2.5"
+									Focusable="false"
+									TextWrapping="Wrap"
+									PlaceholderText="Detection rule for your Deployment Tool of choice (Generates after Build)"
+									IsReadOnly="True"
+									VerticalAlignment="Center"/>
+							</StackPanel>
+						</Grid>
+					</Grid>
+				</Border>
+			</SplitView.Content>
+		</SplitView>
+	</Grid>
+
+</UserControl>

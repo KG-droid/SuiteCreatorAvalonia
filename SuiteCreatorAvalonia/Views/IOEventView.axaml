@@ -1,0 +1,186 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+	xmlns:card="clr-namespace:SuiteCreatorAvalonia.ViewModels.EventCards"
+	xmlns:eventCommon="using:SuiteCreatorAvalonia.Models.Common"
+	xmlns:event="using:SuiteCreatorAvalonia.Models.Events"
+	xmlns:dataTemplates="using:SuiteCreatorAvalonia.IDataTemplates"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:sys="clr-namespace:System;assembly=mscorlib"
+	mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+	x:Class="SuiteCreatorAvalonia.Views.IOEventView"
+	x:DataType="vm:IOEventViewModel">
+
+	<Design.DataContext>
+		<vm:IOEventViewModel/>
+	</Design.DataContext>
+
+	<Grid
+		RowDefinitions="Auto,*,Auto"
+		ColumnDefinitions="Auto,*,Auto">
+		<TextBlock
+			Classes="TabHeader"
+			Text="{Binding Title}"
+			Grid.ColumnSpan="2"
+			Grid.Column="0"/>
+		<Border
+			CornerRadius="7"
+			BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+			BorderThickness="2"
+			Grid.RowSpan="2"
+			Grid.Column="1"
+			Grid.Row="1"/>
+
+		<!-- ItemsControl for cards -->
+		<ScrollViewer
+			Margin="10"
+			Grid.Column="1"
+			Grid.Row="1">
+			<UserControl
+				Margin="0,0,15,0"
+				Content="{Binding ItemsControl}">
+			</UserControl>
+		</ScrollViewer>
+
+		<!-- Filter controls -->
+		<Grid
+			VerticalAlignment="Center"
+			Grid.Column="1"
+			Grid.Row="2">
+			<Border
+				Margin="2"
+				CornerRadius="0,0,7,7"
+				Padding="0,5,0,5"
+				Grid.Row="1"
+				Background="{DynamicResource SystemControlBackgroundListLowBrush}">
+				<StackPanel
+					Orientation="Horizontal"
+					Spacing="10"
+					Margin="15,0,15,0"
+					VerticalAlignment="Center">
+					<Button
+						Command="{Binding RemoveFilterCommand}"
+						ToolTip.Tip="Remove all filters"
+						Foreground="{DynamicResource BinButton}"
+						Classes="IconButton"
+						Tag="FilterOff"/>
+					<TextBlock
+						FontWeight="Bold"
+						VerticalAlignment="Center"
+						Text="Filters:"
+						Margin="0,0,20,0"/>
+					<TextBlock
+						FontWeight="DemiBold"
+						VerticalAlignment="Center"
+						Text="Stage:"/>
+					<ComboBox
+						Width="190"
+						VerticalAlignment="Center"
+						SelectedItem="{Binding SelectedStageNameFilter}"
+						ItemsSource="{Binding StageNamesInList}"/>
+					<Button
+						Command="{Binding RemoveStageFilterCommand}"
+						ToolTip.Tip="Remove Stage filter"
+						Foreground="{DynamicResource BinButton}"
+						Classes="IconButton"
+						Tag="FilterOffOutline"/>
+					<TextBlock
+						FontWeight="DemiBold"
+						VerticalAlignment="Center"
+						Text="Sequence:"/>
+					<ComboBox
+						VerticalAlignment="Center"
+						Width="190"
+						SelectedValue="{Binding SelectedSequenceFilter}"
+						ItemsSource="{Binding SequencesInList}"/>
+					<Button
+						Command="{Binding RemoveSequenceFilterCommand}"
+						ToolTip.Tip="Remove Sequence filter"
+						Foreground="{DynamicResource BinButton}"
+						Classes="IconButton"
+						Tag="FilterOffOutline"/>
+				</StackPanel>
+			</Border>
+		</Grid>
+
+		<!-- Right Side Control buttons -->
+		<StackPanel
+			Margin="4"
+			Grid.Column="2"
+			Grid.Row="1"
+			HorizontalAlignment="Center"
+			VerticalAlignment="Top"
+			Orientation="Vertical"
+			Spacing="5">
+			<Button
+				Tag="Plus"
+				ToolTip.Tip="Add an event"
+				Command="{Binding AddCardCommand}"
+				Foreground="{DynamicResource PlusButton}"
+				Classes="IconButton"
+			/>
+			<Button
+				IsVisible="{Binding !IsRemovesEnabled}"
+				Tag="Minus"
+				ToolTip.Tip="Toggle remove mode"
+				Foreground="{DynamicResource BinButton}"
+				Command="{Binding ToggleRemovesCommand}"
+				Classes="IconButton"/>
+			<Button
+				IsVisible="{Binding IsRemovesEnabled}"
+				Tag="Tick"
+				ToolTip.Tip="Confirm Removes"
+				Foreground="{DynamicResource BinButton}"
+				Command="{Binding DeleteCardsCommand}"
+				Classes="IconButton">
+				<Button.CommandParameter>
+					<sys:Boolean>False</sys:Boolean>
+				</Button.CommandParameter>
+			</Button>
+			<Button
+				IsVisible="{Binding !IsCloneEnabled}"
+				Tag="ContentCopy"
+				ToolTip.Tip="Toggle clone mode"
+				Foreground="Gray"
+				Command="{Binding ToggleCloneCommand}"
+				Classes="IconButton"/>
+			<Button
+				IsVisible="{Binding IsCloneEnabled}"
+				Tag="Tick"
+				ToolTip.Tip="Confirm Clones"
+				Foreground="{DynamicResource PlusButton}"
+				Command="{Binding CloneCardsCommand}"
+				Classes="IconButton"/>
+			<Button
+				Tag="Clear"
+				x:Name="ClearAll_Button"
+				ToolTip.Tip="Remove all events"
+				Foreground="{DynamicResource BinButton}"
+				Classes="IconButton">
+				<Button.Flyout>
+					<Flyout
+						FlyoutPresenterClasses="Warning"
+						Placement="Left">
+						<StackPanel
+							Margin="10,3,10,0"
+							Background="Transparent"
+							Orientation="Horizontal">
+							<TextBlock
+								Foreground="White"
+								Text="Are you sure you want to remove all events?"/>
+							<Button
+								Tag="Tick"
+								Click="ClearConfirmButton_Click"
+								ToolTip.Tip="Confirm"
+								Foreground="White"
+								Classes="IconButton"/>
+						</StackPanel>
+					</Flyout>
+				</Button.Flyout>
+			</Button>
+		</StackPanel>
+	</Grid>
+
+</UserControl>

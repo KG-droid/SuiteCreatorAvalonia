@@ -1,0 +1,186 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup Label="Globals">
+		<WebView2EnableCsWinRTProjection>True</WebView2EnableCsWinRTProjection>
+		<Platforms>AnyCPU;x64</Platforms>
+	</PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows10.0.22000.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+		<ApplicationIcon>SuiteCreatorLogo.ico</ApplicationIcon>
+		<PackageIcon>SuiteCreatorLogoImage.png</PackageIcon>
+		<TrimMode>partial</TrimMode>
+		<SatelliteResourceLanguages>en-GB</SatelliteResourceLanguages>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<LongPathsEnabled>true</LongPathsEnabled>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<SuiteSfxStubPublishDir>..\SuiteSfxStub\bin\publish\win-x64\$(TargetFramework)\</SuiteSfxStubPublishDir>
+		<SuiteUserPopupPublishDir>..\SuiteUserPopup\bin\publish\win-x64\$(TargetFramework)\</SuiteUserPopupPublishDir>
+		<SuiteProgressPopupPublishDir>..\SuiteProgressPopup\bin\publish\win-x64\$(TargetFramework)\</SuiteProgressPopupPublishDir>
+		<SuiteExecutorPublishDir>..\SuiteExecutor\bin\publish\win-x64\$(TargetFramework)\</SuiteExecutorPublishDir>
+		<SuiteExecRuntimeIdentifier>win-x64</SuiteExecRuntimeIdentifier>
+		<Version>1.0.4</Version>
+		<AssemblyVersion>1.0.4</AssemblyVersion>
+		<FileVersion>1.0.4</FileVersion>
+	</PropertyGroup>
+		
+	<ItemGroup>
+		<Content Include="SuiteCreatorLogo.ico" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="..\SuiteCreatorAvalonia\Assets\Images\SuiteCreatorLogoImage.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Avalonia" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+		<PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
+		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\SuiteCreatorAvalonia\SuiteCreatorAvalonia.csproj" />
+	</ItemGroup>
+
+	<Target Name="CopyOtherPublishFilesOutput" AfterTargets="Build">
+        <RemoveDir Directories="$(TargetDir)SuiteExec" />
+		<MakeDir Directories="$(TargetDir)SuiteExec" />
+        <!-- Copy all files except .pdb from SuiteSfxStub -->
+        <ItemGroup>
+			<StubFilesCheck Include="$(SuiteSfxStubPublishDir)*.*" Exclude="$(SuiteSfxStubPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteSfxStubPublishDir)')" />
+        </ItemGroup>
+		<PropertyGroup>
+			<NeedPublishStub Condition="'@(StubFilesCheck)' == ''">true</NeedPublishStub>
+		</PropertyGroup>
+		<Exec Command="dotnet publish ..\SuiteSfxStub\SuiteSfxStub.csproj -c Release -r $(SuiteExecRuntimeIdentifier) /p:PublishProfile=FolderProfile" Condition="'$(NeedPublishStub)' == 'true'" />
+		<ItemGroup>
+			<StubFiles Include="$(SuiteSfxStubPublishDir)*.*" Exclude="$(SuiteSfxStubPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteSfxStubPublishDir)')" />
+		</ItemGroup>
+        <Copy SourceFiles="@(StubFiles)" DestinationFolder="$(TargetDir)SuiteExec" SkipUnchangedFiles="true" Condition="'@(StubFiles)' != ''" />
+
+        <!-- Copy all files except .pdb from SuiteUserPopup -->
+        <ItemGroup>
+			<PopupFilesCheck Include="$(SuiteUserPopupPublishDir)*.*" Exclude="$(SuiteUserPopupPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteUserPopupPublishDir)')" />
+        </ItemGroup>
+		<PropertyGroup>
+			<NeedPublishPopup Condition="'@(PopupFilesCheck)' == ''">true</NeedPublishPopup>
+		</PropertyGroup>
+		<Exec Command="dotnet publish ..\SuiteUserPopup\SuiteUserPopup.csproj -c Release -r $(SuiteExecRuntimeIdentifier) /p:PublishProfile=FolderProfile" Condition="'$(NeedPublishPopup)' == 'true'" />
+		<ItemGroup>
+			<PopupFiles Include="$(SuiteUserPopupPublishDir)*.*" Exclude="$(SuiteUserPopupPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteUserPopupPublishDir)')" />
+		</ItemGroup>
+        <Copy SourceFiles="@(PopupFiles)" DestinationFolder="$(TargetDir)SuiteExec" SkipUnchangedFiles="true" Condition="'@(PopupFiles)' != ''" />
+
+        <!-- Copy all files except .pdb from SuiteProgressPopup -->
+        <ItemGroup>
+            <ProgressPopupFilesCheck Include="$(SuiteProgressPopupPublishDir)*.*" Exclude="$(SuiteProgressPopupPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteProgressPopupPublishDir)')" />
+        </ItemGroup>
+        <PropertyGroup>
+            <NeedPublishProgressPopup Condition="'@(ProgressPopupFilesCheck)' == ''">true</NeedPublishProgressPopup>
+        </PropertyGroup>
+        <Exec Command="dotnet publish ..\SuiteProgressPopup\SuiteProgressPopup.csproj -c Release -r $(SuiteExecRuntimeIdentifier) /p:PublishProfile=FolderProfile" Condition="'$(NeedPublishProgressPopup)' == 'true'" />
+        <ItemGroup>
+            <ProgressPopupFiles Include="$(SuiteProgressPopupPublishDir)*.*" Exclude="$(SuiteProgressPopupPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteProgressPopupPublishDir)')" />
+        </ItemGroup>
+        <Copy SourceFiles="@(ProgressPopupFiles)" DestinationFolder="$(TargetDir)SuiteExec" SkipUnchangedFiles="true" Condition="'@(ProgressPopupFiles)' != ''" />
+
+        <!-- Copy all files except .pdb from SuiteExecutor -->
+        <ItemGroup>
+			<ExecutorFilesCheck Include="$(SuiteExecutorPublishDir)*.*" Exclude="$(SuiteExecutorPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri;$(SuiteExecutorPublishDir)*.pri;$(SuiteExecutorPublishDir)DirectML.dll;$(SuiteExecutorPublishDir)onnxruntime.dll;$(SuiteExecutorPublishDir)Microsoft.Windows.AI.MachineLearning.dll" Condition="Exists('$(SuiteExecutorPublishDir)')" />
+        </ItemGroup>
+		<PropertyGroup>
+			<NeedPublishExecutor Condition="'@(ExecutorFilesCheck)' == ''">true</NeedPublishExecutor>
+		</PropertyGroup>
+		<Exec Command="dotnet publish ..\SuiteExecutor\SuiteExecutor.csproj -c Release -r $(SuiteExecRuntimeIdentifier) /p:PublishProfile=FolderProfile" Condition="'$(NeedPublishExecutor)' == 'true'" />
+		<ItemGroup>
+			<ExecutorFiles Include="$(SuiteExecutorPublishDir)*.*" Exclude="$(SuiteExecutorPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri;$(SuiteExecutorPublishDir)*.pri;$(SuiteExecutorPublishDir)DirectML.dll;$(SuiteExecutorPublishDir)onnxruntime.dll;$(SuiteExecutorPublishDir)Microsoft.Windows.AI.MachineLearning.dll" Condition="Exists('$(SuiteExecutorPublishDir)')" />
+		</ItemGroup>
+        <Copy SourceFiles="@(ExecutorFiles)" DestinationFolder="$(TargetDir)SuiteExec" SkipUnchangedFiles="true" Condition="'@(ExecutorFiles)' != ''" />
+    </Target>
+	
+	<Target Name="CopyOtherPublishFilesOutputOnPublish" AfterTargets="Publish">
+        <MakeDir Directories="$(PublishDir)SuiteExec" />
+        <!-- Copy all files except .pdb from SuiteSfxStub -->
+        <ItemGroup>
+			<StubFilesPublishCheck Include="$(SuiteSfxStubPublishDir)*.*" Exclude="$(SuiteSfxStubPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteSfxStubPublishDir)')" />
+        </ItemGroup>
+		<PropertyGroup>
+			<NeedPublishStubPublish Condition="'@(StubFilesPublishCheck)' == ''">true</NeedPublishStubPublish>
+		</PropertyGroup>
+		<Exec Command="dotnet publish ..\SuiteSfxStub\SuiteSfxStub.csproj -c Release -r $(SuiteExecRuntimeIdentifier) /p:PublishProfile=FolderProfile" Condition="'$(NeedPublishStubPublish)' == 'true'" />
+		<ItemGroup>
+			<StubFilesPublish Include="$(SuiteSfxStubPublishDir)*.*" Exclude="$(SuiteSfxStubPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteSfxStubPublishDir)')" />
+		</ItemGroup>
+        <Copy SourceFiles="@(StubFilesPublish)" DestinationFolder="$(PublishDir)SuiteExec" SkipUnchangedFiles="true" Condition="'@(StubFilesPublish)' != ''" />
+
+        <!-- Copy all files except .pdb from SuiteUserPopup -->
+        <ItemGroup>
+			<PopupFilesPublishCheck Include="$(SuiteUserPopupPublishDir)*.*" Exclude="$(SuiteUserPopupPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteUserPopupPublishDir)')" />
+        </ItemGroup>
+		<PropertyGroup>
+			<NeedPublishPopupPublish Condition="'@(PopupFilesPublishCheck)' == ''">true</NeedPublishPopupPublish>
+		</PropertyGroup>
+		<Exec Command="dotnet publish ..\SuiteUserPopup\SuiteUserPopup.csproj -c Release -r $(SuiteExecRuntimeIdentifier) /p:PublishProfile=FolderProfile" Condition="'$(NeedPublishPopupPublish)' == 'true'" />
+		<ItemGroup>
+			<PopupFilesPublish Include="$(SuiteUserPopupPublishDir)*.*" Exclude="$(SuiteUserPopupPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteUserPopupPublishDir)')" />
+		</ItemGroup>
+		<Copy SourceFiles="@(PopupFilesPublish)" DestinationFolder="$(PublishDir)SuiteExec" SkipUnchangedFiles="true" Condition="'@(PopupFilesPublish)' != ''" />
+
+		<!-- Copy all files except .pdb from SuiteProgressPopup -->
+		<ItemGroup>
+			<ProgressPopupFilesPublishCheck Include="$(SuiteProgressPopupPublishDir)*.*" Exclude="$(SuiteProgressPopupPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteProgressPopupPublishDir)')" />
+		</ItemGroup>
+		<PropertyGroup>
+			<NeedPublishProgressPopupPublish Condition="'@(ProgressPopupFilesPublishCheck)' == ''">true</NeedPublishProgressPopupPublish>
+		</PropertyGroup>
+		<Exec Command="dotnet publish ..\SuiteProgressPopup\SuiteProgressPopup.csproj -c Release -r $(SuiteExecRuntimeIdentifier) /p:PublishProfile=FolderProfile" Condition="'$(NeedPublishProgressPopupPublish)' == 'true'" />
+		<ItemGroup>
+			<ProgressPopupFilesPublish Include="$(SuiteProgressPopupPublishDir)*.*" Exclude="$(SuiteProgressPopupPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri" Condition="Exists('$(SuiteProgressPopupPublishDir)')" />
+		</ItemGroup>
+		<Copy SourceFiles="@(ProgressPopupFilesPublish)" DestinationFolder="$(PublishDir)SuiteExec" SkipUnchangedFiles="true" Condition="'@(ProgressPopupFilesPublish)' != ''" />
+
+		<!-- Copy all files except .pdb from SuiteExecutor -->
+		<ItemGroup>
+			<ExecutorFilesPublishCheck Include="$(SuiteExecutorPublishDir)*.*" Exclude="$(SuiteExecutorPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri;$(SuiteExecutorPublishDir)*.pri;$(SuiteExecutorPublishDir)DirectML.dll;$(SuiteExecutorPublishDir)onnxruntime.dll;$(SuiteExecutorPublishDir)Microsoft.Windows.AI.MachineLearning.dll" Condition="Exists('$(SuiteExecutorPublishDir)')" />
+		</ItemGroup>
+		<PropertyGroup>
+			<NeedPublishExecutorPublish Condition="'@(ExecutorFilesPublishCheck)' == ''">true</NeedPublishExecutorPublish>
+		</PropertyGroup>
+		<Exec Command="dotnet publish ..\SuiteExecutor\SuiteExecutor.csproj -c Release -r $(SuiteExecRuntimeIdentifier) /p:PublishProfile=FolderProfile" Condition="'$(NeedPublishExecutorPublish)' == 'true'" />
+		<ItemGroup>
+			<ExecutorFilesPublish Include="$(SuiteExecutorPublishDir)*.*" Exclude="$(SuiteExecutorPublishDir)*.pdb;$(SuiteExecutorPublishDir)*.pri;$(SuiteExecutorPublishDir)*.pri;$(SuiteExecutorPublishDir)DirectML.dll;$(SuiteExecutorPublishDir)onnxruntime.dll;$(SuiteExecutorPublishDir)Microsoft.Windows.AI.MachineLearning.dll" Condition="Exists('$(SuiteExecutorPublishDir)')" />
+		</ItemGroup>
+        <Copy SourceFiles="@(ExecutorFilesPublish)" DestinationFolder="$(PublishDir)SuiteExec" SkipUnchangedFiles="true" Condition="'@(ExecutorFilesPublish)' != ''" />
+    </Target>
+	
+	<Target Name="PublishRemoveDebugFiles" AfterTargets="Publish">
+
+		<ItemGroup>
+			<PDBToDelete Include="$(PublishDir)*.pdb;" />
+			<PRIToDelete Include="$(PublishDir)*.pri;" />
+		</ItemGroup>
+		<Delete Files="@(PDBToDelete)">
+			<Output TaskParameter="DeletedFiles" ItemName="PDBDeleted" />
+		</Delete>
+		<Delete Files="@(PRIToDelete)">
+			<Output TaskParameter="DeletedFiles" ItemName="PRIDeleted" />
+		</Delete>
+		<Exec Command="powershell -Command 'Start-Sleep -s 10'" />
+		<Message Text="Deleted PDB files: @(PDBDeleted)" Importance="high" />
+		<Message Text="Deleted PRI files: @(PRIDeleted)" Importance="high" />
+
+	</Target>
+
+</Project>

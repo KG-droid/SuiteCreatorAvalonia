@@ -1,0 +1,248 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels.EventCards"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	xmlns:eventCommon="using:SuiteCreatorAvalonia.Models.Common"
+	xmlns:rules="using:SuiteCreatorAvalonia.Models.Rules"
+	xmlns:mi="using:Material.Icons.Avalonia"
+    mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="200"
+    x:Class="SuiteCreatorAvalonia.Views.EventCardView"
+    x:DataType="vm:EventCardViewModelBase"
+	Margin="0,0,0,1"
+	x:CompileBindings="True"
+	services:DialogManager.Register="{Binding}"
+	DragDrop.AllowDrop="True"
+	DragDrop.DragOver="Card_DragOver"
+	DragDrop.Drop="Card_Drop"
+	DragDrop.DragEnter="Card_DragEnter"
+	PointerEntered="Card_PointerEntered">
+	
+	<Design.DataContext>
+		<vm:EnvCardViewModel/>
+	</Design.DataContext>
+	
+	<UserControl.Styles>
+		<Style Selector="FlyoutPresenter">
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="Padding" Value="3" />
+			<Setter Property="MinWidth" Value="10" />
+			<Setter Property="MinHeight" Value="10" />
+			<Setter Property="MaxWidth" Value="1000" />
+		</Style>
+	</UserControl.Styles>
+	
+	<Grid
+		ColumnDefinitions="*,Auto"
+		RowDefinitions="Auto,Auto,Auto">
+		<Border
+			IsVisible="{Binding IsSelected, Mode=TwoWay}"
+			Background="{DynamicResource SystemAccentColor}"
+			CornerRadius="8" 
+			Grid.Row="0" 
+			Grid.RowSpan="2"/>
+		<Grid
+			IsVisible="{Binding IsSelected, Mode=TwoWay}"
+			Grid.Row="1" 
+			Margin="0,2,0,0">
+			<StackPanel 
+				Orientation="Vertical" 
+				Margin="5,0,5,5">
+				<StackPanel
+					Orientation="Horizontal">
+					<Label
+						Content="Run on:"
+						VerticalAlignment="Center"/>
+					<Button
+						Classes="IconButton"
+						Command="{Binding AddScheduleCommand}"
+						Tag="Plus"
+						services:Help.Title="Add a schedule"
+						services:Help.Text="Adds another Stage/Sequence/Condition row, so this event can run at more than one point in the suite."
+						Foreground="{DynamicResource PlusButton}"
+						ToolTip.Tip="Add another schedule"/>
+				</StackPanel>
+
+				<!-- DataGrid for Schedules -->
+				<DataGrid
+					x:Name="SchedulesDataGrid"
+					services:Help.Title="Schedules"
+					services:Help.Text="Each row is one point in the suite where this event runs, so each event can be run one or more times. Each column in order is: Stage (The Start of the suite, The End of the suite, or a specific package), a Sequence for exactly when relative to that stage, and an optional Condition to gate whether it runs (See Rules tab). Add more rows with the + button above for an event that needs to run at multiple points. For for example you could select Stage End, and DuringInstallBeforeStage, which will run that event once just before the end of the suite, if the suite is running a Deployment (Install). "
+					AutoGenerateColumns="False"
+					BorderBrush="#CCBFBFBF"
+					HorizontalAlignment="Left"
+					CanUserResizeColumns="True"
+					FontSize="10"
+					Background="Transparent"
+					HeadersVisibility="None"
+					SelectionMode="Single"
+					ItemsSource="{Binding Schedules}">
+					<DataGrid.Columns>
+						<DataGridTemplateColumn 
+							Header="Stage" 
+							Width="Auto">
+							<DataGridTemplateColumn.CellTemplate>
+								<DataTemplate>
+									<ComboBox
+										ToolTip.Tip="Stage"
+										BorderBrush="Transparent"
+										SelectionChanged="Schedule_Changed"
+										ItemsSource="{Binding $parent[UserControl].((vm:EventCardViewModelBase)DataContext).SuiteStages}"
+										SelectedItem="{Binding EventStage}"
+										HorizontalAlignment="Stretch">
+										<ComboBox.ItemTemplate>
+											<DataTemplate DataType="eventCommon:Stage">
+												<TextBlock Text="{Binding Name}"/>
+											</DataTemplate>
+										</ComboBox.ItemTemplate>
+									</ComboBox>
+								</DataTemplate>
+							</DataGridTemplateColumn.CellTemplate>
+						</DataGridTemplateColumn>
+						<DataGridTemplateColumn 
+							Header="StageSequence" 
+							Width="Auto">
+							<DataGridTemplateColumn.CellTemplate>
+								<DataTemplate>
+									<ComboBox
+										ToolTip.Tip="Sequence"
+										BorderBrush="Transparent"
+										SelectionChanged="Schedule_Changed"
+										ItemsSource="{Binding AvailableSequences}"
+										SelectedItem="{Binding StageSequence}"
+										HorizontalAlignment="Stretch"/>
+								</DataTemplate>
+							</DataGridTemplateColumn.CellTemplate>
+						</DataGridTemplateColumn>
+						<DataGridTemplateColumn 
+							Header="Condition" 
+							Width="Auto">
+							<DataGridTemplateColumn.CellTemplate>
+								<DataTemplate>
+									<ComboBox
+										ToolTip.Tip="Conditional Rule"
+										BorderBrush="Transparent"
+										SelectionChanged="Schedule_Changed"
+										SelectedItem="{Binding ConditionDisplay, Mode=OneWay}"
+										ItemsSource="{Binding $parent[UserControl].((vm:EventCardViewModelBase)DataContext).SuiteRules}"
+										HorizontalAlignment="Stretch"
+										MinWidth="150">
+										<ComboBox.ItemTemplate>
+											<DataTemplate DataType="rules:RuleSet">
+												<TextBlock Text="{Binding Name}"/>
+											</DataTemplate>
+										</ComboBox.ItemTemplate>
+									</ComboBox>
+								</DataTemplate>
+							</DataGridTemplateColumn.CellTemplate>
+						</DataGridTemplateColumn>
+					</DataGrid.Columns>
+				</DataGrid>
+			
+			</StackPanel>
+		</Grid>
+
+		<!-- Main Card View -->
+		<Grid
+			Margin="2">
+			<Border
+				x:Name="CardMainBorder"
+				CornerRadius="5"
+				Classes="EventCard">
+				<Border.Styles>
+					<Style Selector="Border.EventCard">
+						<Setter 
+							Property="Background" 
+							Value="{DynamicResource AccentVariant1}"/>
+					</Style>
+					<Style Selector="Border.EventCard:pointerover">
+						<Setter 
+							Property="Background" 
+							Value="{DynamicResource AccentVariant2}"/>
+					</Style>
+				</Border.Styles>
+				<Grid
+					ColumnDefinitions="Auto,*">
+					<mi:MaterialIcon
+						PointerPressed="Card_PointerPressed"
+						Margin="0,5,0,5"
+						Kind="DragVertical"
+						Grid.Column="0"
+						Width="30"
+						Height="30"
+						services:Help.Title="Reorder"
+						services:Help.Text="Click and hold this handle to drag the card to a new position. Events on a page run top to bottom, so order matters when several events target the same schedule point."
+						ToolTip.Tip="Click and hold to drag to a new position"
+						Background="Transparent"/>
+					<UserControl
+						HorizontalAlignment="Stretch"
+						VerticalAlignment="Center"
+						Content="{Binding CardInnerView}"
+						Grid.Column="1"/>
+				</Grid>
+			</Border>
+
+			<!-- Delete Selector -->
+			<Button
+				Command="{Binding MarkForDeletionCommand}"
+				IsVisible="{Binding IsRemoveMode}"
+				services:Help.Title="Mark for deletion"
+				services:Help.Text="While in remove mode, click a card to mark it for deletion (it turns red). Marked cards are removed when you confirm the removal."
+				CornerRadius="5"
+				Opacity="0.6"
+				HorizontalAlignment="Stretch"
+				VerticalAlignment="Stretch"
+				Classes.IsMarkedForDeletion="{Binding IsMarkedForDeletion}">
+				<Button.Styles>
+					<Style Selector="Button.IsMarkedForDeletion">
+						<Setter Property="Background" Value="Red"/>
+					</Style>
+					<Style Selector="Button:pointerover.IsMarkedForDeletion /template/ ContentPresenter">
+						<Setter Property="Background" Value="DarkRed"/>
+					</Style>
+
+					<Style Selector="Button:not(.IsMarkedForDeletion)">
+						<Setter Property="Background" Value="Green"/>
+					</Style>
+					<Style Selector="Button:pointerover:not(.IsMarkedForDeletion) /template/ ContentPresenter">
+						<Setter Property="Background" Value="DarkGreen"/>
+					</Style>
+				</Button.Styles>
+			</Button>
+
+			<!-- Clone Selector -->
+			<Button
+				Command="{Binding MarkForCloneCommand}"
+				IsVisible="{Binding IsCloneMode}"
+				services:Help.Title="Mark for cloning"
+				services:Help.Text="While in clone mode, click a card to mark it for duplication (it turns green). Marked cards are copied when you confirm the clone."
+				CornerRadius="5"
+				Opacity="0.5"
+				HorizontalAlignment="Stretch"
+				VerticalAlignment="Stretch"
+				Classes.IsMarkedForClone="{Binding IsMarkedForClone}">
+				<Button.Styles>
+					<Style Selector="Button.IsMarkedForClone">
+						<Setter Property="Background" Value="Green"/>
+					</Style>
+					<Style Selector="Button:pointerover.IsMarkedForClone /template/ ContentPresenter">
+						<Setter Property="Background" Value="DarkGreen"/>
+					</Style>
+
+					<Style Selector="Button:not(.IsMarkedForClone)">
+						<Setter Property="Background" Value="Gray"/>
+					</Style>
+					<Style Selector="Button:pointerover:not(.IsMarkedForClone) /template/ ContentPresenter">
+						<Setter Property="Background" Value="DimGray"/>
+					</Style>
+				</Button.Styles>
+			</Button>
+
+		</Grid>
+		
+	</Grid>
+	
+</UserControl>

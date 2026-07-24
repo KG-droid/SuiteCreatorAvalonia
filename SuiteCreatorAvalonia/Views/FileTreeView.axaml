@@ -1,0 +1,313 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:local="clr-namespace:SuiteCreatorAvalonia.Views"
+    mc:Ignorable="d"
+	d:DesignWidth="600"
+	d:DesignHeight="400"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	services:DialogManager.Register="{Binding}"
+    x:Class="SuiteCreatorAvalonia.Views.FileTreeView"
+	x:DataType="vm:FileTreeViewModel">
+
+	<Design.DataContext>
+		<vm:FileTreeViewModel/>
+	</Design.DataContext>
+
+	<Border BoxShadow="{DynamicResource IconButtonBoxShadow}" Margin="2" Background="Transparent">
+		<Grid
+			RowDefinitions="Auto,*,Auto"
+			ColumnDefinitions="*,Auto,Auto">
+
+		<!-- Progress bar for loading files-->
+		<Grid 
+			IsVisible="{Binding IsLoadingFiles}"
+			Grid.Column="0"
+			Grid.Row="0"
+			ColumnDefinitions="*,Auto">
+			<StackPanel
+				Grid.Column="0">
+				<TextBlock
+					HorizontalAlignment="Center"
+					Grid.Column="0"
+					Grid.Row="0"
+					IsVisible="{Binding ProgressMessage, Converter={x:Static ObjectConverters.IsNotNull}}}"
+					Text="{Binding ProgressMessage}"/>
+				<ProgressBar
+					Height="5"
+					Grid.Column="0"
+					Grid.Row="0"
+					Value="{Binding ProgressPercentage}"/>
+			</StackPanel>
+			<Button
+				Grid.Column="1"
+				HorizontalAlignment="Right"
+				Classes="IconButton"
+				Tag="Close"
+				Command="{Binding CancelImportOperationCommand}"
+				ToolTip.Tip="Cancel"
+				Foreground="{DynamicResource BinButton}"/>
+		</Grid>
+
+		<!-- TreeView-->
+		<ScrollViewer
+			Grid.Row="1"
+			Grid.Column="0">
+			<TreeView
+				x:Name="TreeView"
+				Loaded="TreeView_Loaded"
+				VerticalAlignment="Stretch"
+				SelectionMode="Multiple"
+				SelectedItems="{Binding SelectedFileTreeNodes}"
+				ItemsSource="{Binding TreeNodes}">
+				<TreeView.ItemTemplate>
+					<TreeDataTemplate
+						ItemsSource="{Binding SubNodes}">
+						<Border>
+							<StackPanel
+								Spacing="5"
+								Orientation="Horizontal">
+								<Image
+									Height="25"
+									Width="25"
+									IsVisible="{Binding Icon, Converter={x:Static ObjectConverters.IsNotNull}}}"
+									Source="{Binding Icon}"/>
+								<mi:MaterialIcon
+									Height="25"
+									Width="25"
+									IsVisible="{Binding IconKind, Converter={x:Static ObjectConverters.IsNotNull}}}"
+									Foreground="Orange"
+									Kind="{Binding IconKind}"/>
+								<TextBlock
+									HorizontalAlignment="Left"
+									Background="Transparent"
+									Text="{Binding Name}"
+									ToolTip.Tip="{Binding FullPath}"/>
+							</StackPanel>
+							<Border.ContextFlyout>
+								<Flyout>
+									<StackPanel
+										IsVisible="{Binding $parent[UserControl].((vm:FileTreeViewModel)DataContext).IsControlsVisible}"
+										Orientation="Horizontal">
+										<Button
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+											ToolTip.Tip="Remove Selected"
+											Classes="IconButton"
+											Foreground="{DynamicResource BinButton}"
+											IsEnabled="{Binding $parent[UserControl].((vm:FileTreeViewModel)DataContext).IsItemsSelected}"
+											Tag="Delete">
+											<Button.Flyout>
+												<Flyout>
+													<StackPanel
+														Orientation="Horizontal">
+														<TextBlock
+															FontWeight="Bold"
+															Text="Confirm:"/>
+														<Button
+															Classes="IconButton"
+															Tag="Tick"
+															Command="{Binding $parent[UserControl].((vm:FileTreeViewModel)DataContext).DeleteSelected}"
+															Foreground="Green"/>
+													</StackPanel>
+												</Flyout>
+											</Button.Flyout>
+										</Button>
+										<Button
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+											ToolTip.Tip="Show in Explorer"
+											Foreground="Orange"
+											Classes="IconButton"
+											Command="{Binding $parent[UserControl].((vm:FileTreeViewModel)DataContext).ShowFileInExplorerCommand}"
+											IsEnabled="{Binding $parent[UserControl].((vm:FileTreeViewModel)DataContext).IsSingleFileSelected}"
+											Tag="FolderOpen"/>
+										<Button
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+											ToolTip.Tip="Import Folder"
+											Command="{Binding $parent[UserControl].((vm:FileTreeViewModel)DataContext).BrowsePackageFilesDir}"
+											Foreground="{DynamicResource PlusButton}"
+											Classes="IconButton"
+											IsEnabled="{Binding $parent[UserControl].((vm:FileTreeViewModel)DataContext).IsSingleDIRSelected}"
+											Tag="Import"/>
+										<Button
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+											ToolTip.Tip="New Folder"
+											Foreground="{DynamicResource PlusButton}"
+											Classes="IconButton"
+											IsEnabled="{Binding $parent[UserControl].((vm:FileTreeViewModel)DataContext).IsSingleDIRSelected}"
+											Tag="FolderPlus">
+											<Button.Flyout>
+												<Flyout>
+													<StackPanel
+														Orientation="Horizontal">
+														<TextBox
+															Tag="NewNameTxt"
+															KeyUp="AddNewDIR_KeyUp"
+															PlaceholderText="New Directory Name"/>
+														<Button
+															Classes="IconButton"
+															Click="AddNewDIR_Click"
+															Tag="Plus"
+															Foreground="Green"/>
+													</StackPanel>
+												</Flyout>
+											</Button.Flyout>
+										</Button>
+										<Button
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+											ToolTip.Tip="Add Files"
+											Foreground="{DynamicResource PlusButton}"
+											Classes="IconButton"
+											Command="{Binding $parent[UserControl].((vm:FileTreeViewModel)DataContext).BrowsePackageFilesCommand}"
+											IsEnabled="{Binding $parent[UserControl].((vm:FileTreeViewModel)DataContext).IsSingleDIRSelected}"
+											Tag="FilePlus"/>
+									</StackPanel>
+								</Flyout>
+							</Border.ContextFlyout>
+						</Border>
+					</TreeDataTemplate>
+				</TreeView.ItemTemplate>
+			</TreeView>
+		</ScrollViewer>
+
+		<!-- Right Side Controls Divider -->
+		<Border
+			IsVisible="{Binding IsControlsVisible}"
+			Grid.Column="1"
+			Grid.RowSpan="2"
+			Grid.Row="0"
+			HorizontalAlignment="Center"
+			VerticalAlignment="Stretch"
+			Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+			Width="3"/>
+		
+		<!-- Right Side Controls -->
+		
+		<StackPanel
+			IsVisible="{Binding IsControlsVisible}"
+			Grid.Row="0"
+			Grid.RowSpan="2"
+			Grid.Column="2">
+			<Button
+				HorizontalAlignment="Center"
+				VerticalAlignment="Center"
+				ToolTip.Tip="Import Folder"
+				Command="{Binding BrowsePackageFilesDir}"
+				Foreground="{DynamicResource PlusButton}"
+				Classes="IconButton"
+				Name="Import_Button"
+				IsEnabled="{Binding IsSingleDIRSelected}"
+				Tag="Import"/>
+			<Button
+				HorizontalAlignment="Center"
+				VerticalAlignment="Center"
+				ToolTip.Tip="New Folder"
+				Foreground="{DynamicResource PlusButton}"
+				Classes="IconButton"
+				IsEnabled="{Binding IsSingleDIRSelected}"
+				Tag="FolderPlus">
+				<Button.Flyout>
+					<Flyout>
+						<StackPanel
+							Orientation="Horizontal">
+							<TextBox
+								Tag="NewNameTxt"
+								KeyUp="AddNewDIR_KeyUp"
+								PlaceholderText="New Directory Name"/>
+							<Button
+								Click="AddNewDIR_Click"
+								Classes="IconButton"
+								Tag="Plus"
+								Foreground="Green"/>
+						</StackPanel>
+					</Flyout>
+				</Button.Flyout>
+			</Button>
+			<Button
+				HorizontalAlignment="Center"
+				VerticalAlignment="Center"
+				ToolTip.Tip="Add Files"
+				Foreground="{DynamicResource PlusButton}"
+				Classes="IconButton"
+				Command="{Binding BrowsePackageFilesCommand}"
+				IsEnabled="{Binding IsSingleDIRSelected}"
+				Tag="FilePlus"/>
+			<Button
+				HorizontalAlignment="Center"
+				VerticalAlignment="Center"
+				ToolTip.Tip="Show in Explorer"
+				Foreground="Orange"
+				Classes="IconButton"
+				Command="{Binding ShowFileInExplorerCommand}"
+				IsEnabled="{Binding IsSingleFileSelected}"
+				Tag="FolderOpen"/>
+			<Button
+				HorizontalAlignment="Center"
+				VerticalAlignment="Center"
+				ToolTip.Tip="Remove Selected"
+				Classes="IconButton"
+				Name="Delete_Button"
+				Foreground="{DynamicResource BinButton}"
+				IsEnabled="{Binding IsItemsSelected}"
+				Tag="Delete">
+				<Button.Flyout>
+					<Flyout>
+						<StackPanel
+						Orientation="Horizontal">
+							<TextBlock
+								FontWeight="Bold"
+								Text="Confirm:"/>
+							<Button
+								Classes="IconButton"
+								Tag="Tick"
+								Click="DeleteTreeNodes_Click"
+								Foreground="Green"/>
+						</StackPanel>
+					</Flyout>
+				</Button.Flyout>
+			</Button>
+			<Button
+				HorizontalAlignment="Center"
+				VerticalAlignment="Center"
+				ToolTip.Tip="Clear All"
+				Classes="IconButton"
+				Foreground="{DynamicResource BinButton}"
+				Tag="CloseOctagon">
+				<Button.Flyout>
+					<Flyout>
+						<StackPanel
+						Orientation="Horizontal">
+							<TextBlock
+								FontWeight="Bold"
+								Text="Confirm:"/>
+							<Button
+								Classes="IconButton"
+								Tag="Tick"
+								Click="ClearTreeNodes_Click"
+								Foreground="Green"/>
+						</StackPanel>
+					</Flyout>
+				</Button.Flyout>
+			</Button>
+		</StackPanel>
+		<TextBlock
+			Margin="4"
+			Grid.Row="2"
+			Grid.Column="0"
+			Grid.ColumnSpan="3"
+			Foreground="{DynamicResource BinButton}"
+			HorizontalAlignment="Center"
+			TextWrapping="Wrap"
+			IsVisible="{Binding !!Error}"
+			Text="{Binding Error}"/>
+		</Grid>
+	</Border>
+</UserControl>

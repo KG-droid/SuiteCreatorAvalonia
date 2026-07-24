@@ -1,0 +1,104 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:local="clr-namespace:SuiteCreatorAvalonia.Views"
+	xmlns:services="clr-namespace:SuiteCreatorAvalonia.Services"
+    mc:Ignorable="d" 
+	d:DesignWidth="800" 
+	d:DesignHeight="650"
+	services:DialogManager.Register="{Binding}"
+    x:Class="SuiteCreatorAvalonia.Views.PackageMSIxInstallDetailsView"
+	x:DataType="vm:PackageMSIxInstallDetailsViewModel">
+
+	<Design.DataContext>
+		<vm:PackageMSIxInstallDetailsViewModel/>
+	</Design.DataContext>
+
+	<ScrollViewer>
+
+		<StackPanel
+			Margin="20"
+			services:Help.Title="MSIx package details"
+			services:Help.Order="4"
+			services:Help.PageSummary="MSIx packages are handled automatically, like MSI: Suite Creator installs and detects the package using its own PackageFamilyName, read straight from the .msix/.appx/.msixbundle file you select below. You don't need to write install, uninstall or detection commands yourself."
+			services:Help.Text="MSIx packages are handled automatically, like MSI: Suite Creator installs and detects the package using its own PackageFamilyName, read straight from the .msix/.appx/.msixbundle file you select below. You don't need to write install, uninstall or detection commands yourself.">
+			<!-- Package Name -->
+			<Grid 
+				ColumnDefinitions="Auto,10,*,Auto">
+				<TextBlock
+					Grid.Column="0"
+					Text="Package Name:" />
+				<TextBox
+					x:Name="PkgName_TextBox"
+					Text="{Binding Name}"
+					Grid.Column="2"
+					Margin="0,0,0,3"/>
+			</Grid>
+
+			<!-- Requirement -->
+			<StackPanel
+				Spacing="10"
+				Orientation="Horizontal">
+				<TextBlock
+					VerticalAlignment="Center"
+					Text="Requirement:"/>
+				<ToggleSwitch
+					Name="Requirement_ToggleSwitch"
+					IsChecked="{Binding HasRequirements}"
+					VerticalAlignment="Center"
+					Margin="15,0,0,0"
+					OffContent=""
+					OnContent=""/>
+				<TextBlock
+					Margin="-15,0,0,0"
+					FontSize="11"
+					FontStyle="Italic"
+					TextWrapping="Wrap"
+					Text="Add a rule/s to determine whether this package should install or not if the detection is not met"/>
+			</StackPanel>
+			<Expander
+				Margin="0,0,0,10"
+				IsVisible="{Binding IsChecked, ElementName=Requirement_ToggleSwitch}"
+				Background="Transparent"
+				Header="Requirement Rules"
+				HorizontalAlignment="Stretch">
+				<UserControl
+					Content="{Binding RequirementRuleBuilder}"/>
+			</Expander>	
+			
+			<!-- MSIx sub details-->
+			<UserControl
+				Content="{Binding MSIxDetailsSubView}"/>
+
+			<!-- Rollback -->
+			<StackPanel
+				Spacing="43"
+				Orientation="Horizontal">
+				<TextBlock
+					Grid.Row="8"
+					Grid.Column="0"
+					Text="Add Rollback"/>
+				<ToggleSwitch
+					Grid.Row="8"
+					Grid.Column="2"
+					Name="Rollback_ToggleSwitch"
+					IsChecked="{Binding AddRollBack}"
+					OnContent=""
+					OffContent=""/>
+			</StackPanel>
+			<Expander
+				Background="Transparent"
+				IsVisible="{Binding IsChecked, ElementName=Rollback_ToggleSwitch}"
+				Header="Rollback"
+				HorizontalAlignment="Stretch">
+				<UserControl
+					Content="{Binding MSIxRollbackView}"/>
+			</Expander>
+		</StackPanel>
+	</ScrollViewer>	
+	
+</UserControl>

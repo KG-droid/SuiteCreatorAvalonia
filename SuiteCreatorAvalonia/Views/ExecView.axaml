@@ -1,0 +1,20 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+    xmlns:services="using:SuiteCreatorAvalonia.Services"
+    x:Class="SuiteCreatorAvalonia.Views.ExecView"
+    services:Help.Title="Executables"
+    services:Help.PageSummary="Run extra executables or commands as part of the suite — useful for setup utilities, configuration tools or anything your packages don't cover. Each event defines the executable, its arguments and when it runs."
+    x:DataType="vm:ExecViewModel">
+
+	<Design.DataContext>
+		<vm:ExecViewModel/>
+	</Design.DataContext>
+
+	<UserControl Content="{Binding IoEventViewModel}"/>
+	
+</UserControl>

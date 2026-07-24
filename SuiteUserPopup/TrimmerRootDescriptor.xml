@@ -1,0 +1,7 @@
+<linker>
+  <assembly fullname="SuiteUserPopup">
+    <namespace fullname="SuiteUserPopup" preserve="all"/>
+    <namespace fullname="SuiteUserPopup.Views" preserve="all"/>
+    <namespace fullname="SuiteUserPopup.ViewModels" preserve="all"/>
+  </assembly>
+</linker>

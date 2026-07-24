@@ -1,0 +1,171 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:local="clr-namespace:SuiteCreatorAvalonia.Views"
+	xmlns:services="clr-namespace:SuiteCreatorAvalonia.Services"
+    mc:Ignorable="d" 
+	d:DesignWidth="800" 
+	d:DesignHeight="650"
+	services:DialogManager.Register="{Binding}"
+    x:Class="SuiteCreatorAvalonia.Views.PackageMSIxInstallSubDetailsView"
+	x:DataType="vm:PackageMSIxInstallSubDetailsViewModel">
+
+	<Design.DataContext>
+		<vm:PackageMSIxInstallSubDetailsViewModel/>
+	</Design.DataContext>
+
+	<ScrollViewer>
+
+		<StackPanel>
+			<!-- MSIx Selection -->
+			<Grid
+                ColumnDefinitions="Auto,10,*,Auto">
+				<TextBlock
+                    Grid.Column="0"
+                    Text="Selected MSIx: "/>
+				<TextBox
+					Text="{Binding MsixPath}"
+                    Grid.Column="2"
+                    TextWrapping="Wrap"/>
+				<Button
+                    Grid.Column="3"
+                    Classes="IconButton"
+					Command="{Binding BrowseForMSIxCommand}"
+					Foreground="{DynamicResource PlusButton}"
+                    ToolTip.Tip="Browse for a different MSIx"
+                    Tag="FilePlus"/>
+			</Grid>
+			
+			<Grid
+				ColumnDefinitions="Auto,10,Auto,5,*"
+				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+				<!-- Force Close Family -->
+				<TextBlock
+					Grid.Row="4"
+					Grid.Column="0"
+					VerticalAlignment="Center"
+					Text="Force close family:"/>
+				<ToggleSwitch
+					Grid.Row="4"
+					Grid.Column="2"
+					IsChecked="{Binding IsForceCloseFamily}"
+					VerticalAlignment="Center"
+					OffContent=""
+					OnContent=""/>
+				<TextBlock
+					Grid.Row="4"
+					Grid.Column="4"
+					FontSize="11"
+					FontStyle="Italic"
+					TextWrapping="Wrap"
+					Text="Whether any related products in the family will be force closed prior to installation. If the package is in use during attempted installation, and this is not enabled, the installation will be deferred until the package is no longer in use"/>
+
+				<!-- Force Version -->
+				<TextBlock
+					Grid.Row="5"
+					Grid.Column="0"
+					VerticalAlignment="Center"
+					Text="Force this version:"/>
+				<ToggleSwitch
+					Grid.Row="5"
+					Grid.Column="2"
+					IsChecked="{Binding IsForceThisVersion}"
+					VerticalAlignment="Center"
+					OffContent=""
+					OnContent=" "/>
+				<TextBlock
+					Grid.Row="5"
+					Grid.Column="4"
+					FontSize="11"
+					FontStyle="Italic"
+					Text="Whether this verison should replace any version, even newer ones"/>
+
+				<!-- Defer when in use -->
+				<TextBlock
+					Grid.Row="6"
+					Grid.Column="0"
+					VerticalAlignment="Center"
+					Text="Defer if in use:"/>
+				<ToggleSwitch
+					Grid.Row="6"
+					Grid.Column="2"
+					IsChecked="{Binding DeferInUse}"
+					VerticalAlignment="Center"
+					OffContent=""
+					OnContent=" "/>
+				<TextBlock
+					Grid.Row="6"
+					Grid.Column="4"
+					FontSize="11"
+					FontStyle="Italic"
+					Text="Defers an upgrade if the app is in use, until the user next opens it"/>
+
+
+				<!-- Dependencies -->
+				<TextBlock
+					Grid.Row="7"
+					Grid.Column="0"
+					VerticalAlignment="Center"
+					Text="Dependencies:"/>
+				<ToggleSwitch
+					Grid.Row="7"
+					Grid.Column="2"
+					Name="Depend_ToggleSwitch"
+					IsChecked="{Binding HasDependencies}"
+					VerticalAlignment="Center"
+					OffContent=""
+					OnContent=" "/>
+				<TextBlock
+					Grid.Row="7"
+					Grid.Column="4"
+					FontSize="11"
+					FontStyle="Italic"
+					Text="Specify other MSIx package that need to install with this one"/>
+
+				<!-- Dependencies List -->
+				<Grid
+					Grid.Row="8"
+					Grid.Column="0"
+					Grid.ColumnSpan="5"
+					IsVisible="{Binding IsChecked, ElementName=Depend_ToggleSwitch}"
+					ColumnDefinitions="Auto,*"
+					RowDefinitions="*,Auto">
+					<StackPanel
+						Grid.Column="0">
+						<Button
+							Foreground="{DynamicResource PlusButton}"
+							Classes="IconButton"
+							Tag="Plus"
+							Command="{Binding BrowseForDependentCommand}"
+							ToolTip.Tip="Add a dependency"/>
+						<Button
+							Foreground="{DynamicResource BinButton}"
+							Classes="IconButton"
+							Tag="Minus"
+							Command="{Binding RemoveSelectedDependentsCommand}"
+							ToolTip.Tip="Remove selected dependency"/>
+					</StackPanel>
+					<ListBox
+						ItemsSource="{Binding Dependencies}"
+						SelectedItems="{Binding SelectedDependents}"
+						SelectionMode="Multiple"
+						Grid.Column="1"/>
+					<TextBlock
+						Grid.Column="1"
+						Grid.Row="1"
+						FontSize="11"
+						FontStyle="Italic"
+						Margin="0,0,0,5">
+						Dependencies will not be installed, if the requirement on this main package isnt met.  <LineBreak />They will also use the force settings above as well
+					</TextBlock>
+				</Grid>
+			</Grid>
+		</StackPanel>
+	</ScrollViewer>	
+	
+</UserControl>

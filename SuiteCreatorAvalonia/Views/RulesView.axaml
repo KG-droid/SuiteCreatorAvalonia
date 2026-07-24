@@ -1,0 +1,206 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+    mc:Ignorable="d" 
+	d:DesignWidth="800" 
+	d:DesignHeight="450"
+    xmlns:services="using:SuiteCreatorAvalonia.Services"
+    x:Class="SuiteCreatorAvalonia.Views.RulesView"
+    services:Help.Title="Rules"
+    services:Help.PageSummary="Build conditional rules that control the suite's behaviour — for example only running certain actions like a Registry Event or a File event when a file, registry value or other condition matches. The Other type packge will also create rules within here, and you can re-use that as well in other events if useful."
+    x:DataType="vm:RulesViewModel">
+
+	<Design.DataContext>
+		<vm:RulesViewModel/>
+	</Design.DataContext>
+
+	<Grid
+		RowDefinitions="Auto,*">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="Auto" MinWidth="220"/>
+			<ColumnDefinition Width="*"/>
+		</Grid.ColumnDefinitions>
+
+		<!-- Rules List Pane -->
+		<TextBlock
+			Classes="TabHeader"
+			Text="Rules"
+			Grid.ColumnSpan="2"
+			Grid.Column="0"
+			Grid.Row="0"/>
+		<Grid
+			Grid.Row="1"
+			Grid.Column="0"
+			ColumnDefinitions="*,Auto">
+			<ListBox
+				CornerRadius="5"
+				ItemsSource="{Binding RuleSets}"
+				SelectionMode="Single"
+				SelectedItem="{Binding SelectedRuleSet}">
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<TextBlock
+							Text="{Binding Name}"/>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+			
+			<!-- Rules List Control Buttons -->
+			<StackPanel
+				Margin="0,0,10,0"
+				Grid.Column="1"
+				Orientation="Vertical">
+
+				<!-- New Rule -->
+				<Button
+					x:Name="NewRuleSet_button"
+					Classes="IconButton"
+					Tag="Plus"
+					Foreground="{DynamicResource PlusButton}"
+					ToolTip.Tip="Add a Ruleset">
+					<Button.Flyout>
+						<Flyout Placement="Right">
+							<StackPanel
+								Margin="10,0,0,0"
+								Orientation="Horizontal">
+								<TextBox
+									x:Name="NewName_TextBox"
+									MinWidth="200"
+									KeyUp="AddRuleSet_KeyUp"	
+									PlaceholderText="RuleSet name  "/>
+								<Button
+									x:Name="AddRuleConfirm_Button"
+									Click="AddRuleSet_Click"
+									Classes="IconButton"
+									Tag="Tick"
+									ToolTip.Tip="Add"/>
+							</StackPanel>
+						</Flyout>
+					</Button.Flyout>
+				</Button>
+
+				<!-- Remove Rule -->
+				<Button
+					x:Name="RemoveRuleSet_Button"
+					Classes="IconButton"
+					Tag="Minus"	
+					IsEnabled="{Binding SelectedRuleSet, Converter={x:Static ObjectConverters.IsNotNull}}"
+					Foreground="{DynamicResource BinButton}"
+					ToolTip.Tip="Remove selected Ruleset">
+					<Button.Flyout>
+						<Flyout Placement="Right">
+							<StackPanel
+								Margin="10,0,0,0"
+								Orientation="Horizontal">
+								<TextBlock
+									Text="Confirm"/>
+								<Button
+									Click="RemoveRuleSet_Click"
+									Classes="IconButton"
+									Tag="Bin"
+									Foreground="{DynamicResource BinButton}"
+									ToolTip.Tip="Remove"/>
+							</StackPanel>
+						</Flyout>
+					</Button.Flyout>
+				</Button>
+
+				<!-- Change Rule Name -->
+				<Button
+					x:Name="EditName_button"
+					Classes="IconButton"
+					Tag="Edit"
+					IsEnabled="{Binding SelectedRuleSet, Converter={x:Static ObjectConverters.IsNotNull}}"
+					ToolTip.Tip="Rename RuleSet">
+					<Button.Flyout>
+						<Flyout
+							Placement="Right">
+							<StackPanel
+								Margin="10,0,0,0"
+								Orientation="Horizontal">
+								<TextBox
+									x:Name="NewRuleName_Textbox"
+									KeyUp="RenameRuleSet_KeyUp"
+									Text="{Binding SelectedRuleSet.Name}"	
+									PlaceholderText="New name  "/>
+								<Button
+									Classes="IconButton"
+									Tag="Tick"
+									Click="RenameRuleSet_Click"
+									ToolTip.Tip="Rename"/>
+							</StackPanel>
+						</Flyout>
+					</Button.Flyout>
+				</Button>
+			</StackPanel>
+		</Grid>
+		
+		<GridSplitter
+			Grid.Row="1"
+			VerticalAlignment="Stretch"
+			HorizontalAlignment="Right"/>
+
+		<!-- Rule Builder -->
+		<UserControl
+			IsVisible="{Binding SelectedRuleSet, Converter={x:Static ObjectConverters.IsNotNull}}"
+			Grid.Row="1"
+			Grid.Column="2"
+			Margin="10,0,10,0"
+			Content="{Binding RuleBuilder}"/>
+
+		<Popup
+			IsOpen="{Binding RuleRemoveError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+			Closed="RemovalErrPopup_Closed"
+			IsLightDismissEnabled="True"
+			Placement="RightEdgeAlignedTop"
+			PlacementTarget="{Binding ElementName=RemoveRuleSet_Button}">
+			<Border
+				Background="Red"
+				Padding="12,10,15,10"
+				CornerRadius="23">
+				<StackPanel
+					Orientation="Horizontal"
+					Spacing="5">
+					<mi:MaterialIcon
+						Kind="AlertCircle"
+						Foreground="White"
+						Width="24"
+						Height="24"/>
+					<TextBlock
+						Foreground="White"
+						Text="{Binding RuleRemoveError}"/>
+				</StackPanel>
+			</Border>
+		</Popup>
+
+		<Popup
+			x:Name="AddWarning_Popup"
+			IsLightDismissEnabled="True"
+			Placement="RightEdgeAlignedTop"
+			PlacementTarget="{Binding ElementName=AddRuleConfirm_Button}">
+			<Border
+				Background="Red"
+				Padding="12,10,15,10"
+				CornerRadius="23">
+				<StackPanel
+					Orientation="Horizontal"
+					Spacing="5">
+					<mi:MaterialIcon
+						Kind="AlertCircle"
+						Foreground="White"
+						Width="24"
+						Height="24"/>
+					<TextBlock
+						Foreground="White"
+						Text="Rule name cannot contain '(' or ')', these are reserved for internal use for Package rules"/>
+				</StackPanel>
+			</Border>
+		</Popup>
+		
+	</Grid>
+	
+</UserControl>

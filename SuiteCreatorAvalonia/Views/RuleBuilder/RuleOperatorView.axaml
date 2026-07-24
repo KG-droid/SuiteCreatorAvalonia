@@ -1,0 +1,43 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:fc="using:FluentAvalonia.UI.Controls"
+    xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels.RuleBuilder"
+	DragDrop.AllowDrop="True"
+	PointerPressed="Operator_PointerPressed"
+	Margin="0,5,0,5"
+    mc:Ignorable="d" d:DesignWidth="400" 
+	x:DataType="vm:RuleOperatorCardViewModel"
+    x:Class="SuiteCreatorAvalonia.Views.RuleBuilder.RuleOperatorView">
+
+	<Design.DataContext>
+		<vm:RuleOperatorCardViewModel/>
+	</Design.DataContext>
+
+	<Grid>
+		<Border
+			Name="OperatorShader_Border"
+			BorderBrush="Black"
+			Grid.Row="0"
+			Height="19"
+			Classes="RuleCard"
+			IsVisible="true"
+			BorderThickness="0"
+			CornerRadius="5">
+			<Border.Styles>
+				<Style Selector="Border.RuleCard">
+					<Setter Property="Background" Value="Transparent"/>
+				</Style>
+				<Style Selector="Border.RuleCard:pointerover">
+					<Setter Property="Background" Value="{DynamicResource AccentVariant2}"/>
+				</Style>
+			</Border.Styles>
+		</Border>
+		<UserControl
+			Content="{Binding OperatorContent}"/>
+	</Grid>
+	
+</UserControl>

@@ -1,0 +1,457 @@
+<Application 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Class="SuiteCreatorAvalonia.App"
+    xmlns:local="using:SuiteCreatorAvalonia"
+	xmlns:dh="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:sys="using:System"
+	RequestedThemeVariant="Default">
+    <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+
+	<Application.Resources>
+		
+		<ResourceDictionary>
+			<ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key='Light'>
+                    <SolidColorBrush x:Key='AccentVariant1' Color="#b4c7f9"/>
+                    <SolidColorBrush x:Key='AccentVariant2' Color="#8facf8"/>
+					<SolidColorBrush x:Key='AccentVariant3' Color="#0508ed"/>
+					<SolidColorBrush x:Key='IconButtonShader' Color="Black"/>
+					<SolidColorBrush x:Key='ShadedText' Color="Gray"/>
+					<SolidColorBrush x:Key='ShadedTextHighlight' Color="DarkGray"/>
+					<SolidColorBrush x:Key='WindowBtnHighlight' Color="#787878"/>
+					<BoxShadows x:Key="IconButtonBoxShadow">0 0 3 1 LightGray</BoxShadows>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key='Dark'>
+                    <SolidColorBrush x:Key='AccentVariant1' Color="#000266"/>
+                    <SolidColorBrush x:Key='AccentVariant2' Color="#00027d"/>
+					<SolidColorBrush x:Key='AccentVariant3' Color="#0508ed"/>
+					<SolidColorBrush x:Key='IconButtonShader' Color="Gray"/>
+					<SolidColorBrush x:Key='ShadedText' Color="Gray"/>
+					<SolidColorBrush x:Key='ShadedTextHighlight' Color="White"/>
+					<SolidColorBrush x:Key='WindowBtnHighlight' Color="White"/>
+					<BoxShadows x:Key="IconButtonBoxShadow">0 0 3 1 Black</BoxShadows>
+                </ResourceDictionary>
+			</ResourceDictionary.ThemeDictionaries>
+		</ResourceDictionary>
+
+		<SolidColorBrush x:Key="PlusButton">Green</SolidColorBrush>
+		<SolidColorBrush x:Key="BinButton">#cf0d06</SolidColorBrush>
+		<SolidColorBrush x:Key="InfoButton">Blue</SolidColorBrush>
+		<SolidColorBrush x:Key="AutoFixButton">Purple</SolidColorBrush>
+		<SolidColorBrush x:Key="Shader">#e0e0e0</SolidColorBrush>
+		<SolidColorBrush x:Key="Help">#6fa5e3</SolidColorBrush>
+		<sys:Double x:Key="IconButtonSize">25</sys:Double>
+		<sys:Double x:Key="FontSize">13</sys:Double>
+		<sys:Double x:Key="HeaderFontSize">19</sys:Double>
+		<sys:Double x:Key="InfoFontSize">11</sys:Double>
+	</Application.Resources>
+  
+    <Application.Styles>
+		<FluentTheme>
+			<FluentTheme.Palettes>
+                <ColorPaletteResources x:Key="Light">
+					<ColorPaletteResources.Accent>#ff0073cf</ColorPaletteResources.Accent>
+					<ColorPaletteResources.AltHigh>White</ColorPaletteResources.AltHigh>
+					<ColorPaletteResources.AltLow>White</ColorPaletteResources.AltLow>
+					<ColorPaletteResources.AltMedium>White</ColorPaletteResources.AltMedium>
+					<ColorPaletteResources.AltMediumHigh>White</ColorPaletteResources.AltMediumHigh>
+					<ColorPaletteResources.AltMediumLow>White</ColorPaletteResources.AltMediumLow>
+					<ColorPaletteResources.BaseHigh>#161616</ColorPaletteResources.BaseHigh>
+					<ColorPaletteResources.BaseLow>#ffcccccc</ColorPaletteResources.BaseLow>
+					<ColorPaletteResources.BaseMedium>#ff898989</ColorPaletteResources.BaseMedium>
+					<ColorPaletteResources.BaseMediumHigh>#ff5d5d5d</ColorPaletteResources.BaseMediumHigh>
+					<ColorPaletteResources.BaseMediumLow>#ff737373</ColorPaletteResources.BaseMediumLow>
+					<ColorPaletteResources.ChromeAltLow>#ff5d5d5d</ColorPaletteResources.ChromeAltLow>
+					<ColorPaletteResources.ChromeBlackHigh>Black</ColorPaletteResources.ChromeBlackHigh>
+					<ColorPaletteResources.ChromeBlackLow>#ffcccccc</ColorPaletteResources.ChromeBlackLow>
+					<ColorPaletteResources.ChromeBlackMedium>#ff5d5d5d</ColorPaletteResources.ChromeBlackMedium>
+					<ColorPaletteResources.ChromeBlackMediumLow>#ff898989</ColorPaletteResources.ChromeBlackMediumLow>
+					<ColorPaletteResources.ChromeDisabledHigh>#ffcccccc</ColorPaletteResources.ChromeDisabledHigh>
+					<ColorPaletteResources.ChromeDisabledLow>#ff898989</ColorPaletteResources.ChromeDisabledLow>
+					<ColorPaletteResources.ChromeGray>#ff737373</ColorPaletteResources.ChromeGray>
+					<ColorPaletteResources.ChromeHigh>#ffcccccc</ColorPaletteResources.ChromeHigh>
+					<ColorPaletteResources.ChromeLow>#ffececec</ColorPaletteResources.ChromeLow>
+					<ColorPaletteResources.ChromeMedium>#ffe6e6e6</ColorPaletteResources.ChromeMedium>
+					<ColorPaletteResources.ChromeMediumLow>#ffececec</ColorPaletteResources.ChromeMediumLow>
+					<ColorPaletteResources.ChromeWhite>White</ColorPaletteResources.ChromeWhite>
+					<ColorPaletteResources.ListLow>#ffe6e6e6</ColorPaletteResources.ListLow>
+					<ColorPaletteResources.ListMedium>#ffcccccc</ColorPaletteResources.ListMedium>
+					<ColorPaletteResources.RegionColor>White</ColorPaletteResources.RegionColor>
+				</ColorPaletteResources>
+                <ColorPaletteResources x:Key="Dark">
+					<ColorPaletteResources.Accent>#ff0073cf</ColorPaletteResources.Accent>
+					<ColorPaletteResources.AltHigh>#161616</ColorPaletteResources.AltHigh>
+					<ColorPaletteResources.AltLow>#161616</ColorPaletteResources.AltLow>
+					<ColorPaletteResources.AltMedium>#161616</ColorPaletteResources.AltMedium>
+					<ColorPaletteResources.AltMediumHigh>#161616</ColorPaletteResources.AltMediumHigh>
+					<ColorPaletteResources.AltMediumLow>#161616</ColorPaletteResources.AltMediumLow>
+					<ColorPaletteResources.BaseHigh>#d3d3d3</ColorPaletteResources.BaseHigh>
+					<ColorPaletteResources.BaseLow>#ff333333</ColorPaletteResources.BaseLow>
+					<ColorPaletteResources.BaseMedium>#ff9a9a9a</ColorPaletteResources.BaseMedium>
+					<ColorPaletteResources.BaseMediumHigh>#ffb4b4b4</ColorPaletteResources.BaseMediumHigh>
+					<ColorPaletteResources.BaseMediumLow>#ff676767</ColorPaletteResources.BaseMediumLow>
+					<ColorPaletteResources.ChromeAltLow>#ffb4b4b4</ColorPaletteResources.ChromeAltLow>
+					<ColorPaletteResources.ChromeBlackHigh>Black</ColorPaletteResources.ChromeBlackHigh>
+					<ColorPaletteResources.ChromeBlackLow>#ffb4b4b4</ColorPaletteResources.ChromeBlackLow>
+					<ColorPaletteResources.ChromeBlackMedium>Black</ColorPaletteResources.ChromeBlackMedium>
+					<ColorPaletteResources.ChromeBlackMediumLow>Black</ColorPaletteResources.ChromeBlackMediumLow>
+					<ColorPaletteResources.ChromeDisabledHigh>#ff333333</ColorPaletteResources.ChromeDisabledHigh>
+					<ColorPaletteResources.ChromeDisabledLow>#ff9a9a9a</ColorPaletteResources.ChromeDisabledLow>
+					<ColorPaletteResources.ChromeGray>Gray</ColorPaletteResources.ChromeGray>
+					<ColorPaletteResources.ChromeHigh>Gray</ColorPaletteResources.ChromeHigh>
+					<ColorPaletteResources.ChromeLow>#ff151515</ColorPaletteResources.ChromeLow>
+					<ColorPaletteResources.ChromeMedium>#ff1d1d1d</ColorPaletteResources.ChromeMedium>
+					<ColorPaletteResources.ChromeMediumLow>#ff2c2c2c</ColorPaletteResources.ChromeMediumLow>
+					<ColorPaletteResources.ChromeWhite>White</ColorPaletteResources.ChromeWhite>
+					<ColorPaletteResources.ListLow>#ff1d1d1d</ColorPaletteResources.ListLow>
+					<ColorPaletteResources.ListMedium>#ff333333</ColorPaletteResources.ListMedium>
+					<ColorPaletteResources.RegionColor>#222222</ColorPaletteResources.RegionColor>
+				</ColorPaletteResources>
+			</FluentTheme.Palettes>
+		</FluentTheme>
+
+		<dh:DialogHostStyles/>
+		<mi:MaterialIconStyles />
+		<StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+		<StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml"/>
+		<StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml"/>
+
+		<Style Selector="Button">
+			<Setter Property="Background" Value="{DynamicResource AccentVariant1}"/>
+		</Style>
+		<Style Selector="Button:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="{DynamicResource AccentVariant2}"/>
+		</Style>
+		
+		<Style Selector="Button.IconButton">
+			<Setter Property="Height" Value="37"/>
+			<Setter Property="Width" Value="37"/>
+		</Style>
+		<Style Selector="Button.IconButton /template/ ContentPresenter">
+			<Setter Property="ContentTemplate">
+				<DataTemplate>
+					<Border
+						CornerRadius="5">
+						<Viewbox
+							VerticalAlignment="Stretch"
+							HorizontalAlignment="Stretch"
+							Margin="3">
+							<mi:MaterialIcon
+								IsHitTestVisible="False"
+								Kind="{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}"/>
+						</Viewbox>
+					</Border>
+				</DataTemplate>
+			</Setter>
+			<Setter Property="Padding" Value="5"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="ToolTip.Placement" Value="Right"/>
+		</Style>
+		<Style Selector="Button.IconButton:pointerover /template/ ContentPresenter">
+			<Setter Property="ContentTemplate">
+				<DataTemplate>
+					<Border
+						BoxShadow="{DynamicResource IconButtonBoxShadow}"
+						CornerRadius="5">
+						<Viewbox
+							VerticalAlignment="Stretch"
+							HorizontalAlignment="Stretch"
+							Margin="3">
+							<mi:MaterialIcon
+								Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+								IsHitTestVisible="False"
+								Kind="{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}"/>
+						</Viewbox>
+					</Border>
+				</DataTemplate>
+			</Setter>
+			<Setter Property="ToolTip.Placement" Value="Right"/>
+		</Style>
+		<Style Selector="Button.IconButton:pressed /template/ ContentPresenter">
+			<Setter Property="ContentTemplate">
+				<DataTemplate>
+					<Border
+						Background="Black"
+						CornerRadius="5">
+						<Viewbox
+							VerticalAlignment="Stretch"
+							HorizontalAlignment="Stretch"
+							Margin="3">
+							<mi:MaterialIcon
+								Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+								IsHitTestVisible="False"
+								Kind="{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}"/>
+						</Viewbox>
+					</Border>
+				</DataTemplate>
+			</Setter>
+		</Style>
+
+		<Style Selector="Button.WindowBtn">
+			<Setter Property="Height" Value="37"/>
+			<Setter Property="Width" Value="37"/>
+		</Style>
+		<Style Selector="Button.WindowBtn /template/ ContentPresenter">
+			<Setter Property="ContentTemplate">
+				<DataTemplate>
+					<Border
+						CornerRadius="5">
+						<Viewbox
+							VerticalAlignment="Stretch"
+							HorizontalAlignment="Stretch"
+							Margin="3">
+							<mi:MaterialIcon
+								IsHitTestVisible="False"
+								Kind="{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}"/>
+						</Viewbox>
+					</Border>
+				</DataTemplate>
+			</Setter>
+			<Setter Property="Padding" Value="5"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="ToolTip.Placement" Value="Right"/>
+		</Style>
+		<Style Selector="Button.WindowBtn:pointerover /template/ ContentPresenter">
+			<Setter Property="Foreground" Value="{DynamicResource WindowBtnHighlight}"/>
+			<Setter Property="ToolTip.Placement" Value="Bottom"/>
+		</Style>
+		<Style Selector="Button.WindowBtn:pressed /template/ ContentPresenter">
+			<Setter Property="ContentTemplate">
+				<DataTemplate>
+					<Border
+						Background="Black"
+						CornerRadius="5">
+						<Viewbox
+							VerticalAlignment="Stretch"
+							HorizontalAlignment="Stretch"
+							Margin="3">
+							<mi:MaterialIcon
+								Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+								IsHitTestVisible="False"
+								Kind="{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}"/>
+						</Viewbox>
+					</Border>
+				</DataTemplate>
+			</Setter>
+		</Style>
+
+		<Style Selector="Button.BinButton /template/ ContentPresenter">
+			<Setter Property="ContentTemplate">
+				<DataTemplate>
+					<Viewbox>
+						<mi:MaterialIcon
+							Kind="Bin"/>
+					</Viewbox>
+				</DataTemplate>
+			</Setter>
+			<Setter Property="Foreground" Value="#cf0d06"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="ToolTip.Placement" Value="Right"/>
+			<Setter Property="Background" Value="Transparent"/>
+		</Style>		
+		<Style Selector="Button.BinButton:pointerover /template/ ContentPresenter">
+			<Setter Property="ContentTemplate">
+				<DataTemplate>
+					<Viewbox>
+						<mi:MaterialIcon
+							Kind="BinEmpty"/>
+					</Viewbox>
+				</DataTemplate>
+			</Setter>
+			<Setter Property="ToolTip.Placement" Value="Right"/>
+			<Setter Property="Foreground" Value="#cf0d06"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Background" Value="Transparent"/>
+		</Style>
+
+		<Style Selector="Button.SuiteValidationErrorButton">
+			<Setter Property="Background" Value="#c92506"/>
+		</Style>
+
+		<Style Selector="Button.Picker">
+			<Setter Property="Height" Value="25"/>
+			<Setter Property="Width" Value="25"/>
+		</Style>
+		<Style Selector="Button.Picker /template/ ContentPresenter">
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Background" Value="Transparent"/>
+		</Style>
+		<Style Selector="Button.Picker:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="Transparent"/>
+		</Style>
+
+		<Style Selector="Button.PicTile">
+			<Setter Property="Height" Value="70"/>
+			<Setter Property="Width" Value="70"/>
+		</Style>
+		<Style Selector="Button.PicTile /template/ ContentPresenter">
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Background" Value="Transparent"/>
+		</Style>
+		<Style Selector="Button.PicTile:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="Transparent"/>
+		</Style>
+			
+		<Style Selector="ToggleButton.IconToggleButton">
+			<Setter Property="Height" Value="28"/>
+			<Setter Property="Width" Value="28"/>
+		</Style>
+		<Style Selector="ToggleButton.IconToggleButton /template/ ContentPresenter">
+			<Setter Property="ContentTemplate">
+				<DataTemplate>
+					<Viewbox
+						VerticalAlignment="Stretch"
+						HorizontalAlignment="Stretch">
+						<mi:MaterialIcon
+							IsHitTestVisible="False"
+							Kind="{Binding Tag, RelativeSource={RelativeSource AncestorType=ToggleButton}}"/>
+					</Viewbox>
+				</DataTemplate>
+			</Setter>
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="Margin" Value="3"/>
+			<Setter Property="Foreground" Value="Gray"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Background" Value="Transparent"/>
+		</Style>
+		<Style Selector="ToggleButton.IconToggleButton:checked /template/ ContentPresenter">
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlBackgroundChromeWhiteBrush}"/>
+		</Style>
+
+		<Style Selector="TextBlock.TabHeader">
+			<Setter Property="FontFamily" Value="Ariel"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="FontSize" Value="{DynamicResource HeaderFontSize}"/>
+			<Setter Property="Margin" Value="0,0,0,10"/>
+			<Setter Property="HorizontalAlignment" Value="Left"/>
+			<Setter Property="VerticalAlignment" Value="Top"/>
+		</Style>
+
+		<Style Selector="TextBlock.FieldName">
+			<Setter Property="FontSize" Value="{DynamicResource FontSize}"/>
+			<Setter Property="FontWeight" Value="DemiBold"/>
+		</Style>
+
+		<Style Selector="TextBlock">
+			<Setter Property="VerticalAlignment" Value="Center"/>
+			<Setter Property="FontSize" Value="{DynamicResource FontSize}"/>
+		</Style>
+
+		<Style Selector="Label">
+			<Setter Property="FontSize" Value="{DynamicResource FontSize}"/>
+		</Style>
+
+		<Style Selector="TextBox">
+			<Setter Property="VerticalAlignment" Value="Center"/>
+			<Setter Property="VerticalContentAlignment" Value="Center"/>
+			<Setter Property="FontSize" Value="{DynamicResource FontSize}"/>
+			<Setter Property="BorderBrush" Value="{DynamicResource SystemChromeMediumLowColor}"/>
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltMediumLowBrush}"/>
+			<Setter Property="SelectionBrush" Value="{DynamicResource AccentVariant2}" />
+		</Style>
+
+		<Style Selector="TextBox /template/ ContentPresenter">
+			<Setter Property="VerticalAlignment" Value="Center"/>
+		</Style>
+
+		<Style Selector="TextBox:pointerover">
+			<Setter Property="BorderBrush" Value="{DynamicResource SystemChromeMediumLowColor}"/>
+		</Style>
+
+		<Style Selector="TextBox.NoFocusBorder">
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="MinWidth" Value="5"/>
+			<Setter Property="BorderThickness" Value="0"/>
+		</Style>
+
+		<Style Selector="TextBox.NoFocusBorder:focus /template/ Border#PART_BorderElement">
+			<Setter Property="BorderThickness" Value="0"/>
+		</Style>
+
+		<Style Selector="NumericUpDown">
+			<Setter Property="FontSize" Value="20"/>
+			<Setter Property="BorderBrush" Value="{DynamicResource SystemChromeMediumLowColor}"/>
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltMediumLowBrush}"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+		</Style>
+
+		<Style Selector="ComboBox">
+			<Setter Property="FontSize" Value="{DynamicResource FontSize}"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltMediumLowBrush}"/>
+		</Style>
+
+		<Style Selector="ComboBox:pointerover">
+			<Setter Property="BorderBrush" Value="{DynamicResource SystemChromeMediumLowColor}"/>
+		</Style>
+
+		<Style Selector="DataGridColumnHeader">
+			<Setter Property="Background" Value="Transparent" />
+		</Style>
+
+		<Style Selector="CheckBox">
+			<Setter Property="FontSize" Value="{DynamicResource FontSize}" />
+		</Style>
+
+		<Style Selector="CheckBox:checked /template/ Border#NormalRectangle">
+			<Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+		</Style>
+
+		<Style Selector="CheckBox:checked /template/ Path#CheckGlyph">
+			<Setter Property="Fill" Value="{DynamicResource SystemChromeMediumLowColor}" />
+		</Style>
+
+		<Style Selector="FlyoutPresenter">
+			<Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="CornerRadius" Value="10" />
+			<Setter Property="Padding" Value="3" />
+			<Setter Property="MinWidth" Value="10" />
+			<Setter Property="MinHeight" Value="10" />
+			<Setter Property="MaxWidth" Value="1000" />
+		</Style>
+		
+		<Style Selector="FlyoutPresenter.Warning">
+			<Setter Property="Background" Value="{DynamicResource BinButton}" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="CornerRadius" Value="25" />
+			<Setter Property="Padding" Value="10,3,10,3" />
+			<Setter Property="MinWidth" Value="10" />
+			<Setter Property="MinHeight" Value="10" />
+			<Setter Property="MaxWidth" Value="1000" />
+		</Style>
+
+		<Style Selector="Expander /template/ ToggleButton#ExpanderHeader">
+			<Setter Property="Background" Value="Transparent" />
+		</Style>
+
+		<Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobBounds">
+			<Setter Property="Background" Value="{DynamicResource AccentVariant1}" />
+		</Style>
+
+		<Style Selector="ToggleSwitch:checked:pointerover /template/ Border#SwitchKnobBounds">
+			<Setter Property="Background" Value="{DynamicResource AccentVariant2}" />
+		</Style>
+
+		<Style Selector="HyperlinkButton /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Foreground" Value="{DynamicResource SystemBaseHighColor}" />
+		</Style>
+
+		<Style Selector="HyperlinkButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="Foreground" Value="{DynamicResource AccentVariant3}" />
+		</Style>
+		
+    </Application.Styles>
+
+</Application>

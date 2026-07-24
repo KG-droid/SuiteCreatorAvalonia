@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+			 xmlns:views="using:SuiteCreatorAvalonia.Views"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:services="using:SuiteCreatorAvalonia.Services"
+             x:Class="SuiteCreatorAvalonia.Views.DriversView"
+             services:Help.Title="Drivers"
+             services:Help.PageSummary="Install Windows drivers from an .inf file (the driver's folder is bundled into the suite), or remove installed drivers from the driver store by their original .inf file name."
+			 x:DataType="vm:DriversViewModel">
+
+	<Design.DataContext>
+		<vm:DriversViewModel/>
+	</Design.DataContext>
+
+	<UserControl Content="{Binding IoEventViewModel}"/>
+
+</UserControl>

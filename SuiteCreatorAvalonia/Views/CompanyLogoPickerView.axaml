@@ -1,0 +1,44 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
+	xmlns:avalonStyle="using:Avalonia.Styling"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	xmlns:enums="using:SuiteCreatorAvalonia.Enums"
+	xmlns:labsGif="using:Avalonia.Labs.Gif"
+    mc:Ignorable="d"
+    x:Class="SuiteCreatorAvalonia.Views.CompanyLogoPickerView"
+	x:DataType="vm:CompanyLogoPickerViewModel">
+
+	<Design.DataContext>
+		<vm:CompanyLogoPickerViewModel/>
+	</Design.DataContext>
+
+	<Grid
+		Margin="10,0,0,0"
+		HorizontalAlignment="Left">
+		<ColorPicker
+			IsEnabled="False"
+			ToolTip.Tip="Logo Background Color"
+			Height="60"
+			Width="100"
+			Color="{Binding CompanyLogoBackgroundColor}"
+			HorizontalAlignment="Center"
+			VerticalAlignment="Center"/>
+		<Button
+			Margin="0,0,30,0"
+			Width="66"
+			Height="58"
+			HorizontalAlignment="Center"
+			VerticalAlignment="Center"
+			Background="Transparent"
+			IsHitTestVisible="False">
+			<UserControl Content="{Binding CompanyLogoCtrl}"/>
+		</Button>
+	</Grid>
+
+</UserControl>

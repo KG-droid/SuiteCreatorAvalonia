@@ -1,0 +1,16 @@
+{
+  "LogFilePath": "C:\\Modern-Workplace-Logs\\Igor Pavlov_7zip_24.0.0.0_1.log",
+  "CompanyLogoBackground": "#ffd1ffc6",
+  "ProductName": "7zip",
+  "ProductVersion": "24.0.0.0",
+  "MainText": "The following apps will be closed before the upgrade. Please save any work required before you continue.",
+  "IsClosuresAppsVisible": true,
+  "ClosureApps": [
+    "7zFM.exe"
+  ],
+  "Timer": 40,
+  "MaxDelayDays": 7,
+  "Action": "Upgrade",
+  "ActionIconKind": 5064,
+  "TimerExpireAction": 0
+}

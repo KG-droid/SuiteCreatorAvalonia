@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:services="using:SuiteCreatorAvalonia.Services"
+             x:Class="SuiteCreatorAvalonia.Views.ProcClosuresView"
+             services:Help.Title="Process Closures"
+             services:Help.PageSummary="Close running processes before the suite runs its installs — for example the app being upgraded — so installers don't fail on locked files. Add a closure event per process name."
+			 x:DataType="vm:ProcClosuresViewModel">
+
+	<Design.DataContext>
+		<vm:ProcClosuresViewModel/>
+	</Design.DataContext>
+
+	<UserControl Content="{Binding IoEventViewModel}"/>
+
+</UserControl>

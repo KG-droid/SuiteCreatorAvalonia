@@ -1,0 +1,100 @@
+<Window 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteUserPopup.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+	Topmost="True"
+	RequestedThemeVariant="Default"
+	WindowStartupLocation="Manual"
+	ShowInTaskbar="False"
+	CanResize="False"
+	BorderThickness="0"
+	SizeToContent="WidthAndHeight"
+    Background="Transparent"
+	TransparencyLevelHint="Transparent"
+    ExtendClientAreaToDecorationsHint="False"
+	WindowDecorations="None"
+    x:Class="SuiteUserPopup.Views.PopupWindow"
+	LayoutUpdated="Popup_LayoutUpdated"
+    x:DataType="vm:PopupWindowViewModel">
+
+	<Design.DataContext>
+		<vm:PopupWindowViewModel/>
+	</Design.DataContext>
+
+	<Window.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.ThemeDictionaries>
+				<ResourceDictionary x:Key='Light'>
+					<BoxShadows x:Key="MainBoxShadow">-3 3 10 1 LightGray</BoxShadows>
+					<Color x:Key="MainBoxShadowColor">LightGray</Color>
+				</ResourceDictionary>		
+				<ResourceDictionary x:Key='Dark'>
+					<BoxShadows x:Key="MainBoxShadow">-4 1 15 1 Black</BoxShadows>
+					<Color x:Key="MainBoxShadowColor">Black</Color>
+				</ResourceDictionary>
+			</ResourceDictionary.ThemeDictionaries>
+		</ResourceDictionary>
+	</Window.Resources>
+
+	<StackPanel
+		Orientation="Horizontal"
+		Margin="0,13,7,13"
+		Background="Transparent">
+		
+		<!-- Company logo tab; not shown for a blocked-process notice, which uses the blocked app's own icon instead -->
+		<Canvas
+			IsVisible="{Binding !IsBlockedNotice}"
+			Margin="10,0,-1,0"
+			VerticalAlignment="Stretch"
+			Width="60"
+			Grid.Column="0">
+			<Path
+				Canvas.Top="11"
+				VerticalAlignment="Center"
+				Fill="{DynamicResource CompanyLogoBackgroundBrush}"
+				Opacity="0.97"
+				Data="M60,0
+					v155.59
+					c0-14.66-18.1-33.24-40-39.81
+					C13.67,113.71-.16,106.81,0,95.78
+					v-35.97
+					c-.16-11.03,13.67-17.93,20-20
+					C41.9,33.24,60,14.66,60,0Z">
+				<Path.Effect>
+					<DropShadowEffect
+						OffsetX="1"
+						OffsetY="1"
+						BlurRadius="25"
+						Color="{DynamicResource MainBoxShadowColor}"
+						Opacity="0.6"/>
+				</Path.Effect>
+			</Path>
+			<!-- Company logo; for static images the outline (when too close in colour to the tab) is baked into the bitmap itself -->
+			<UserControl
+				Content="{Binding CompanyLogo}"
+				Width="40"
+				Height="40"
+				Canvas.Left="8"
+				Canvas.Top="68" />
+		</Canvas>
+
+		<Border Width="16" IsVisible="{Binding IsBlockedNotice}"/>
+
+		<!-- Main View-->
+		<Border
+			MaxWidth="330"
+			MinWidth="330"
+			CornerRadius="15"
+			Background="{DynamicResource SystemAltHighColor}"
+			Opacity="0.97"
+			BoxShadow="{DynamicResource MainBoxShadow}">
+			<TransitioningContentControl
+				Content="{Binding MainView}"/>
+		</Border>
+
+		<Border Width="8" IsVisible="{Binding IsBlockedNotice}"/>
+	</StackPanel>
+</Window>

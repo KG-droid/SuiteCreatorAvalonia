@@ -1,0 +1,214 @@
+<Window 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:SuiteCreatorAvalonia.ViewModels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:dh="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	xmlns:views="using:SuiteCreatorAvalonia.Views"
+    mc:Ignorable="d" 
+	d:DesignWidth="800" 
+	d:DesignHeight="450"
+    x:Class="SuiteCreatorAvalonia.Views.MainWindow"
+	x:CompileBindings="True"
+	services:DialogManager.Register="{Binding}"
+	ExtendClientAreaToDecorationsHint="true"
+	BorderThickness="0"
+    x:DataType="vm:MainWindowViewModel"
+	Background="{DynamicResource SystemAccentColor}"
+    Icon="/Assets/Images/SuiteCreatorLogo.ico"
+    Title="Suite Creator">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+	<Window.Styles>
+		<Style Selector="WindowDrawnDecorations /template/ TextBlock">
+			<Setter Property="IsVisible" Value="False" />
+		</Style>
+	</Window.Styles>
+
+	<Window.KeyBindings>
+		<KeyBinding 
+			Gesture="Ctrl+S" 
+			Command="{Binding SaveCommand}" />
+	</Window.KeyBindings>
+
+	<Grid>
+		<dh:DialogHost
+			Identifier="MainDialogHost"
+			DialogMargin="30"
+			DisableOpeningAnimation="true"
+			dh:DialogHostStyle.CornerRadius="8">
+			<dh:DialogHost.DataTemplates>
+				<DataTemplate DataType="vm:AutoRecoveryViewModel">
+					<StackPanel
+						Margin="50,10,50,10"
+						MinWidth="420"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Spacing="15">
+						<TextBlock
+							Text="Auto-Recovered Saves Found"
+							HorizontalAlignment="Center"
+							FontWeight="Bold"
+							FontSize="20"/>
+						<TextBlock
+							Text="One or more auto-recovered saves were found from previous sessions. Select one to restore, discard all, or be reminded again next launch."
+							TextWrapping="Wrap"
+							TextAlignment="Center"
+							HorizontalAlignment="Center"
+							Margin="20,0,20,0"/>
+						<ListBox
+							ItemsSource="{Binding Entries}"
+							SelectedItem="{Binding SelectedEntry}"
+							MaxHeight="240"
+							Margin="0,0,0,0">
+							<ListBox.ItemTemplate>
+								<DataTemplate DataType="vm:AutoRecoveryEntryViewModel">
+									<Grid
+										ColumnDefinitions="*,Auto"
+										Margin="5,4,5,4">
+										<StackPanel
+											Grid.Column="0"
+											Spacing="2">
+											<TextBlock
+												Text="{Binding ProjectName}"
+												FontWeight="SemiBold"/>
+											<TextBlock
+												Text="{Binding LastModified}"
+												FontSize="11"
+												Opacity="0.7"/>
+										</StackPanel>
+										<Button
+											Grid.Column="1"
+											Classes="IconButton"
+											Tag="Delete"
+											Foreground="{DynamicResource BinButton}"
+											ToolTip.Tip="Delete this recovery file"
+											VerticalAlignment="Center"
+											Command="{Binding DeleteCommand}"/>
+									</Grid>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+						<StackPanel
+							Orientation="Horizontal"
+							HorizontalAlignment="Center"
+							Spacing="10">
+							<Button
+								Content="Restore Selected"
+								FontWeight="Bold"
+								Padding="15,5,15,5"
+								Command="{Binding RestoreCommand}"/>
+							<Button
+								Content="Discard All"
+								Padding="15,5,15,5"
+								Command="{Binding DiscardAllCommand}"/>
+							<Button
+								Content="Remind Me Next Time"
+								Padding="15,5,15,5"
+								Command="{Binding RemindNextTimeCommand}"/>
+						</StackPanel>
+					</StackPanel>
+				</DataTemplate>
+				<DataTemplate DataType="vm:AboutViewModel">
+					<StackPanel
+						Margin="40,20,40,20"
+						MaxWidth="440"
+						Spacing="10"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center">
+						<Image
+							Source="/Assets/Images/SuiteCreatorLogo.ico"
+							Width="52"
+							Height="52"
+							HorizontalAlignment="Center"/>
+						<TextBlock
+							Text="{Binding AppTitle}"
+							FontSize="22"
+							FontWeight="Bold"
+							HorizontalAlignment="Center"/>
+						<TextBlock
+							Text="{Binding VersionText}"
+							Opacity="0.7"
+							HorizontalAlignment="Center"/>
+						<TextBlock
+							Text="{Binding Author}"
+							HorizontalAlignment="Center"/>
+						<TextBlock
+							Text="{Binding Description}"
+							TextWrapping="Wrap"
+							TextAlignment="Center"
+							Margin="0,6,0,0"/>
+						<StackPanel
+							Orientation="Horizontal"
+							HorizontalAlignment="Center"
+							Spacing="6">
+							<TextBlock
+								Text="{Binding LicenseText}"
+								Opacity="0.7"
+								VerticalAlignment="Center"/>
+							<TextBlock
+								Text="—"
+								Opacity="0.7"
+								VerticalAlignment="Center"/>
+							<HyperlinkButton
+								Content="View on GitHub"
+								Padding="2,0,2,0"
+								Command="{Binding OpenRepoCommand}"/>
+						</StackPanel>
+						<Button
+							Content="   Close   "
+							HorizontalAlignment="Center"
+							Margin="0,10,0,0"
+							Command="{Binding CloseCommand}"/>
+					</StackPanel>
+				</DataTemplate>
+				<DataTemplate DataType="vm:DialogHostViewModel">
+					<StackPanel
+						Margin="50,10,50,10"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Spacing="15">
+						<TextBlock
+							Text="{Binding Title}"
+							HorizontalAlignment="Center"
+							FontWeight="Bold"
+							FontSize="20"/>
+						<TextBlock
+							Text="{Binding Msg}"
+							TextWrapping="Wrap"
+							TextAlignment="Center"
+							HorizontalAlignment="Center"
+							Margin="30,0,30,0"/>
+						<ItemsControl
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+							ItemsSource="{Binding popButtons}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<StackPanel Orientation="Horizontal" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<ContentPresenter Content="{Binding Content}" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</StackPanel>
+				</DataTemplate>
+			</dh:DialogHost.DataTemplates>
+			<UserControl
+				Content="{Binding MainView}"/>
+		</dh:DialogHost>
+
+		<!-- Interactive help spotlight overlay; hidden until a help walkthrough/tour is started -->
+		<views:HelpOverlayView
+			x:Name="HelpOverlay"/>
+	</Grid>
+
+</Window>

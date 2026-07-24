@@ -1,0 +1,70 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0-windows10.0.22000.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<PublishAot>true</PublishAot>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+		<ApplicationIcon>SuiteCreatorLogo.ico</ApplicationIcon>
+		<PackageIcon>SuiteCreatorLogoImage.png</PackageIcon>
+		<Platforms>AnyCPU;x64</Platforms>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <Version>1.0.3</Version>
+        <AssemblyVersion>1.0.3</AssemblyVersion>
+        <FileVersion>1.0.3</FileVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <AvaloniaXaml Remove="DebugAssets\**" />
+	  <Compile Remove="DebugAssets\**" />
+	  <Content Remove="DebugAssets\**" />
+	  <EmbeddedResource Remove="DebugAssets\**" />
+	  <None Remove="DebugAssets\**" />
+	  <Page Remove="DebugAssets\**" />
+	  <PRIResource Remove="DebugAssets\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="SuiteCreatorLogo.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\SuiteCreatorAvalonia\Assets\Images\SuiteCreatorLogoImage.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<TrimmerRootAssembly Include="SuiteOperations" />
+		<TrimmerRootAssembly Include="SuiteCreatorModels" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Logger\Logger.csproj" />
+		<ProjectReference Include="..\MSITools\MSITools.csproj" />
+		<ProjectReference Include="..\MSIxTools\MSIxTools.csproj" />
+		<ProjectReference Include="..\SuiteCreatorModels\SuiteCreatorModels.csproj" />
+		<ProjectReference Include="..\SuiteOperations\SuiteOperations.csproj" />
+		<ProjectReference Include="..\SystemTools\SystemTools.csproj" />
+		<ProjectReference Include="..\UserTools\UserTools.csproj" />
+	</ItemGroup>
+	
+	<Target Name="FlattenDebugAssets" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+		<ItemGroup>
+			<DebugAssetFiles Include="DebugAssets\**\*" />
+		</ItemGroup>
+		<Copy SourceFiles="@(DebugAssetFiles)" DestinationFiles="@(DebugAssetFiles->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+	</Target>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0">
+			<ExcludeAssets>*</ExcludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+</Project>

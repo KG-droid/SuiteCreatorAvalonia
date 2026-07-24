@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:services="using:SuiteCreatorAvalonia.Services"
+             x:Class="SuiteCreatorAvalonia.Views.ServClosuresView"
+             services:Help.Title="Service Closures"
+             services:Help.PageSummary="Stop Windows services before the suite runs its installs, so files they hold aren't locked. Add a closure event per service; you can also control whether the service is restarted afterwards."
+			 x:DataType="vm:ServClosuresViewModel">
+
+	<Design.DataContext>
+		<vm:ServClosuresViewModel/>
+	</Design.DataContext>
+
+	<UserControl Content="{Binding IoEventViewModel}"/>
+
+</UserControl>

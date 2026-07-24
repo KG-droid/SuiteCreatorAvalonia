@@ -1,0 +1,312 @@
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:local="clr-namespace:SuiteCreatorAvalonia.Views"
+	xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
+	xmlns:enums="using:SuiteCreatorAvalonia.Enums"
+	xmlns:services="clr-namespace:SuiteCreatorAvalonia.Services"
+    mc:Ignorable="d"
+    d:DesignWidth="800"
+    d:DesignHeight="900"
+	services:DialogManager.Register="{Binding}"
+    x:Class="SuiteCreatorAvalonia.Views.PackageMSIInstallSubDetailsView"
+    x:DataType="vm:PackageMSIInstallSubDetailsViewModel">
+
+	<Design.DataContext>
+		<vm:PackageMSIInstallSubDetailsViewModel/>
+	</Design.DataContext>
+
+	<ScrollViewer>
+		<StackPanel
+			Spacing="5">
+
+			<!-- MSI file -->
+			<TextBlock
+				Grid.Column="0"
+                Text="Selected MSI:"/>
+			<Grid
+				ColumnDefinitions="*, Auto">
+				<TextBox
+					Text="{Binding MsiFilePath}"
+					Grid.Column="0"
+					PlaceholderText="No MSI selected"
+					TextWrapping="Wrap"/>
+				<Button
+					Grid.Column="2"
+					Classes="IconButton"
+					Foreground="ORange"
+					Command="{Binding BrowseForMSICommand}"
+					ToolTip.Tip="Browse for a different MSI"
+					Tag="Package"/>
+			</Grid>
+
+			<!-- Transform File -->
+			<StackPanel
+				Spacing="5">
+				<TextBlock
+					Text="Transform File"/>
+				<Grid
+					ColumnDefinitions="*, Auto">
+					<TextBox
+						Text="{Binding TransformFile}"
+                        PlaceholderText="No transform file selected"/>
+					<Button
+						Grid.Column="1"
+						Command="{Binding BrowseForTransformCommand}"
+						Foreground="{DynamicResource PlusButton}"
+						Tag="FilePlus"
+						Classes="IconButton"/>
+				</Grid>
+			</StackPanel>
+
+			<!-- Patch File -->
+			<StackPanel
+				Spacing="5">
+				<TextBlock
+					Text="Patch File"/>
+				<Grid
+					ColumnDefinitions="*, Auto">
+					<TextBox
+						Text="{Binding PatchFile}"
+                        PlaceholderText="No Patch file selected"/>
+					<Button
+						Grid.Column="1"
+						Command="{Binding BrowseForPatchCommand}"
+						Foreground="{DynamicResource PlusButton}"
+						Tag="FilePlus"
+						Classes="IconButton"/>
+				</Grid>
+			</StackPanel>
+
+			<Grid
+				ColumnDefinitions="Auto,Auto,Auto"
+				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+
+				<!-- Context -->
+				<TextBlock
+					Grid.Column="0"
+					Grid.Row="0"
+					VerticalAlignment="Center"
+					Text="Context:"/>
+				<ToggleSwitch
+					IsChecked="{Binding IsUserContext}"
+					VerticalAlignment="Center"
+					Grid.Column="1"
+					Grid.ColumnSpan="2"
+					Grid.Row="0"
+					Margin="0,0,-10,0"
+					OffContent="System"
+					OnContent="User"
+					ToolTip.Tip="Adds /q switch"/>
+
+				<!-- Family removal -->
+				<TextBlock
+					Grid.Column="0"
+					Grid.Row="1"
+					VerticalAlignment="Center"
+					Text="Remove Family:"/>
+				<ToggleSwitch
+					IsChecked="{Binding IsRemoveFamily}"
+					VerticalAlignment="Center"
+					Grid.Column="1"
+					Grid.ColumnSpan="2"
+					Grid.Row="1"
+					Margin="0,0,-10,0"
+					OffContent=""
+					OnContent=""/>
+				<TextBlock
+					Grid.Column="2"
+					Grid.Row="1"
+					MaxWidth="570"
+					TextWrapping="Wrap"
+					Margin="0,5,0,5"
+					Text="When run as removal/rollback, whether it should remove the specific product or all products in its family, based on its UpgradeCode. This also changes the detection, to product based, or to whether or not there is a version installed in the family greater or equal to this version."/>
+
+				<!-- Adjacent files -->
+				<TextBlock
+					Grid.Column="0"
+					Grid.Row="2"
+					VerticalAlignment="Center"
+					Margin="0,0,10,0"
+					Text="Include adjacent files:"/>
+				<ToggleSwitch
+					Grid.Column="1"
+					Grid.Row="2"
+					IsChecked="{Binding IncludeAdjacentFilesFolders}"
+					VerticalAlignment="Center"
+					Margin="0,0,-5,0"
+					OffContent=""
+					OnContent=""/>
+				<TextBlock
+					Grid.Column="2"
+					Grid.Row="2"
+					MaxWidth="570"
+					TextWrapping="Wrap"
+					Text="Whether or not to include all the files/folders adjacent to the MSI as well as the MSI itself in this package. Since some MSIs dont have all the files embedded within."/>
+
+				<!-- Secure Transforms -->
+				<TextBlock
+					Grid.Column="0"
+					Grid.Row="3"
+					VerticalAlignment="Center"
+					Text="Secure Transforms:"/>
+				<ToggleSwitch
+					Grid.Column="1"
+					Grid.Row="3"
+					IsChecked="{Binding SecureTransforms}"
+					Margin="0,0,-5,0"
+					VerticalAlignment="Center"
+					OffContent=""
+					OnContent=" "/>
+
+				<!-- Legacy Long file path support -->
+				<TextBlock
+					Grid.Column="0"
+					Grid.Row="4"
+					VerticalAlignment="Center"
+					Text="Legacy File Path:"/>
+				<ToggleSwitch
+					Grid.Column="1"
+					Grid.Row="4"
+					IsChecked="{Binding LegacyLongFilePath}"
+					VerticalAlignment="Center"
+					Margin="0,0,-5,0"
+					OffContent=""
+					OnContent=" "/>
+				<TextBlock
+					Grid.Column="2"
+					Grid.Row="4"
+					MaxWidth="570"
+					TextWrapping="Wrap"
+					Text="Add support for legacy installers that dont support long file paths, creates a virtual drive and runs the installer from there."/>
+
+				<!-- Restart Behavior -->
+				<TextBlock
+					Grid.Column="0"
+					Grid.Row="5"
+					VerticalAlignment="Center"
+					Text="Restart Behavior:"/>
+				<ComboBox
+					Grid.Column="1"
+					Grid.Row="5"
+					Grid.ColumnSpan="2"
+					VerticalAlignment="Center"
+					SelectedItem="{Binding RestartBehavior}"
+					ItemsSource="{helpers:EnumValues {x:Type enums:RestartBehavior}}"/>
+			</Grid>
+
+			<!-- Log Options -->
+			<Grid
+				Margin="0,5,0,10"
+				ColumnDefinitions="Auto,10,*,Auto">
+				<CheckBox
+					Name="Log_CheckBox"
+					Content="Create Log"
+					IsChecked="{Binding IsCreateLog}"
+					ToolTip.Tip="Adds /l*v [LogPath] switch"/>
+				<TextBox
+					IsVisible="{Binding IsChecked, ElementName=Log_CheckBox}"
+					Text="{Binding LogPath}"
+					Grid.Column="2"
+					PlaceholderText="Path to the log file e.g. C:\Modern-Workplace-Logs\MyInstaller.log"/>
+				<Button
+					IsVisible="{Binding IsChecked, ElementName=Log_CheckBox}"
+					Command="{Binding GenerateLogPathCommand}"
+					Grid.Column="3"
+					ToolTip.ShowOnDisabled="True"
+					ToolTip.Tip="Auto Generate from the selected MSI, and Log path from the settings"
+					Classes="IconButton"
+					Tag="Autofix"/>
+			</Grid>
+
+			<!-- Custom Properties -->
+			<StackPanel
+				HorizontalAlignment="Left"
+				Width="400"
+				Spacing="5">
+				<TextBlock
+					Text="Custom MSI Properties"/>
+				<StackPanel 
+					Orientation="Horizontal"
+					Margin="10,0,0,0">
+					<TextBlock
+						VerticalAlignment="Center"
+						Text="Property Name:"
+						Margin="0,0,5,0"/>
+					<TextBox
+						PlaceholderText="Enter property name"
+						TextWrapping="Wrap"
+						Width="250"
+						Text="{Binding NewPropertyName}"
+						Margin="0,0,20,0"/>
+					<TextBlock
+						VerticalAlignment="Center"
+						Text="Property Value:"
+						Margin="0,0,5,0"/>
+					<TextBox
+						PlaceholderText="Enter property value"
+						TextWrapping="Wrap"
+						Width="250"
+						Text="{Binding NewPropertyValue}"/>
+					<Button
+						Classes="IconButton"
+						Foreground="{DynamicResource PlusButton}"
+						Tag="Add"
+						ToolTip.Tip="Add Property"
+						Command="{Binding AddPropertyCommand}"
+						Grid.Column="1"/>
+				</StackPanel>
+				<StackPanel
+					Orientation="Horizontal">
+					<DataGrid
+						IsVisible="{Binding Properties.Count}"
+						SelectionMode="Single"
+						ItemsSource="{Binding Properties}"
+						SelectedItem="{Binding SelectedProperty}"
+						AutoGenerateColumns="True">
+					</DataGrid>
+					<Button
+						VerticalAlignment="Top"
+						IsVisible="{Binding Properties.Count}"
+						Foreground="{DynamicResource BinButton}"
+						Classes="IconButton"
+						ToolTip.Tip="Remove selected Properties"
+						Tag="Minus"
+						Command="{Binding RemovePropertyCommand}"
+						Grid.Column="1"/>
+				</StackPanel>
+
+			</StackPanel>
+
+			<!-- Command Preview -->
+			<StackPanel
+				Spacing="10">
+				<TextBlock
+					Text="Command Line Preview" />
+				<TextBox
+					Text="{Binding CmdPreview}"
+					IsReadOnly="True"
+					Margin="10,0,0,0"
+                    TextWrapping="Wrap"/>
+				<TextBlock
+					FontSize="12"
+					Margin="10,0,0,0"
+					Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+					FontStyle="Italic"
+					Classes="InfoText"
+					Text="File Paths shown here will be substituted for the actual paths where the suite runs"/>
+				<TextBlock
+					IsVisible="{Binding !!MsiFilePath}"
+					Margin="10,0,0,0"
+					MaxWidth="570"
+					TextWrapping="Wrap"
+					HorizontalAlignment="Left"
+					Text="{Binding DetectionPreview}"/>
+			</StackPanel>
+		</StackPanel>
+	</ScrollViewer>
+</UserControl>

@@ -1,0 +1,263 @@
+<UserControl
+xmlns="https://github.com/avaloniaui"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+xmlns:mi="using:Material.Icons.Avalonia"
+xmlns:local="clr-namespace:SuiteCreatorAvalonia.Views"
+xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
+xmlns:enums="using:SuiteCreatorAvalonia.Enums"
+xmlns:services="clr-namespace:SuiteCreatorAvalonia.Services"
+services:DialogManager.Register="{Binding}"
+mc:Ignorable="d"
+d:DesignWidth="800"
+d:DesignHeight="650"
+x:Class="SuiteCreatorAvalonia.Views.PackageMSIRemoveDetailsView"
+x:DataType="vm:PackageMSIRemoveDetailsViewModel">
+
+	<Design.DataContext>
+		<vm:PackageMSIRemoveDetailsViewModel/>
+	</Design.DataContext>
+
+	<ScrollViewer>
+		<StackPanel
+		Margin="20"
+		Spacing="5"
+		services:Help.Title="MSI removal package details"
+		services:Help.Order="4"
+		services:Help.PageSummary="This removes an existing MSI product that isn't installed by this suite (for example, an older or conflicting version), so there's no MSI file for Suite Creator to read a code from automatically. Browse an MSI to grab its Upgrade/ProductCode, or paste the code in yourself — the removal command (msiexec /x with that code) and detection are then built from it for you."
+		services:Help.Text="This removes an existing MSI product that isn't installed by this suite (for example, an older or conflicting version), so there's no MSI file for Suite Creator to read a code from automatically. Browse an MSI to grab its Upgrade/ProductCode, or paste the code in yourself — the removal command (msiexec /x with that code) and detection are then built from it for you.">
+			<Grid
+			ColumnDefinitions="Auto,10,*,Auto"
+			RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+				<!-- Package Name -->
+				<TextBlock
+				Grid.Column="0"
+				Grid.Row="0"
+				Text="Package Name:" />
+				<TextBox
+				x:Name="PkgName_TextBox"
+				Text="{Binding Name}"
+				Grid.Row="0"
+				Grid.Column="2"/>
+
+				<!-- Requirement -->
+				<TextBlock
+				Grid.Row="1"
+				Grid.Column="0"
+				VerticalAlignment="Center"
+				Text="Requirement:"/>
+				<StackPanel
+				Grid.Row="1"
+				Grid.Column="2"
+				Grid.ColumnSpan="4"
+				Orientation="Horizontal">
+					<ToggleSwitch
+					Grid.Row="2"
+					Grid.Column="2"
+					Grid.ColumnSpan="3"
+					Name="Requirement_ToggleSwitch"
+					IsChecked="{Binding HasRequirements}"
+					VerticalAlignment="Center"
+					OffContent=""
+					OnContent=""/>
+					<TextBlock
+					Grid.Row="2"
+					Grid.Column="4"
+					FontSize="11"
+					FontStyle="Italic"
+					TextWrapping="Wrap"
+					Text="Add a rule/s to determine whether this package should install or not if the detection is not met"/>
+				</StackPanel>
+				<Expander
+				Grid.Row="2"
+				Grid.ColumnSpan="4"
+				Margin="10"
+				IsVisible="{Binding IsChecked, ElementName=Requirement_ToggleSwitch}"
+				Background="Transparent"
+				Header="Requirement Rules"
+				HorizontalAlignment="Stretch">
+					<UserControl
+					Content="{Binding RequirementRuleBuilder}"/>
+				</Expander>
+
+				<!-- Removal Type -->
+				<TextBlock
+				Grid.Row="3"
+				Grid.Column="0"
+				VerticalAlignment="Center"
+				Text="Removal Type:"/>
+				<ToggleSwitch
+				Grid.Row="3"
+				Grid.Column="2"
+				IsChecked="{Binding IsProductCodeRemoval}"
+				Name="RemovalType_ToggleSwitch"
+				VerticalAlignment="Center"
+				OffContent="Family"
+				OnContent="Product"
+				ToolTip.Tip="Adds /q switch"/>
+
+				<!-- Context -->
+				<TextBlock
+				Grid.Row="4"
+				Grid.Column="0"
+				VerticalAlignment="Center"
+				Text="Context:"/>
+				<ToggleSwitch
+				Grid.Row="4"
+				Grid.Column="2"
+				IsChecked="{Binding IsUserContext}"
+				VerticalAlignment="Center"
+				OffContent="System"
+				OnContent="User"/>
+
+				<!-- Product/Upgrade Code -->
+				<TextBlock
+				IsVisible="{Binding !IsChecked, ElementName=RemovalType_ToggleSwitch}"
+				Grid.Row="5"
+				Grid.Column="0"
+				Text="UpgradeCode:"/>
+				<TextBlock
+				IsVisible="{Binding IsChecked, ElementName=RemovalType_ToggleSwitch}"
+				Grid.Row="5"
+				Grid.Column="0"
+				Text="ProductCode:"/>
+				<TextBox
+				Text="{Binding RemovalCode}"
+				Grid.Row="5"
+				Grid.Column="2"
+				TextWrapping="Wrap"/>
+				<TextBlock
+				IsVisible="{Binding !IsChecked, ElementName=RemovalType_ToggleSwitch}"
+				FontStyle="Italic"
+				FontSize="{DynamicResource InfoFontSize}"
+				Grid.Column="2"
+				Grid.Row="6"
+				Margin="0,0,0,10"
+				Text="Removes any/all products and versions in the family that share this upgrade code"/>
+				<TextBlock
+				IsVisible="{Binding IsChecked, ElementName=RemovalType_ToggleSwitch}"
+				FontStyle="Italic"
+				FontSize="{DynamicResource InfoFontSize}"
+				Grid.Column="2"
+				Grid.Row="6"
+				Margin="0,0,0,10"
+				Text="Removes only this specific product/version"/>
+				<Button
+				Grid.Column="4"
+				Grid.Row="5"
+				Classes="IconButton"
+				Command="{Binding GetMSIRemovalCodeCommand}"
+				ToolTip.Tip="Browse for an MSI to get the code"
+				Tag="CodeBraces"/>
+
+
+				<!-- Logging Options -->
+				<CheckBox
+				Grid.Row="8"
+				Name="Log_CheckBox"
+				Content="Create Log"
+				IsChecked="{Binding IsCreateLog}"
+				ToolTip.Tip="Adds /l*v [LogPath] switch"/>
+				<TextBox
+				IsVisible="{Binding IsChecked, ElementName=Log_CheckBox}"
+				Text="{Binding LogPath}"
+				Grid.Row="8"
+				Grid.Column="2"
+				PlaceholderText="Path to the log file e.g. C:\Modern-Workplace-Logs\MyInstaller.log"/>
+				<Button
+				IsVisible="{Binding IsChecked, ElementName=Log_CheckBox}"
+				Command="{Binding GenerateLogPathCommand}"
+				Grid.Row="8"
+				Grid.Column="3"
+				ToolTip.ShowOnDisabled="True"
+				ToolTip.Tip="Auto Generate from the selected MSI, and Log path from the settings"
+				Classes="IconButton"
+				Tag="Autofix"/>
+
+				<!-- Restart Behavior -->
+				<TextBlock
+				Grid.Row="9"
+				Grid.Column="0"
+				VerticalAlignment="Center"
+				Margin="0,0,10,0"
+				Text="Restart Behavior:"/>
+				<ComboBox
+				Grid.Row="9"
+				Grid.Column="2"
+				Grid.ColumnSpan="2"
+				VerticalAlignment="Center"
+				SelectedItem="{Binding RestartBehavior}"
+				ItemsSource="{helpers:EnumValues {x:Type enums:RestartBehavior}}"/>
+
+			</Grid>
+
+			<!-- Custom Properties -->
+			<StackPanel
+			HorizontalAlignment="Left"
+			Width="400"
+			Spacing="5">
+				<TextBlock
+				Text="Custom MSI Properties"/>
+				<StackPanel
+				Orientation="Horizontal"
+				Margin="10,0,0,0">
+					<TextBlock
+					VerticalAlignment="Center"
+					Text="Property Name:"
+					Margin="0,0,5,0"/>
+					<TextBox
+					PlaceholderText="Enter property name"
+					TextWrapping="Wrap"
+					Width="250"
+					Text="{Binding NewPropertyName}"
+					Margin="0,0,20,0"/>
+					<TextBlock
+					VerticalAlignment="Center"
+					Text="Property Value:"
+					Margin="0,0,5,0"/>
+					<TextBox
+					PlaceholderText="Enter property value"
+					TextWrapping="Wrap"
+					Width="250"
+					Text="{Binding NewPropertyValue}"/>
+					<Button
+					Classes="IconButton"
+					Foreground="{DynamicResource PlusButton}"
+					Tag="Add"
+					ToolTip.Tip="Add Property"
+					Command="{Binding AddPropertyCommand}"/>
+				</StackPanel>
+				<StackPanel
+				Orientation="Horizontal">
+					<DataGrid
+					IsVisible="{Binding Properties.Count}"
+					SelectionMode="Single"
+					ItemsSource="{Binding Properties}"
+					SelectedItem="{Binding SelectedProperty}"
+					AutoGenerateColumns="True"/>
+					<Button
+					VerticalAlignment="Top"
+					IsVisible="{Binding Properties.Count}"
+					Foreground="{DynamicResource BinButton}"
+					Classes="IconButton"
+					ToolTip.Tip="Remove selected property"
+					Tag="Minus"
+					Command="{Binding RemovePropertyCommand}"/>
+				</StackPanel>
+			</StackPanel>
+
+			<!-- Removal notes -->
+			<TextBlock
+			Grid.Row="10"
+			Grid.Column="0"
+			Grid.ColumnSpan="5"
+			TextWrapping="Wrap">
+				For MSI Family type removals the suite will find all products that share the same UpgradeCode and remove them, for Product type removals it will only remove the specific product/version that matches the ProductCode. The MSI removal command will be in the format of msiexec.exe /x [ProductCode] /q with additional switches added based on the options selected above.
+			</TextBlock>
+
+		</StackPanel>
+	</ScrollViewer>
+</UserControl>

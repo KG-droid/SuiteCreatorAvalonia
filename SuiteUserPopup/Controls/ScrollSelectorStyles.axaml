@@ -1,0 +1,61 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:SuiteUserPopup.Controls">
+
+    <Style Selector="controls|ScrollSelector">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+        <Style Selector="^ /template/ Button.navigation-button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="LightGray"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="^ /template/ Button.navigation-button:pointerover">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="^ /template/ Button.navigation-button:disabled">
+            <Setter Property="IsVisible" Value="false"/>
+        </Style>
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:ScrollSelector">
+                <Grid ClipToBounds="True"
+                      ColumnDefinitions="Auto,*,Auto">
+
+                    <Button Name="PART_PreviousButton"
+                            Classes="navigation-button"
+                            Grid.Column="0"
+                            Margin="0,0,8,0"
+                            Padding="8"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Content="❮" />
+
+                    <Border Name="PART_ItemsViewport"
+                            Grid.Column="1"
+                            Background="Transparent"
+                            ClipToBounds="True"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch">
+                        <!-- Items panel — orientation and children are managed in code-behind -->
+                        <StackPanel Name="PART_ItemsPanel"
+                                    Background="Transparent"
+                                    Spacing="8"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center" />
+                    </Border>
+
+                    <Button Name="PART_NextButton"
+                            Classes="navigation-button"
+                            Grid.Column="2"
+                            Margin="8,0,0,0"
+                            Padding="8"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Content="❯" />
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+</Styles>

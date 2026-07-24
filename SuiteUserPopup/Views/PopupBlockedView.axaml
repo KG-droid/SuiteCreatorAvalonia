@@ -1,0 +1,66 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteUserPopup.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:conv="using:Avalonia.Data.Converters"
+    mc:Ignorable="d"
+	d:DesignHeight="180"
+	d:DesignWidth="330"
+    x:Class="SuiteUserPopup.Views.PopupBlockedView"
+    x:DataType="vm:PopupBlockedViewModel">
+
+	<Design.DataContext>
+		<vm:PopupBlockedViewModel/>
+	</Design.DataContext>
+
+	<StackPanel
+		Margin="15"
+		Spacing="12">
+
+		<StackPanel
+			Orientation="Horizontal"
+			Spacing="8"
+			HorizontalAlignment="Center">
+			<Image
+				Source="{Binding AppIcon}"
+				Width="26"
+				Height="26"
+				IsVisible="{Binding AppIcon, Converter={x:Static conv:ObjectConverters.IsNotNull}}"/>
+			<mi:MaterialIcon
+				Kind="Block"
+				Width="26"
+				Height="26"
+				IsVisible="{Binding AppIcon, Converter={x:Static conv:ObjectConverters.IsNull}}"/>
+			<TextBlock
+				Text="Application Blocked"
+				FontSize="15"
+				FontWeight="Bold"
+				VerticalAlignment="Center"/>
+		</StackPanel>
+
+		<TextBlock
+			Text="{Binding MainText}"
+			FontSize="13"
+			TextWrapping="Wrap"
+			TextAlignment="Center"
+			HorizontalAlignment="Center"/>
+
+		<Button
+			Command="{Binding DismissCommand}"
+			HorizontalAlignment="Center"
+			Width="90"
+			Margin="0,5,0,0"
+			Background="{DynamicResource ButtonBackground}"
+			Foreground="{DynamicResource ButtonForeground}">
+			<TextBlock
+				Text="OK"
+				FontWeight="Bold"
+				HorizontalAlignment="Center"/>
+		</Button>
+
+	</StackPanel>
+
+</UserControl>

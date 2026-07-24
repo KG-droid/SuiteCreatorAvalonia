@@ -1,0 +1,96 @@
+<Window 
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteProgressPopup.ViewModels"  
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	Topmost="True"
+	RequestedThemeVariant="Default"
+	WindowStartupLocation="Manual"
+	ShowInTaskbar="False"
+	CanResize="False"
+	BorderThickness="0"
+	SizeToContent="WidthAndHeight"
+	Background="Transparent"
+	TransparencyLevelHint="Transparent"
+	ExtendClientAreaToDecorationsHint="False"
+	WindowDecorations="None"
+	Padding="15,0,0,0"
+	x:Class="SuiteProgressPopup.Views.ProgressWindow"
+	LayoutUpdated="Progress_LayoutUpdated"
+	x:DataType="vm:ProgressWindowViewModel">
+
+	<Design.DataContext>
+		<vm:ProgressWindowViewModel/>
+	</Design.DataContext>
+
+	<Window.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.ThemeDictionaries>
+				<ResourceDictionary x:Key='Light'>
+					<BoxShadows x:Key="MainBoxShadow">-3 3 10 1 LightGray</BoxShadows>
+					<Color x:Key="MainBoxShadowColor">LightGray</Color>
+				</ResourceDictionary>		
+				<ResourceDictionary x:Key='Dark'>
+					<BoxShadows x:Key="MainBoxShadow">-4 1 15 1 Black</BoxShadows>
+					<Color x:Key="MainBoxShadowColor">Black</Color>
+				</ResourceDictionary>
+			</ResourceDictionary.ThemeDictionaries>
+		</ResourceDictionary>
+	</Window.Resources>
+
+	<Border
+		Margin="0,13,10,13"
+		Padding="0,0,15,0"
+		MinWidth="280"
+		MaxWidth="280"
+		Background="{DynamicResource SystemAltHighColor}"
+		CornerRadius="20"
+		BoxShadow="{DynamicResource MainBoxShadow}">
+
+		<Grid 
+			ColumnDefinitions="Auto,10,*">
+
+			<!-- Suite logo; the outline (when the logo is too close in colour to the theme background) is baked into SuiteLogo itself -->
+			<Border
+				Grid.Column="0"
+				Padding="8,5,5,5"
+				VerticalAlignment="Center"
+				CornerRadius="20,0,0,20">
+				<Image
+					Source="{Binding SuiteLogo}"
+					Stretch="Uniform"
+					Width="36"
+					Height="36" />
+			</Border>
+
+			<!-- Progress content -->
+			<StackPanel
+				Grid.Column="2"
+				VerticalAlignment="Center"
+				Spacing="4">
+
+				<TextBlock
+					Text="{Binding StatusText}"
+					FontSize="12"
+					ToolTip.Tip="{Binding StatusText}"
+					TextTrimming="CharacterEllipsis" />
+
+				<ProgressBar
+					Grid.Column="0"
+					Classes="Pulse"
+					Height="8"
+					CornerRadius="4"
+					Minimum="0"
+					Maximum="100"
+					MinWidth="50"
+					Value="{Binding Percentage}"
+					IsIndeterminate="{Binding IsIndeterminate}"
+					Foreground="{Binding ProgressColourBrush}"
+					VerticalAlignment="Center" />
+
+			</StackPanel>
+		</Grid>
+	</Border>
+</Window>

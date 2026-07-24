@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels" 
+			 xmlns:views="using:SuiteCreatorAvalonia.Views"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:services="using:SuiteCreatorAvalonia.Services"
+             x:Class="SuiteCreatorAvalonia.Views.PowerShellView"
+             services:Help.Title="PS Scripts"
+             services:Help.PageSummary="Run PowerShell scripts as part of the suite, for anything the built-in event types don't cover. Write or link a script per event, add any supporting files it needs, and choose when it runs."
+			 x:DataType="vm:PowerShellViewModel">
+
+	<Design.DataContext>
+		<vm:PowerShellViewModel/>
+	</Design.DataContext>
+
+	<UserControl Content="{Binding IoEventViewModel}"/>
+
+</UserControl>

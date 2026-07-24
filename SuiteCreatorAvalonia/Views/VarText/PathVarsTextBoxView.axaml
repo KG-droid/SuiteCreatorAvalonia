@@ -1,0 +1,87 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:vm="using:SuiteCreatorAvalonia.ViewModels"
+	xmlns:models="using:SuiteCreatorAvalonia.Models.Common"
+	xmlns:views="using:SuiteCreatorAvalonia.Views"
+    mc:Ignorable="d" 
+	d:DesignWidth="700"
+	d:DesignHeight="100"
+    x:Class="SuiteCreatorAvalonia.Views.PathVarsTextBoxView"
+	x:DataType="vm:PathVarsTextBoxViewModel">
+
+	<Design.DataContext>
+		<vm:PathVarsTextBoxViewModel/>
+	</Design.DataContext>
+
+	<Border
+		Height="34"
+		CornerRadius="5"
+		Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+		<Grid
+			ColumnDefinitions="*,Auto"
+			RowDefinitions="Auto,Auto">
+			
+			<!--Text-->
+			<ItemsControl
+				x:Name="PathVars_ItemsControl"
+				Margin="5,0,5,0"
+				ItemsSource="{Binding InternalVariablePath}">
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<views:LastItemStretchPanel />
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+				
+				<ItemsControl.DataTemplates>
+					<!-- Text Template -->
+					<DataTemplate DataType="models:LiteralText">
+						<TextBox
+							Height="34"
+							MinHeight="34"
+							VerticalContentAlignment="Center"
+							AttachedToVisualTree="CMD_AttachedToVisualTree"
+							TextChanged="VarTextBox_TextChanged"
+							KeyUp="VarTextBox_KeyUp"
+							HorizontalAlignment="Stretch"
+							VerticalAlignment="Center"
+							Classes="NoFocusBorder"
+							Text="{Binding Value}" />
+					</DataTemplate>
+
+					<!-- FileVar Template -->
+					<DataTemplate DataType="models:FileVar">
+						<Button
+							Padding="1"
+							ToolTip.Tip="{Binding Node.FullPath}"
+							Content="{Binding Node.Name}" />
+					</DataTemplate>
+
+					<!-- SysVar Template -->
+					<DataTemplate DataType="models:SpecialDIR">
+						<Button
+							Padding="1"
+							Content="{Binding Value}" />
+					</DataTemplate>
+				</ItemsControl.DataTemplates>
+			</ItemsControl>
+
+			<!--Add files button-->
+			<Button
+				Grid.Column="1"
+				IsVisible="{Binding IsAddFileButtonVisible}"
+				Classes="IconButton"
+				Tag="FilePlus"
+				Height="34"
+				Width="34"
+				VerticalAlignment="Center"
+				Click="OpenFileTreeModelWindow_Click"
+				ToolTip.Tip="Insert a file to the command">
+			</Button>
+			
+		</Grid>
+	</Border>
+
+</UserControl>

@@ -1,0 +1,33 @@
+<Application xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:local="using:SuiteProgressPopup"
+			 x:Class="SuiteProgressPopup.App"
+			 x:CompileBindings="False"
+			 RequestedThemeVariant="Default">
+	<!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+	<Application.DataTemplates>
+		<local:ViewLocator/>
+	</Application.DataTemplates>
+
+	<Application.Styles>
+		<FluentTheme />
+
+		<Style Selector="ProgressBar.Pulse">
+			<Style.Animations>
+				<Animation Duration="0:0:1.2" IterationCount="INFINITE" Easing="SineEaseInOut">
+					<KeyFrame Cue="0%">
+						<Setter Property="Opacity" Value="0.55" />
+					</KeyFrame>
+					<KeyFrame Cue="50%">
+						<Setter Property="Opacity" Value="1.0" />
+					</KeyFrame>
+					<KeyFrame Cue="100%">
+						<Setter Property="Opacity" Value="0.55" />
+					</KeyFrame>
+				</Animation>
+			</Style.Animations>
+		</Style>
+	</Application.Styles>
+
+</Application>

@@ -1,0 +1,79 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+	x:Class="SuiteCreatorAvalonia.Views.HelpOverlayView"
+	IsVisible="False"
+	Focusable="True">
+
+	<Canvas x:Name="RootCanvas">
+		<!-- Dims the window with an even-odd "hole" punched over the spotlighted control -->
+		<Path
+			x:Name="DimPath"
+			Fill="#A0000000"/>
+		<Border
+			x:Name="HighlightBorder"
+			IsVisible="False"
+			IsHitTestVisible="False"
+			BorderBrush="#FFD400"
+			BorderThickness="3"
+			CornerRadius="5"/>
+		<Border
+			x:Name="CalloutBorder"
+			Width="340"
+			Background="{DynamicResource SystemRegionColor}"
+			CornerRadius="8"
+			BoxShadow="0 4 16 2 #80000000"
+			Padding="16,12,16,12">
+			<StackPanel
+				Spacing="10">
+				<Grid
+					ColumnDefinitions="*,Auto">
+					<TextBlock
+						x:Name="CalloutTitle"
+						Grid.Column="0"
+						FontWeight="Bold"
+						FontSize="16"
+						TextWrapping="Wrap"
+						VerticalAlignment="Center"/>
+					<Button
+						x:Name="CloseButton"
+						Grid.Column="1"
+						Content="✕"
+						FontSize="12"
+						Padding="6,2,6,2"
+						Background="Transparent"
+						VerticalAlignment="Top"
+						ToolTip.Tip="Close help (Esc)"/>
+				</Grid>
+				<TextBlock
+					x:Name="CalloutText"
+					TextWrapping="Wrap"/>
+				<Grid
+					x:Name="NavRow"
+					ColumnDefinitions="Auto,*,Auto,Auto">
+					<TextBlock
+						x:Name="StepCounter"
+						Grid.Column="0"
+						Opacity="0.7"
+						VerticalAlignment="Center"/>
+					<Button
+						x:Name="BackButton"
+						Grid.Column="2"
+						Content="Back"
+						Padding="12,4,12,4"
+						Margin="0,0,8,0"/>
+					<Button
+						x:Name="NextButton"
+						Grid.Column="3"
+						Content="Next"
+						FontWeight="Bold"
+						Padding="12,4,12,4"/>
+				</Grid>
+			</StackPanel>
+		</Border>
+	</Canvas>
+
+</UserControl>

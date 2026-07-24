@@ -1,0 +1,117 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	xmlns:AvaloniaEdit="using:AvaloniaEdit"
+	services:DialogManager.Register="{Binding}"
+    mc:Ignorable="d" d:DesignWidth="720" d:DesignHeight="640"
+    x:Class="SuiteCreatorAvalonia.Views.AdminExportView"
+	x:DataType="vm:AdminExportViewModel">
+
+	<Design.DataContext>
+		<vm:AdminExportViewModel/>
+	</Design.DataContext>
+
+	<ScrollViewer MaxHeight="800">
+		<StackPanel Margin="20" Spacing="14" Width="680">
+			<TextBlock FontWeight="Bold" FontSize="16" Text="Export Admin AppSettings.json"/>
+			<TextBlock
+				TextWrapping="Wrap"
+				Text="Builds a standalone AppSettings.json to place in the Suite Creator install directory, so it applies to every user. Anything left blank below is simply omitted, and the app will fall back to its normal default for it."/>
+
+			<!-- Company Logo -->
+			<TextBlock Text="Company Logo &amp; Background Color" FontWeight="DemiBold"/>
+			<StackPanel Orientation="Horizontal" Spacing="10">
+				<Grid HorizontalAlignment="Left">
+					<ColorPicker
+						ToolTip.Tip="Change Logo Background Color"
+						Height="60"
+						Width="100"
+						Color="{Binding CompanyLogoBackgroundColor}"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"/>
+					<Button
+						Margin="0,0,30,0"
+						Width="66"
+						Height="58"
+						x:Name="ChangeLogo_Button"
+						ToolTip.Tip="Change Logo"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Command="{Binding ImportCompanyLogoCommand}"
+						Background="Transparent">
+						<UserControl Content="{Binding CompanyLogoCtrl}"/>
+					</Button>
+					<Popup
+						IsOpen="{Binding CompanyLogoError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+						IsLightDismissEnabled="True"
+						Placement="RightEdgeAlignedTop"
+						PlacementTarget="{Binding ElementName=ChangeLogo_Button}">
+						<Border
+							Background="Red"
+							Padding="12,10,15,10"
+							CornerRadius="23">
+							<StackPanel
+								Orientation="Horizontal"
+								Spacing="5">
+								<mi:MaterialIcon
+									Kind="AlertCircle"
+									Foreground="White"
+									Width="24"
+									Height="24"/>
+								<TextBlock
+									Foreground="White"
+									Text="{Binding CompanyLogoError}"/>
+							</StackPanel>
+						</Border>
+					</Popup>
+				</Grid>
+				<Button
+					Command="{Binding ResetCompanyLogoCommand}"
+					Width="40"
+					Height="40"
+					Classes="IconButton"
+					ToolTip.Tip="Reset Color and Logo"
+					Tag="Restart"/>
+			</StackPanel>
+
+			<!-- Log Location -->
+			<TextBlock Text="Suite Log Location" FontWeight="DemiBold"/>
+			<TextBox Text="{Binding LogLocation}"/>
+
+			<!-- Global Popup Condition -->
+			<TextBlock Text="Global Popup Condition" FontWeight="DemiBold"/>
+			<TextBlock
+				TextWrapping="Wrap"
+				Text="A PowerShell script that is evaluated for every suite with a popup enabled. The script must output only $True or $False. Leave this empty for no global condition."/>
+			<Border
+				BorderBrush="Gray"
+				BorderThickness="1"
+				CornerRadius="7">
+				<AvaloniaEdit:TextEditor
+					x:Name="GlobalPopupCondition_TextEditor"
+					Document="{Binding GlobalPopupCondition}"
+					Margin="10"
+					MinHeight="120"
+					SyntaxHighlighting="PowerShell"
+					ShowLineNumbers="True"/>
+			</Border>
+
+			<TextBlock
+				TextWrapping="Wrap"
+				Foreground="Red"
+				IsVisible="{Binding ExportError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+				Text="{Binding ExportError}"/>
+
+			<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+				<Button Content="Close" Command="{Binding CloseCommand}"/>
+				<Button Content="Export to File..." FontWeight="Bold" Command="{Binding ExportCommand}"/>
+			</StackPanel>
+		</StackPanel>
+	</ScrollViewer>
+
+</UserControl>

@@ -1,0 +1,213 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
+	xmlns:avalonStyle="using:Avalonia.Styling"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	xmlns:enums="using:SuiteCreatorAvalonia.Enums"
+	xmlns:labsGif="using:Avalonia.Labs.Gif"
+	xmlns:AvaloniaEdit="using:AvaloniaEdit"
+	services:DialogManager.Register="{Binding}"
+    mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+    x:Class="SuiteCreatorAvalonia.Views.SettingsView"
+    services:Help.Title="Settings"
+    services:Help.PageSummary="Settings for the Suite Creator app itself — theme, behaviour and other preferences. These affect the editor only, not the suites you build."
+	Focusable="True"
+	x:DataType="vm:SettingsViewModel">
+
+	<Design.DataContext>
+		<vm:SettingsViewModel/>
+	</Design.DataContext>
+
+	<UserControl.KeyBindings>
+		<!-- Hidden admin shortcut: opens the admin AppSettings.json export dialog -->
+		<KeyBinding Gesture="Ctrl+Shift+A" Command="{Binding OpenAdminExportCommand}"/>
+	</UserControl.KeyBindings>
+
+	<ScrollViewer>
+		<StackPanel
+			Spacing="10"
+			Orientation="Vertical">
+			<TextBlock
+				Classes="TabHeader"
+				Text="Settings"
+				Grid.ColumnSpan="2"
+				Grid.Column="0"/>
+			<StackPanel
+				Orientation="Vertical"
+				Spacing="5">
+			
+				<!-- Theme -->
+				<TextBlock
+					Text="Theme"
+					Classes="FieldName"
+					FontWeight="DemiBold"
+					VerticalAlignment="Top"/>
+				<StackPanel
+					Spacing="10"
+					Orientation="Horizontal">
+					<ComboBox
+						x:Name="ThemeTypes_ComboBox"
+						ItemsSource="{Binding Themes}"
+						BorderThickness="1"
+						SelectedItem="{Binding Theme}"
+						Margin="10,0,0,0"
+						VerticalAlignment="Top"/>
+					<TextBlock
+						Text="- Default sets the theme to the current OS theme"/>
+				</StackPanel>
+			
+				<!-- Pane -->
+				<TextBlock
+					Text="Pane Control"
+					Margin="0,10,0,0"
+					Classes="FieldName"
+					FontWeight="DemiBold"
+					VerticalAlignment="Top"/>
+				<StackPanel
+					Orientation="Horizontal">
+					<ToggleSwitch
+						IsChecked="{Binding ManualPaneControl}"
+						Margin="10,0,0,0"
+						OnContent="Manual"
+						OffContent="Auto"
+						VerticalAlignment="Top"/>
+					<TextBlock
+						TextWrapping="Wrap"
+						Text="- Whether or not the pane on the left will auto show/hide when the pointer is moved over it"/>
+				</StackPanel>
+			
+				<!-- Accent -->
+				<TextBlock
+					Margin="0,10,0,0"
+					Text="Accent Colour"
+					FontWeight="DemiBold"
+					VerticalAlignment="Top"/>
+				<StackPanel
+					Margin="10,0,0,0"
+					Orientation="Horizontal">
+					<TextBlock
+						VerticalAlignment="Center"
+						Text="Dark Theme Accent:  "/>
+					<ColorPicker
+						IsColorModelVisible="false"
+						IsColorComponentsVisible="false"
+						IsColorPaletteVisible="False"
+						IsComponentSliderVisible="false"
+						IsHexInputVisible="false"
+						IsAccentColorsVisible="false"
+						IsAlphaVisible="False"
+						IsColorSpectrumSliderVisible="False"
+						MinSaturation="100"
+						Color="{Binding DarkAccentColour}"
+						Width="100"
+						HorizontalAlignment="Left">
+					</ColorPicker>
+					<TextBlock
+						Margin="30,0,0,0"
+						VerticalAlignment="Center"
+						Text="Light Theme Accent:  "/>
+					<ColorPicker
+						IsColorModelVisible="false"
+						IsColorComponentsVisible="false"
+						IsColorPaletteVisible="False"
+						IsComponentSliderVisible="false"
+						IsHexInputVisible="false"
+						IsColorSpectrumSliderVisible="false"
+						IsAccentColorsVisible="false"
+						IsAlphaVisible="False"
+						MinSaturation="5"
+						MaxSaturation="15"
+						Color="{Binding LightAccentColour}"
+						Width="100"
+						HorizontalAlignment="Left"/>
+				</StackPanel>
+			
+				<!-- Company Logo -->
+				<StackPanel
+					Margin="0,10,0,0"
+					Orientation="Horizontal"
+					Spacing="6">
+					<TextBlock
+						TextWrapping="Wrap"
+						MaxWidth="120"
+						Text="Company Logo &amp; Background Color"
+						VerticalAlignment="Center"
+						HorizontalAlignment="Left"
+						FontWeight="DemiBold"/>
+					<TextBlock
+						VerticalAlignment="Center"
+						FontStyle="Italic"
+						Text="(This setting is controlled by your administrator.)"/>
+				</StackPanel>
+				<UserControl Content="{Binding CompanyLogoPicker}"/>
+
+				<!-- Log Location -->
+				<StackPanel
+					Margin="0,10,0,0"
+					Orientation="Horizontal"
+					Spacing="6">
+					<TextBlock
+						MaxWidth="120"
+						Text="Suite Log Location"
+						VerticalAlignment="Center"
+						HorizontalAlignment="Left"
+						FontWeight="DemiBold"/>
+					<TextBlock
+						VerticalAlignment="Center"
+						FontStyle="Italic"
+						Text="(This setting is controlled by your administrator.)"/>
+				</StackPanel>
+				<TextBox
+					IsReadOnly="True"
+					HorizontalAlignment="Left"
+					Text="{Binding LogLocation}"
+					Margin="10,4,10,0"
+					Width="600"/>
+
+				<!-- Global Popup Condition -->
+				<StackPanel
+					Margin="0,10,0,0"
+					Orientation="Horizontal"
+					Spacing="6">
+					<TextBlock
+						Text="Global Popup Condition"
+						FontWeight="DemiBold"
+						VerticalAlignment="Center"/>
+					<TextBlock
+						VerticalAlignment="Center"
+						FontStyle="Italic"
+						Text="(This setting is controlled by your administrator.)"/>
+				</StackPanel>
+				<TextBlock
+					TextWrapping="Wrap"
+					MaxWidth="800"
+					Margin="10,2,0,4"
+					HorizontalAlignment="Left"
+					Text="A PowerShell script that is evaluated for every suite with a popup enabled, in addition to any condition script set on the popup page for that suite as well, so both must be met for the popup to show. The script must output only $True or $False, like Write-Output $False, or return $false. If the condition/s is/are not met, the popup will not show. If the script fails, the popup will show as a safety measure, and the suite execution will continue anyway."/>
+				<Border
+					Margin="10,0,0,10"
+					BorderBrush="Gray"
+					BorderThickness="1"
+					CornerRadius="7"
+					Width="800"
+					HorizontalAlignment="Left">
+					<AvaloniaEdit:TextEditor
+						x:Name="GlobalPopupCondition_TextEditor"
+						Document="{Binding GlobalPopupCondition}"
+						IsReadOnly="True"
+						Margin="10"
+						MinHeight="120"
+						SyntaxHighlighting="PowerShell"
+						ShowLineNumbers="True"/>
+				</Border>
+
+			</StackPanel>
+		</StackPanel>
+	</ScrollViewer>
+
+</UserControl>

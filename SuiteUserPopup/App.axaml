@@ -1,0 +1,110 @@
+<Application xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:local="using:SuiteUserPopup"
+			 x:Class="SuiteUserPopup.App"
+			 xmlns:mi="using:Material.Icons.Avalonia"
+			 x:CompileBindings="False"
+			 RequestedThemeVariant="Default">
+	<!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+	<Application.DataTemplates>
+		<local:ViewLocator/>
+	</Application.DataTemplates>
+
+	<Application.Resources>
+		<SolidColorBrush x:Key="CompanyLogoForegroundBrush" Color="#FFFFFFFF" /> <!-- White -->
+		<SolidColorBrush x:Key="CompanyLogoBackgroundBrush" Color="#00000000" /> <!-- Transparent -->
+		<SolidColorBrush x:Key="CompanyLogoBackgroundShadeBrush" Color="#FF808080" /> <!-- Gray -->
+	</Application.Resources>
+
+	<Application.Styles>
+		<FluentTheme>
+			<FluentTheme.Palettes>
+				<ColorPaletteResources x:Key="Light">
+					<ColorPaletteResources.Accent>#ff0073cf</ColorPaletteResources.Accent>
+					<ColorPaletteResources.AltHigh>White</ColorPaletteResources.AltHigh>
+					<ColorPaletteResources.AltLow>White</ColorPaletteResources.AltLow>
+					<ColorPaletteResources.AltMedium>White</ColorPaletteResources.AltMedium>
+					<ColorPaletteResources.AltMediumHigh>White</ColorPaletteResources.AltMediumHigh>
+					<ColorPaletteResources.AltMediumLow>White</ColorPaletteResources.AltMediumLow>
+					<ColorPaletteResources.BaseHigh>#161616</ColorPaletteResources.BaseHigh>
+					<ColorPaletteResources.BaseLow>#ffcccccc</ColorPaletteResources.BaseLow>
+					<ColorPaletteResources.BaseMedium>#ff898989</ColorPaletteResources.BaseMedium>
+					<ColorPaletteResources.BaseMediumHigh>#ff5d5d5d</ColorPaletteResources.BaseMediumHigh>
+					<ColorPaletteResources.BaseMediumLow>#ff737373</ColorPaletteResources.BaseMediumLow>
+					<ColorPaletteResources.ChromeAltLow>#ff5d5d5d</ColorPaletteResources.ChromeAltLow>
+					<ColorPaletteResources.ChromeBlackHigh>Black</ColorPaletteResources.ChromeBlackHigh>
+					<ColorPaletteResources.ChromeBlackLow>#ffcccccc</ColorPaletteResources.ChromeBlackLow>
+					<ColorPaletteResources.ChromeBlackMedium>#ff5d5d5d</ColorPaletteResources.ChromeBlackMedium>
+					<ColorPaletteResources.ChromeBlackMediumLow>#ff898989</ColorPaletteResources.ChromeBlackMediumLow>
+					<ColorPaletteResources.ChromeDisabledHigh>#ffcccccc</ColorPaletteResources.ChromeDisabledHigh>
+					<ColorPaletteResources.ChromeDisabledLow>#ff898989</ColorPaletteResources.ChromeDisabledLow>
+					<ColorPaletteResources.ChromeGray>#ff737373</ColorPaletteResources.ChromeGray>
+					<ColorPaletteResources.ChromeHigh>#ffcccccc</ColorPaletteResources.ChromeHigh>
+					<ColorPaletteResources.ChromeLow>#ffececec</ColorPaletteResources.ChromeLow>
+					<ColorPaletteResources.ChromeMedium>#ffe6e6e6</ColorPaletteResources.ChromeMedium>
+					<ColorPaletteResources.ChromeMediumLow>#ffececec</ColorPaletteResources.ChromeMediumLow>
+					<ColorPaletteResources.ChromeWhite>White</ColorPaletteResources.ChromeWhite>
+					<ColorPaletteResources.ListLow>#ffe6e6e6</ColorPaletteResources.ListLow>
+					<ColorPaletteResources.ListMedium>#ffcccccc</ColorPaletteResources.ListMedium>
+					<ColorPaletteResources.RegionColor>White</ColorPaletteResources.RegionColor>
+				</ColorPaletteResources>
+				<ColorPaletteResources x:Key="Dark">
+					<ColorPaletteResources.Accent>#ff0073cf</ColorPaletteResources.Accent>
+					<ColorPaletteResources.AltHigh>#161616</ColorPaletteResources.AltHigh>
+					<ColorPaletteResources.AltLow>#161616</ColorPaletteResources.AltLow>
+					<ColorPaletteResources.AltMedium>#161616</ColorPaletteResources.AltMedium>
+					<ColorPaletteResources.AltMediumHigh>#161616</ColorPaletteResources.AltMediumHigh>
+					<ColorPaletteResources.AltMediumLow>#161616</ColorPaletteResources.AltMediumLow>
+					<ColorPaletteResources.BaseHigh>#d3d3d3</ColorPaletteResources.BaseHigh>
+					<ColorPaletteResources.BaseLow>#ff333333</ColorPaletteResources.BaseLow>
+					<ColorPaletteResources.BaseMedium>#ff9a9a9a</ColorPaletteResources.BaseMedium>
+					<ColorPaletteResources.BaseMediumHigh>#ffb4b4b4</ColorPaletteResources.BaseMediumHigh>
+					<ColorPaletteResources.BaseMediumLow>#ff676767</ColorPaletteResources.BaseMediumLow>
+					<ColorPaletteResources.ChromeAltLow>#ffb4b4b4</ColorPaletteResources.ChromeAltLow>
+					<ColorPaletteResources.ChromeBlackHigh>Black</ColorPaletteResources.ChromeBlackHigh>
+					<ColorPaletteResources.ChromeBlackLow>#ffb4b4b4</ColorPaletteResources.ChromeBlackLow>
+					<ColorPaletteResources.ChromeBlackMedium>Black</ColorPaletteResources.ChromeBlackMedium>
+					<ColorPaletteResources.ChromeBlackMediumLow>Black</ColorPaletteResources.ChromeBlackMediumLow>
+					<ColorPaletteResources.ChromeDisabledHigh>#ff333333</ColorPaletteResources.ChromeDisabledHigh>
+					<ColorPaletteResources.ChromeDisabledLow>#ff9a9a9a</ColorPaletteResources.ChromeDisabledLow>
+					<ColorPaletteResources.ChromeGray>Gray</ColorPaletteResources.ChromeGray>
+					<ColorPaletteResources.ChromeHigh>Gray</ColorPaletteResources.ChromeHigh>
+					<ColorPaletteResources.ChromeLow>#ff151515</ColorPaletteResources.ChromeLow>
+					<ColorPaletteResources.ChromeMedium>#ff1d1d1d</ColorPaletteResources.ChromeMedium>
+					<ColorPaletteResources.ChromeMediumLow>#ff2c2c2c</ColorPaletteResources.ChromeMediumLow>
+					<ColorPaletteResources.ChromeWhite>White</ColorPaletteResources.ChromeWhite>
+					<ColorPaletteResources.ListLow>#ff1d1d1d</ColorPaletteResources.ListLow>
+					<ColorPaletteResources.ListMedium>#ff333333</ColorPaletteResources.ListMedium>
+					<ColorPaletteResources.RegionColor>#222222</ColorPaletteResources.RegionColor>
+				</ColorPaletteResources>
+			</FluentTheme.Palettes>
+		</FluentTheme>
+		<StyleInclude Source="avares://SuiteUserPopup/Controls/ScrollSelectorStyles.axaml" />
+		<StyleInclude Source="avares://SuiteUserPopup/Controls/ClockTimePickerStyles.axaml" />
+		<mi:MaterialIconStyles />
+
+		<Style Selector="Image.PointerEnlarge:pointerover">
+			<Setter Property="RenderTransform">
+				<Setter.Value>
+					<ScaleTransform ScaleX="1.1" ScaleY="1.1"/>
+				</Setter.Value>
+			</Setter>
+		</Style>
+
+		<Style Selector="Button">
+			<Setter Property="Foreground" Value="{DynamicResource CompanyLogoForegroundBrush}"/>
+			<Setter Property="Background" Value="{DynamicResource CompanyLogoBackgroundBrush}"/>
+		</Style>
+
+		<Style Selector="TimePicker:pointerover">
+			<Setter Property="Background" Value="{DynamicResource ButtonBackgroundPointerOver}"/>
+		</Style>
+
+		<Style Selector="TimePickerPresenter Button#PART_AcceptButton:pointerover, TimePickerPresenter Button#PART_DismissButton:pointerover">
+			<Setter Property="Foreground" Value="{DynamicResource ButtonForeground}" />
+		</Style>
+
+	</Application.Styles>
+
+</Application>

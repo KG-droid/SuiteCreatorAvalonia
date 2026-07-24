@@ -1,0 +1,146 @@
+<UserControl 
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:local="clr-namespace:SuiteCreatorAvalonia.Views"
+	xmlns:services="clr-namespace:SuiteCreatorAvalonia.Services"
+    mc:Ignorable="d" 
+	d:DesignWidth="800" 
+	d:DesignHeight="650"
+	services:DialogManager.Register="{Binding}"
+    x:Class="SuiteCreatorAvalonia.Views.PackageMSIxRemoveDetailsView"
+	x:DataType="vm:PackageMSIxRemoveDetailsViewModel">
+
+	<Design.DataContext>
+		<vm:PackageMSIxRemoveDetailsViewModel/>
+	</Design.DataContext>
+
+	<ScrollViewer>
+		<StackPanel
+			Spacing="10"
+			Margin="20"
+			services:Help.Title="MSIx removal package details"
+			services:Help.Order="4"
+			services:Help.PageSummary="This removes an existing MSIx/AppX package that isn't installed by this suite. Browse an .msix file to grab its PackageFamilyName (removes all versions in the family) or PackageFullName (removes just that specific version), or paste the value in yourself — the removal command is built from it automatically."
+			services:Help.Text="This removes an existing MSIx/AppX package that isn't installed by this suite. Browse an .msix file to grab its PackageFamilyName (removes all versions in the family) or PackageFullName (removes just that specific version), or paste the value in yourself — the removal command is built from it automatically.">
+			<!-- Common MSI Options -->
+            <Grid
+                ColumnDefinitions="Auto,10,Auto,5,*"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                Margin="0,10,0,0">
+
+				<!-- Package Name -->
+				<TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Text="Package Name:"/>
+				<TextBox
+					x:Name="PkgName_TextBox"
+					Grid.Row="0"
+					Text="{Binding Name}"
+					Grid.Column="2"
+					Grid.ColumnSpan="3"/>
+
+				<!-- Requirement -->
+				<TextBlock
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Text="Requirement:"/>
+				<ToggleSwitch
+                    Grid.Row="1"
+                    Grid.Column="2"
+					Grid.ColumnSpan="3"
+                    Name="Requirement_ToggleSwitch"
+					IsChecked="{Binding HasRequirements}"
+                    VerticalAlignment="Center"
+                    OffContent=""
+                    OnContent=""/>
+				<TextBlock
+                    Grid.Row="1"
+                    Grid.Column="4"
+                    FontSize="{DynamicResource InfoFontSize}"
+                    FontStyle="Italic"
+                    TextWrapping="Wrap"
+					Margin="47,0,0,0"
+                    Text="Add a rule/s to determine whether this package should be removed or not even if the detection is met"/>
+				<Expander
+					Grid.Row="2"
+					Grid.ColumnSpan="5"
+					Margin="0,0,0,10"
+					IsVisible="{Binding IsChecked, ElementName=Requirement_ToggleSwitch}"
+					Background="Transparent"
+					Header="Requirement Rules"
+					HorizontalAlignment="Stretch">
+					<UserControl
+						Content="{Binding RequirementRuleBuilder}"/>
+				</Expander>
+
+				<!-- Removal Type -->
+				<TextBlock
+                    Grid.Row="3"
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Text="Removal Type:"/>
+				<ToggleSwitch
+                    Grid.Row="3"
+                    Grid.Column="2"
+					Grid.ColumnSpan="3"
+                    Name="RemovalType_ToggleSwitch"
+					IsChecked="{Binding IsProductRemoval}"
+                    VerticalAlignment="Center"
+                    OffContent="Family"
+                    OnContent="Specific Version"/>
+
+				<!-- PFN Name -->
+				<TextBlock
+                    Grid.Row="4"
+                    Grid.Column="0"
+					IsVisible="{Binding !IsChecked, ElementName=RemovalType_ToggleSwitch}"
+                    VerticalAlignment="Center"
+                    Text="PackageFamilyName:"/>
+				<TextBlock
+                    Grid.Row="4"
+                    Grid.Column="0"
+					IsVisible="{Binding IsChecked, ElementName=RemovalType_ToggleSwitch}"
+                    VerticalAlignment="Center"
+                    Text="PackageFullname:      "/>
+				<Grid
+					Grid.Row="4"
+					Grid.Column="2"
+                    Grid.ColumnSpan="3"
+					ColumnDefinitions="*,Auto">
+					<TextBox
+						IsVisible="{Binding !IsChecked, ElementName=RemovalType_ToggleSwitch}"
+						Grid.Column="0"
+						Text="{Binding RemovalCode}"
+                        PlaceholderText="No PackageFamilyName provided"/>
+					<TextBox
+						IsVisible="{Binding IsChecked, ElementName=RemovalType_ToggleSwitch}"
+						Grid.Column="0"
+						Text="{Binding RemovalCode}"
+                        PlaceholderText="No PackageFullName provided"/>
+					<Button
+						IsVisible="{Binding !IsChecked, ElementName=RemovalType_ToggleSwitch}"
+						Grid.Column="1"
+						Command="{Binding BrowseForPFNCommand}"
+						CommandParameter="PackageFamilyName"
+						Classes="IconButton"
+						Tag="HumanMaleFemaleChild"/>
+					<Button
+						IsVisible="{Binding IsChecked, ElementName=RemovalType_ToggleSwitch}"
+						Grid.Column="1"
+						Command="{Binding BrowseForPFNCommand}"
+						CommandParameter="PackageFullName"
+						Classes="IconButton"
+						Tag="TagText"/>
+				</Grid>
+            </Grid>
+		</StackPanel>
+	</ScrollViewer>
+	
+</UserControl>

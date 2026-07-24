@@ -1,0 +1,120 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:SuiteUserPopup.Controls">
+
+    <Style Selector="controls|ClockTimePicker">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:ClockTimePicker">
+                <Panel>
+                    <ToggleButton Name="PART_ToggleButton"
+                                  HorizontalAlignment="Center"
+                                  Padding="16,8"
+                                  CornerRadius="6">
+                        <TextBlock Text="{TemplateBinding DisplayText}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"/>
+                    </ToggleButton>
+
+                    <Popup Name="PART_Popup"
+                           IsLightDismissEnabled="True"
+                           WindowManagerAddShadowHint="False">
+                        <Border Background="{DynamicResource SystemAltHighColor}"
+                                CornerRadius="12"
+                                Padding="16"
+                                BoxShadow="0 2 12 0 #40000000">
+                            <StackPanel Spacing="12" Width="232">
+
+                                <!-- Header: HH : MM readout (click to switch editing mode) + AM/PM -->
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="4"
+                                                VerticalAlignment="Center"
+                                                Grid.Column="0">
+                                        <Button Name="PART_HourModeButton"
+                                                Content="{TemplateBinding HourDisplay}"
+                                                Foreground="{DynamicResource SystemBaseHighColor}"
+                                                FontSize="24"
+                                                Padding="4,0"
+                                                Background="Transparent"
+                                                BorderThickness="0"/>
+                                        <TextBlock Text=":" FontSize="24" VerticalAlignment="Center"/>
+                                        <Button Name="PART_MinuteModeButton"
+                                                Content="{TemplateBinding MinuteDisplay}"
+                                                Foreground="{DynamicResource SystemBaseHighColor}"
+                                                FontSize="24"
+                                                Padding="4,0"
+                                                Background="Transparent"
+                                                BorderThickness="0"/>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Vertical"
+                                                Spacing="2"
+                                                VerticalAlignment="Center"
+                                                Grid.Column="1">
+                                        <ToggleButton Name="PART_AmButton"
+                                                      Content="AM"
+                                                      FontSize="11"
+                                                      Padding="8,2"/>
+                                        <ToggleButton Name="PART_PmButton"
+                                                      Content="PM"
+                                                      FontSize="11"
+                                                      Padding="8,2"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Clock face -->
+                                <Canvas Name="PART_ClockCanvas"
+                                        Width="200"
+                                        Height="200"
+                                        Background="Transparent"
+                                        HorizontalAlignment="Center">
+                                    <Ellipse Width="200"
+                                             Height="200"
+                                             IsHitTestVisible="False"
+                                             Fill="{DynamicResource SystemBaseLowColor}"/>
+                                    <Line Name="PART_Hand"
+                                          IsHitTestVisible="False"
+                                          Stroke="{DynamicResource SystemAccentColor}"
+                                          StrokeThickness="2"/>
+                                    <Ellipse Name="PART_HandKnob"
+                                             Width="30"
+                                             Height="30"
+                                             IsHitTestVisible="False"
+                                             Fill="{DynamicResource SystemAccentColor}"/>
+                                    <Ellipse Width="8"
+                                             Height="8"
+                                             Canvas.Left="96"
+                                             Canvas.Top="96"
+                                             IsHitTestVisible="False"
+                                             Fill="{DynamicResource SystemAccentColor}"/>
+                                </Canvas>
+
+                                <Button Name="PART_DoneButton"
+                                        Content="Done"
+                                        HorizontalAlignment="Right"
+                                        Padding="14,4"/>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </Panel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="controls|ClockTimePicker /template/ TextBlock.clock-number">
+        <Setter Property="Foreground" Value="{DynamicResource SystemBaseHighColor}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+
+    <Style Selector="controls|ClockTimePicker /template/ TextBlock.clock-number.selected">
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+    </Style>
+
+    <Style Selector="controls|ClockTimePicker /template/ ToggleButton#PART_AmButton, controls|ClockTimePicker /template/ ToggleButton#PART_PmButton">
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+
+</Styles>
