@@ -55,3 +55,7 @@ If you want to contribute or understand how the pieces fit together — the edit
 Found a bug or have a feature idea? [Open an issue](../../issues) — bug reports and feature requests are both welcome.
 
 Want to contribute code? Fork the repo, make your changes on a branch, and open a pull request. All changes to `main` go through review before merging.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
