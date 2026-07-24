@@ -6,6 +6,8 @@ Instead of hand-rolling a wrapper script per app, you build the suite visually: 
 
 > **Note:** Suite Creator is a new project. It's actively used and maintained, but as with any early-stage app you may run into bugs or rough edges — see [Contributing](#contributing) below for how to report them.
 
+**[⬇ Download the latest release](../../releases/latest)**
+
 ![Suite Creator overview](docs/images/hero.png)
 
 ## What you can bundle into a suite
