@@ -4,6 +4,8 @@ Suite Creator lets software packagers bundle multiple installs, uninstalls, and 
 
 Instead of hand-rolling a wrapper script per app, you build the suite visually: add your packages, the files/registry/environment changes they need, any end-user messaging, then hit Build. Suite Creator produces a single executable plus a detection rule for your deployment tool.
 
+> **Note:** Suite Creator is a new project. It's actively used and maintained, but as with any early-stage app you may run into bugs or rough edges — see [Contributing](#contributing) below for how to report them.
+
 ![Suite Creator overview](docs/images/hero.png)
 
 ## What you can bundle into a suite
@@ -47,3 +49,9 @@ A few app-wide settings — the popup company logo/background colour, the suite 
 ## Working on the repo
 
 If you want to contribute or understand how the pieces fit together — the editor app, the AOT-compiled runtime executables (`SuiteExecutor`, `SuiteUserPopup`, `SuiteProgressPopup`, `SuiteSfxStub`) that get bundled into every built suite, and the full build → deploy → execute flow — read the **[developer guide](docs/developer-guide.md)**. It includes a flow diagram of the whole pipeline and the non-obvious build wiring you need to know before changing runtime code.
+
+## Contributing
+
+Found a bug or have a feature idea? [Open an issue](../../issues) — bug reports and feature requests are both welcome.
+
+Want to contribute code? Fork the repo, make your changes on a branch, and open a pull request. All changes to `main` go through review before merging.
