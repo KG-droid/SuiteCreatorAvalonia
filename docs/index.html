@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suite Creator | Bundle App Installs into One Windows Suite</title>
+<meta name="description" content="Suite Creator is a free, open-source Windows tool that bundles multiple installers, files, registry changes, and configuration into one deployable suite for Intune, SCCM, and PDQ.">
+<link rel="canonical" href="https://kg-droid.github.io/SuiteCreatorAvalonia/">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Suite Creator | Bundle App Installs into One Windows Suite">
+<meta property="og:description" content="Free, open-source Windows packaging tool. Bundle installers, files, registry, and configuration into one deployable suite for Intune, SCCM, and PDQ.">
+<meta property="og:url" content="https://kg-droid.github.io/SuiteCreatorAvalonia/">
+<meta property="og:image" content="https://kg-droid.github.io/SuiteCreatorAvalonia/images/hero.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Suite Creator | Bundle App Installs into One Windows Suite">
+<meta name="twitter:description" content="Free, open-source Windows packaging tool. Bundle installers, files, registry, and configuration into one deployable suite for Intune, SCCM, and PDQ.">
+<meta name="twitter:image" content="https://kg-droid.github.io/SuiteCreatorAvalonia/images/hero.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Suite Creator",
+  "operatingSystem": "Windows",
+  "applicationCategory": "DeveloperApplication",
+  "description": "Suite Creator bundles multiple installers, files, registry changes, and configuration into one deployable suite for Windows software packaging.",
+  "url": "https://kg-droid.github.io/SuiteCreatorAvalonia/",
+  "downloadUrl": "https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+
+<style>
+  :root{
+    --bg: #0a0f1a;
+    --bg-alt: #0d1526;
+    --card: #101c33;
+    --card-border: #1c2a45;
+    --text: #e7edf7;
+    --text-dim: #9db0cc;
+    --accent: #38bdf8;
+    --accent-2: #fb923c;
+    --radius: 14px;
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  a{ color: inherit; }
+  img{ max-width: 100%; height: auto; display: block; }
+  .wrap{ max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  header{
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(10,15,26,0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--card-border);
+  }
+  .nav{ display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; }
+  .brand{ display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; text-decoration: none; }
+  .brand img{ width: 28px; height: 28px; border-radius: 7px; }
+  .nav-links{ display: flex; align-items: center; gap: 28px; }
+  .nav-links a{ text-decoration: none; color: var(--text-dim); font-size: 15px; font-weight: 600; }
+  .nav-links a:hover{ color: var(--text); }
+  .nav-cta{ display:flex; gap: 10px; align-items:center; }
+
+  .btn{
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 20px; border-radius: 999px; font-weight: 700; font-size: 15px;
+    text-decoration: none; border: 1px solid transparent; white-space: nowrap;
+  }
+  .btn-primary{ background: linear-gradient(135deg, var(--accent), #60a5fa); color: #06111f; }
+  .btn-primary:hover{ filter: brightness(1.08); }
+  .btn-ghost{ border-color: var(--card-border); color: var(--text); }
+  .btn-ghost:hover{ border-color: var(--accent); }
+  .btn-sm{ padding: 8px 16px; font-size: 14px; }
+
+  .hero{ padding: 88px 0 40px; text-align: center; }
+  .eyebrow{
+    display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: .04em;
+    color: var(--accent); background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3);
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 22px;
+  }
+  h1{ font-size: 46px; font-weight: 800; line-height: 1.15; margin: 0 0 20px; letter-spacing: -0.02em; }
+  h1 span{ background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p.lead{ font-size: 19px; color: var(--text-dim); max-width: 640px; margin: 0 auto 32px; }
+  .hero-actions{ display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 56px; }
+
+  .shot{
+    border-radius: var(--radius); border: 1px solid var(--card-border);
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+  .hero-shot{ max-width: 980px; margin: 0 auto; }
+
+  section{ padding: 72px 0; }
+  .section-head{ text-align: center; max-width: 640px; margin: 0 auto 48px; }
+  .section-head h2{ font-size: 32px; font-weight: 800; margin: 0 0 14px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-dim); font-size: 16px; margin: 0; }
+
+  .grid{ display: grid; gap: 20px; }
+  .grid-features{ grid-template-columns: repeat(3, 1fr); }
+  .card{
+    background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
+    padding: 26px;
+  }
+  .card .icon{
+    width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    background: rgba(56,189,248,0.12); color: var(--accent); margin-bottom: 16px; font-size: 20px;
+  }
+  .card h3{ font-size: 17px; margin: 0 0 8px; font-weight: 700; }
+  .card p{ font-size: 14.5px; color: var(--text-dim); margin: 0; }
+
+  .grid-shots{ grid-template-columns: repeat(2, 1fr); }
+  figure{ margin: 0; }
+  figure figcaption{ text-align: center; font-size: 14px; color: var(--text-dim); margin-top: 12px; font-weight: 600; }
+
+  .strip{ background: var(--bg-alt); border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); }
+  .grid-strip{ grid-template-columns: repeat(3, 1fr); text-align: center; }
+  .grid-strip .num{ font-size: 15px; }
+
+  .docs-list{ display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); }
+  .doc-card{
+    background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
+    padding: 22px; text-decoration: none; transition: border-color .15s;
+  }
+  .doc-card:hover{ border-color: var(--accent); }
+  .doc-card h3{ margin: 0 0 6px; font-size: 16px; }
+  .doc-card p{ margin: 0; color: var(--text-dim); font-size: 14px; }
+
+  .cta{ text-align: center; }
+  .cta h2{ font-size: 30px; font-weight: 800; margin: 0 0 12px; }
+  .cta p{ color: var(--text-dim); margin: 0 0 28px; }
+
+  .note{
+    max-width: 760px; margin: 0 auto; text-align: center; color: var(--text-dim);
+    font-size: 14px; background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.25);
+    padding: 14px 20px; border-radius: 10px;
+  }
+
+  footer{ border-top: 1px solid var(--card-border); padding: 40px 0; }
+  .foot-row{ display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .foot-links{ display: flex; gap: 20px; flex-wrap: wrap; }
+  .foot-links a{ color: var(--text-dim); text-decoration: none; font-size: 14px; font-weight: 600; }
+  .foot-links a:hover{ color: var(--text); }
+  .copy{ color: var(--text-dim); font-size: 13px; }
+
+  @media (max-width: 860px){
+    .nav-links{ display: none; }
+    h1{ font-size: 34px; }
+    .grid-features{ grid-template-columns: repeat(2, 1fr); }
+    .grid-shots{ grid-template-columns: 1fr; }
+    .grid-strip{ grid-template-columns: 1fr; }
+    .docs-list{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px){
+    .grid-features{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#">
+      <img src="favicon.png" alt="Suite Creator logo">
+      Suite Creator
+    </a>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#docs">Docs</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia">GitHub</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-primary btn-sm" href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">Download</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <span class="eyebrow">FREE &amp; OPEN SOURCE · MIT LICENSED</span>
+    <h1>Bundle your installs<br>into <span>one deployable suite.</span></h1>
+    <p class="lead">
+      Suite Creator lets software packagers combine installs, uninstalls, and configuration
+      steps into a single executable — ready for Intune, SCCM, PDQ, or any deployment tool.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">⬇ Download the latest release</a>
+      <a class="btn btn-ghost" href="https://github.com/KG-droid/SuiteCreatorAvalonia">View on GitHub</a>
+    </div>
+    <div class="shot hero-shot">
+      <img src="images/hero.png" alt="Suite Creator editor showing the event list sidebar for a new suite" width="2580" height="1003" loading="eager">
+    </div>
+  </section>
+
+  <section id="features" class="wrap">
+    <div class="section-head">
+      <h2>Everything a suite needs, in one place</h2>
+      <p>Add as many of these as your deployment requires — each one gets its own install and uninstall behaviour.</p>
+    </div>
+    <div class="grid grid-features">
+      <div class="card">
+        <div class="icon">📦</div>
+        <h3>Packages</h3>
+        <p>MSI, MSIX, or any installer executable, run in order, each with its own install/uninstall behaviour.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📁</div>
+        <h3>Files &amp; Folders</h3>
+        <p>Deploy files to the device — placed during install, removed on uninstall, or left permanently.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🗝️</div>
+        <h3>Registry</h3>
+        <p>Create registry keys and values, with full control over whether they're removed on uninstall.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🧩</div>
+        <h3>Environment &amp; Extensions</h3>
+        <p>Set environment variables like <code>PATH</code>, or install browser extensions as part of the suite.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🪟</div>
+        <h3>Popups</h3>
+        <p>End-user messaging while the suite runs — warnings, install progress, and deferrals with a timer.</p>
+      </div>
+      <div class="card">
+        <div class="icon">⚙️</div>
+        <h3>Executables &amp; PS Scripts</h3>
+        <p>Run setup utilities, commands, or full PowerShell scripts with supporting files bundled alongside.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🛡️</div>
+        <h3>Certificates &amp; Drivers</h3>
+        <p>Install certificates into a chosen store, or install/remove Windows drivers from an <code>.inf</code>.</p>
+      </div>
+      <div class="card">
+        <div class="icon">✋</div>
+        <h3>Service &amp; Process Closures</h3>
+        <p>Stop services or close running processes before installs run, so files aren't locked.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔀</div>
+        <h3>Rules &amp; Shortcuts</h3>
+        <p>Gate any event on a file, registry value, or condition match, and create desktop or Start Menu shortcuts.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="screenshots" class="strip">
+    <div class="wrap" style="padding-top:72px; padding-bottom:72px;">
+      <div class="section-head">
+        <h2>See it in action</h2>
+        <p>A visual editor for every step — no hand-rolled wrapper scripts.</p>
+      </div>
+      <div class="grid grid-shots">
+        <figure class="shot">
+          <img src="images/files-folders.png" alt="Files and Folders configuration screen in Suite Creator" width="2580" height="1003" loading="lazy">
+          <figcaption>Files &amp; Folders</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="images/registry.png" alt="Registry configuration screen in Suite Creator" width="2580" height="1003" loading="lazy">
+          <figcaption>Registry</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="images/popups.png" alt="Popup designer screen in Suite Creator" width="2580" height="1003" loading="lazy">
+          <figcaption>Popups</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="images/build.png" alt="Build screen in Suite Creator" width="2580" height="1003" loading="lazy">
+          <figcaption>Build</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-head">
+      <h2>Built for how packaging actually works</h2>
+      <p></p>
+    </div>
+    <div class="grid grid-strip">
+      <div class="card">
+        <h3>One exe, any deployment tool</h3>
+        <p>Suite Creator produces a single executable plus a detection rule — push it out with Intune, SCCM, PDQ, or anything else that runs an .exe.</p>
+      </div>
+      <div class="card">
+        <h3>End-user aware</h3>
+        <p>Warn users before an upgrade, show install progress, and let them defer with a timer — all previewable before you ship.</p>
+      </div>
+      <div class="card">
+        <h3>Centrally locked down</h3>
+        <p>Admins can enforce the popup branding, log location, and a global PowerShell gate via an <code>AppSettings.json</code>, instead of leaving it to each packager.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="docs" class="wrap">
+    <div class="section-head">
+      <h2>Documentation</h2>
+      <p>Guides for building suites, locking down settings, and understanding the runtime.</p>
+    </div>
+    <div class="docs-list">
+      <a class="doc-card" href="https://github.com/KG-droid/SuiteCreatorAvalonia/blob/main/docs/user-popup-guide.md">
+        <h3>User popup guide →</h3>
+        <p>What the end-user warning popup is for, and how the deferral flow works.</p>
+      </a>
+      <a class="doc-card" href="https://github.com/KG-droid/SuiteCreatorAvalonia/blob/main/docs/admin-guide.md">
+        <h3>Admin guide →</h3>
+        <p>Centrally enforcing the company logo, log location, and global popup condition.</p>
+      </a>
+      <a class="doc-card" href="https://github.com/KG-droid/SuiteCreatorAvalonia/blob/main/docs/developer-guide.md">
+        <h3>Developer guide →</h3>
+        <p>Solution architecture and the full build → deploy → execute flow.</p>
+      </a>
+    </div>
+  </section>
+
+  <section class="wrap cta">
+    <h2>Ready to build your first suite?</h2>
+    <p>Free to use, MIT licensed, and open to contributions.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">⬇ Download the latest release</a>
+      <a class="btn btn-ghost" href="https://github.com/KG-droid/SuiteCreatorAvalonia/issues">Report a bug / request a feature</a>
+    </div>
+  </section>
+
+  <div class="wrap" style="padding-bottom: 60px;">
+    <p class="note">Suite Creator is a new project. It's actively used and maintained, but as with any early-stage app you may run into bugs or rough edges — issues are welcome.</p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span class="copy">MIT licensed · © Suite Creator contributors</span>
+    <div class="foot-links">
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia">GitHub</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">Releases</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia/issues">Issues</a>
+      <a href="https://github.com/sponsors/KG-droid">Sponsor</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

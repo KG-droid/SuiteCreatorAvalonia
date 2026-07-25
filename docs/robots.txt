@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kg-droid.github.io/SuiteCreatorAvalonia/sitemap.xml
