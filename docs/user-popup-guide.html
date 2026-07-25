@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User Popup Guide | Suite Creator</title>
+<meta name="description" content="How Suite Creator's end-user warning popup works: enabling it, linking it to process closures, deferrals, timers, and conditions.">
+<link rel="canonical" href="https://kg-droid.github.io/SuiteCreatorAvalonia/user-popup-guide.html">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <img src="favicon.png" alt="Suite Creator logo">
+      Suite Creator
+    </a>
+    <nav class="nav-links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#screenshots">Screenshots</a>
+      <a href="index.html#docs">Docs</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia">GitHub</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-primary btn-sm" href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">Download</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap doc-header">
+    <a class="eyebrow-link" href="index.html#docs">← Back to Suite Creator</a>
+    <h1>The User Popup: Warning Users Before a Suite Runs</h1>
+    <p class="dek">How the end-user warning popup works — enabling it, linking it to process closures, deferrals, timers, and conditions.</p>
+    <nav class="doc-nav">
+      <a href="user-popup-guide.html" class="active">User popup guide</a>
+      <a href="admin-guide.html">Admin guide</a>
+      <a href="developer-guide.html">Developer guide</a>
+    </nav>
+  </div>
+
+  <article class="wrap doc-body">
+    <p>Deployments have a human problem: the moment your suite closes an app to upgrade it, someone might be halfway through unsaved work in that app. The <strong>user popup</strong> is Suite Creator's answer — a small, branded window shown to the logged-in user <em>before</em> the suite makes any changes, telling them what's about to happen, which of their running apps will be closed, and (optionally) letting them defer the run to a time that suits them.</p>
+
+    <div class="shot" style="width: 70%"><picture>
+      <source srcset="images/light/user-popup-warning.png" media="(prefers-color-scheme: light)">
+      <img src="images/user-popup-warning.png" alt="The user popup warning view" loading="lazy">
+    </picture></div>
+
+    <p>The popup shows:</p>
+    <ul>
+      <li>Your <strong>company logo</strong> on the coloured tab (set on the Popups page, or <a href="admin-guide.html">enforced by an admin</a>), and the <strong>suite logo</strong>, product name and version from the Build page.</li>
+      <li>The <strong>action</strong> ("Upgrade", "Install", whatever text you choose) with a pickable icon.</li>
+      <li>Your <strong>message text</strong> — separate messages for Deployment and for Removal/Rollback runs.</li>
+      <li>A row of the user's <strong>running apps that will be closed</strong> (when linked to Process Closures — see below), with their real icons and names.</li>
+      <li>A <strong>countdown timer</strong> with what happens when it expires.</li>
+      <li><strong>Later (n)</strong> — defer the run, with the number of remaining delay days shown — and <strong>Continue</strong>.</li>
+    </ul>
+
+    <h2>Enabling it</h2>
+    <p>On the <strong>Popups</strong> page, tick <strong>Enable warning Popup</strong>. From there you can write the Deployment and Removal/Rollback messages, set the action text and icon, and use <strong>Popup Preview</strong> to see a live sample of exactly what users will get — including switching between the Deployment and Removal previews.</p>
+
+    <div class="shot"><picture>
+      <source srcset="images/light/popups.png" media="(prefers-color-scheme: light)">
+      <img src="images/popups.png" alt="The Popups configuration page" loading="lazy">
+    </picture></div>
+
+    <h2>Linking to Process Closures</h2>
+    <p>The most useful configuration for upgrades: tick <strong>Link to Process Closures</strong> on the Popups page. This changes the popup's behaviour in two ways:</p>
+    <ol>
+      <li><strong>The popup only appears when it matters.</strong> If none of the processes listed on your Process Closures page are actually running on the device, there is nothing to warn the user about — the popup is skipped entirely and the suite proceeds silently.</li>
+      <li><strong>The popup shows the user exactly which of their apps will be closed</strong>, with each app's real icon and display name (resolved even for Store/MSIX apps), so "save your work" is concrete rather than vague.</li>
+    </ol>
+    <p>Combined with a deferral window, this gives users a genuine chance to finish what they're doing: they see <em>"these apps of yours will be closed"</em>, and can either save up and hit <strong>Continue</strong>, or push the whole install to later.</p>
+
+    <h2>Deferral: letting users skip the install until later</h2>
+    <p>If <strong>Max Delay Days</strong> is greater than zero, the popup shows a <strong>Later</strong> button with the remaining allowance (e.g. "Later (7)"). Choosing it opens a time picker:</p>
+
+    <div class="shot" style="width: 70%"><picture>
+      <source srcset="images/light/user-popup-reminder.png" media="(prefers-color-scheme: light)">
+      <img src="images/user-popup-reminder.png" alt="The reminder time picker" loading="lazy">
+    </picture></div>
+
+    <p>The user picks a time later that day, and the suite exits without making changes (exit code 1602, so your deployment tool records the run accurately). A scheduled reminder task re-runs the suite at the chosen time, where the same popup appears again and they can defer again — until the allowance runs out:</p>
+    <ul>
+      <li>The <strong>first time</strong> the popup ever shows, the date is recorded. The delay allowance counts down in calendar days from then, not per-click.</li>
+      <li>Once the user has burned through the maximum delay days, they're warned; after that the skip option is gone and they get one final countdown of your configured <strong>Timer</strong> length before the suite proceeds.</li>
+      <li>Restarting the machine to dodge the final run doesn't work — the deployment runs silently on the next startup/logon instead.</li>
+    </ul>
+
+    <h2>Timers and unattended edge cases</h2>
+    <p>A popup is only useful if someone is there to see it. These settings (all on the Popups page) control what happens when they aren't:</p>
+    <div class="doc-table-wrap">
+      <table>
+        <thead><tr><th>Setting</th><th>What it controls</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Timer</strong></td><td>Minutes the user has to make a choice. A progress bar counts it down on the popup.</td></tr>
+          <tr><td><strong>Timer Expire Action</strong></td><td>Continue or Skip when the timer runs out with no choice made.</td></tr>
+          <tr><td><strong>User Logged off action</strong></td><td>What to do when the suite runs with no one logged in.</td></tr>
+          <tr><td><strong>Locked Device action</strong></td><td>What to do when a user is logged in but the screen is locked/asleep — including if it locks <em>during</em> the timer.</td></tr>
+          <tr><td><strong>ESP action</strong></td><td>What to do during Windows device initial setup (Autopilot ESP).</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Conditions: showing the popup only when a script says so</h2>
+    <p>Two optional PowerShell gates run before the popup is shown, and both must pass:</p>
+    <ol>
+      <li>The <strong>global popup condition</strong> — set by an administrator for every suite built with that install of Suite Creator (see the <a href="admin-guide.html">admin guide</a>).</li>
+      <li>The <strong>per-suite popup condition</strong> — tick <strong>Set Popup Condition</strong> on the Popups page and write a script.</li>
+    </ol>
+    <p>Each script must output only <code>$True</code> (show the popup) or <code>$False</code> (skip the popup and continue the suite). If a script errors, the popup is shown anyway — failing safe, so a broken script can never cause users' apps to be closed without warning.</p>
+
+    <h2>How it works under the hood</h2>
+    <p><code>SuiteUserPopup.exe</code> is its own small AOT-compiled Avalonia app, bundled into every built suite (see the <a href="developer-guide.html">developer guide</a>). The elevated <code>SuiteExecutor</code> launches it <strong>in the logged-in user's session</strong> and reads the outcome back from its exit code: continue (0), device locked (1), error (2), defer (3, with the chosen reminder time on stdout), timer expired (4), or missing logo (5). Everything the popup displays comes from a <code>popconfig.json</code> the Creator writes at build time, plus the logo images bundled next to it.</p>
+  </article>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span class="copy">MIT licensed · © Suite Creator contributors</span>
+    <div class="foot-links">
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia">GitHub</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">Releases</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia/issues">Issues</a>
+      <a href="https://github.com/sponsors/KG-droid">Sponsor</a>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="trademark-note">All product names, logos, and brands shown on this page are property of their respective owners and are used for illustration only. Use of these names does not imply endorsement.</p>
+  </div>
+</footer>
+
+</body>
+</html>

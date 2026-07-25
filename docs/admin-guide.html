@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Guide | Suite Creator</title>
+<meta name="description" content="How to centrally lock down Suite Creator's company logo, log location, and global popup condition with an AppSettings.json file.">
+<link rel="canonical" href="https://kg-droid.github.io/SuiteCreatorAvalonia/admin-guide.html">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <img src="favicon.png" alt="Suite Creator logo">
+      Suite Creator
+    </a>
+    <nav class="nav-links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#screenshots">Screenshots</a>
+      <a href="index.html#docs">Docs</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia">GitHub</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-primary btn-sm" href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">Download</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap doc-header">
+    <a class="eyebrow-link" href="index.html#docs">← Back to Suite Creator</a>
+    <h1>Admin Guide: Locking Down App-Wide Settings</h1>
+    <p class="dek">Centrally enforcing the company logo, log location, and global popup condition for every packager on the team.</p>
+    <nav class="doc-nav">
+      <a href="user-popup-guide.html">User popup guide</a>
+      <a href="admin-guide.html" class="active">Admin guide</a>
+      <a href="developer-guide.html">Developer guide</a>
+    </nav>
+  </div>
+
+  <article class="wrap doc-body">
+    <p>Suite Creator lets an administrator centrally control a handful of app-wide settings so every packager on the team gets the same values, and can't override them locally. This is done with an <code>AppSettings.json</code> file placed in the app's <strong>install directory</strong> (next to <code>SuiteCreatorAvalonia.Desktop.exe</code>) — separate from the per-user settings file each packager's own preferences (theme, accent colour, etc.) are saved to.</p>
+
+    <h2>What's admin-controlled</h2>
+    <div class="doc-table-wrap">
+      <table>
+        <thead><tr><th>Setting</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Company Logo &amp; Background Color</strong></td><td>The logo and background colour shown in the end-user popup.</td></tr>
+          <tr><td><strong>Suite Log Location</strong></td><td>Where the built suite writes its execution logs on the target device.</td></tr>
+          <tr><td><strong>Global Popup Condition</strong></td><td>A PowerShell script evaluated before <em>every</em> popup, across every suite built with this install. It must output only <code>$True</code> or <code>$False</code>. If it returns <code>$False</code>, the popup for that run is skipped; if the script itself fails to run cleanly, the popup shows anyway as a safety measure.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Once an <code>AppSettings.json</code> sets any of these, they become read-only in the Settings page for every user of that install — each field shows <em>"This setting is controlled by your administrator."</em> and can no longer be edited or reset locally.</p>
+
+    <div class="shot"><picture>
+      <source srcset="images/light/settings-default.png" media="(prefers-color-scheme: light)">
+      <img src="images/settings-default.png" alt="Settings page with no admin file in place" loading="lazy">
+    </picture></div>
+
+    <h2>Building the AppSettings.json</h2>
+    <p>You don't need to hand-write the JSON. There's a built-in export dialog for it:</p>
+    <ol>
+      <li>Open the <strong>Settings</strong> page.</li>
+      <li>Press <strong>Ctrl+Shift+A</strong>. (This is intentionally not a visible button — it's an admin-only entry point, not something regular packagers need.)</li>
+      <li>Fill in whichever of the three fields you want to lock down. Anything left blank is simply omitted from the export, and the app falls back to its normal default for it.</li>
+      <li>Click <strong>Export to File...</strong> and save the file as <code>AppSettings.json</code>.</li>
+    </ol>
+
+    <div class="shot"><picture>
+      <source srcset="images/light/admin-export-dialog-empty.png" media="(prefers-color-scheme: light)">
+      <img src="images/admin-export-dialog-empty.png" alt="Admin export dialog" loading="lazy">
+    </picture></div>
+    <div class="shot"><picture>
+      <source srcset="images/light/admin-export-dialog-filled.png" media="(prefers-color-scheme: light)">
+      <img src="images/admin-export-dialog-filled.png" alt="Admin export dialog filled in" loading="lazy">
+    </picture></div>
+
+    <h2>Deploying it</h2>
+    <p>Copy the exported <code>AppSettings.json</code> into the same directory as <code>SuiteCreatorAvalonia.Desktop.exe</code> on every machine the app is installed on (e.g. bundle it into your install package, or drop it in as a post-install step). It's read once at app startup.</p>
+    <p>The exported file looks like this — only the fields you filled in are non-null:</p>
+
+    <pre><code>{
+  "Theme": null,
+  "IsManualPaneControl": false,
+  "LightAccentColour": null,
+  "DarkAccentColour": null,
+  "CompanyLogoType": null,
+  "CompanyLogoBytes": null,
+  "CompanyLogoBackgroundColor": "#ff497cab",
+  "LogLocation": "\\\\FileServer\\DeploymentLogs\\SuiteCreator",
+  "GlobalPopupCondition": "V3JpdGUtT3V0cHV0ICRUcnVl"
+}</code></pre>
+
+    <p><code>GlobalPopupCondition</code> is the PowerShell script, Base64-encoded (the example above decodes to <code>Write-Output $True</code>). <code>CompanyLogoBytes</code>/<code>CompanyLogoType</code> hold the imported logo image if one was set.</p>
+    <p>Once the file is in place, every user's Settings page reflects the locked-down values and can no longer change them:</p>
+
+    <div class="shot"><picture>
+      <source srcset="images/light/settings-admin-applied.png" media="(prefers-color-scheme: light)">
+      <img src="images/settings-admin-applied.png" alt="Settings page with admin values applied" loading="lazy">
+    </picture></div>
+
+    <h2>Notes</h2>
+    <ul>
+      <li>Any other setting (theme, accent colours, pane behaviour) is <strong>not</strong> admin-controlled and remains a per-user preference stored in <code>%LocalAppData%\SuiteCreator\AppSettings.json</code>.</li>
+      <li>Re-running the export dialog and deploying a new file simply overwrites the previous admin configuration — there's no merge step to worry about.</li>
+    </ul>
+  </article>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span class="copy">MIT licensed · © Suite Creator contributors</span>
+    <div class="foot-links">
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia">GitHub</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">Releases</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia/issues">Issues</a>
+      <a href="https://github.com/sponsors/KG-droid">Sponsor</a>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="trademark-note">All product names, logos, and brands shown on this page are property of their respective owners and are used for illustration only. Use of these names does not imply endorsement.</p>
+  </div>
+</footer>
+
+</body>
+</html>

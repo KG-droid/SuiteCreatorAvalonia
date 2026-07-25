@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Developer Guide | Suite Creator</title>
+<meta name="description" content="Suite Creator solution architecture: the Creator app, the AOT-compiled runtime executables, and the full build to deploy to execute flow.">
+<link rel="canonical" href="https://kg-droid.github.io/SuiteCreatorAvalonia/developer-guide.html">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <img src="favicon.png" alt="Suite Creator logo">
+      Suite Creator
+    </a>
+    <nav class="nav-links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#screenshots">Screenshots</a>
+      <a href="index.html#docs">Docs</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia">GitHub</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-primary btn-sm" href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">Download</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap doc-header">
+    <a class="eyebrow-link" href="index.html#docs">← Back to Suite Creator</a>
+    <h1>Developer Guide: Working on this Solution</h1>
+    <p class="dek">Solution architecture, the AOT runtime projects, and the full build → deploy → execute flow.</p>
+    <nav class="doc-nav">
+      <a href="user-popup-guide.html">User popup guide</a>
+      <a href="admin-guide.html">Admin guide</a>
+      <a href="developer-guide.html" class="active">Developer guide</a>
+    </nav>
+  </div>
+
+  <article class="wrap doc-body">
+    <p>This document explains how the solution fits together — which projects do what, how they're wired into each other at build time, and what actually happens end-to-end when a packager builds a suite and it runs on a target device. Read this before making changes that cross project boundaries.</p>
+
+    <h2>The big picture</h2>
+    <p>There are really <strong>two applications</strong> in this repo, plus the glue between them:</p>
+    <ol>
+      <li><strong>The Creator</strong> (<code>SuiteCreatorAvalonia</code> + <code>SuiteCreatorAvalonia.Desktop</code>) — the Avalonia desktop app packagers use to design a suite. It runs on the packager's machine.</li>
+      <li><strong>The runtime</strong> — everything that ends up inside a built suite and runs on the <em>target</em> device: <code>SuiteSfxStub</code>, <code>SuiteExecutor</code>, <code>SuiteUserPopup</code>, and <code>SuiteProgressPopup</code>.</li>
+    </ol>
+    <p>The Creator doesn't reference the runtime projects as normal project references. Instead it bundles their <strong>published executables</strong> as content, and stitches them into a single self-extracting suite exe at build time.</p>
+
+    <div class="mermaid-wrap">
+      <pre class="mermaid">
+flowchart TD
+    subgraph Packager["Packager's machine — Suite Creator app"]
+        UI["SuiteCreatorAvalonia&lt;br/&gt;(editor UI)"] -->|Build pressed| SB["SuiteBuilder"]
+        SB -->|"serialises config"| CFG["SuiteConfig.scfg (JSON)"]
+        SB -->|"copies from app's SuiteExec folder"| RT["SuiteExecutor.exe&lt;br/&gt;+ Popup exes"]
+        SB -->|"copies"| PKGS["Installers, files,&lt;br/&gt;scripts, logos,&lt;br/&gt;popconfig.json"]
+        CFG --> ZIP["SuiteFiles.zip"]
+        RT --> ZIP
+        PKGS --> ZIP
+        ZIP -->|"appended to SuiteSfxStub.exe&lt;br/&gt;+ length + 'SUFX' magic trailer"| EXE["Single suite .exe&lt;br/&gt;+ detection rule"]
+    end
+
+    EXE -->|"deployed via Intune / SCCM / etc."| STUB
+
+    subgraph Target["Target device — suite runs"]
+        STUB["SuiteSfxStub.exe&lt;br/&gt;(reads its own tail)"] -->|"extracts zip"| CACHE["%windir%\\&lt;br/&gt;SuiteInstallerCache\\&lt;br/&gt;{suiteGUID}&lt;br/&gt;(hardened, admin-only)"]
+        STUB -->|"installs/updates newest"| PF["%ProgramFiles%\\&lt;br/&gt;SuiteExecutor\\&lt;br/&gt;SuiteExecutor.exe&lt;br/&gt;+ popup exes"]
+        STUB -->|launches| EXEC["SuiteExecutor"]
+        EXEC <-->|"launches if conditions met&lt;br/&gt;reports back: continue / defer / skip"| POP["SuiteUserPopup.exe&lt;br/&gt;(run as logged-in user)"]
+        EXEC --> RUN["Run stages: closures,&lt;br/&gt;packages, files, registry,&lt;br/&gt;env, scripts..."]
+        EXEC -.->|"if enabled"| PROG["SuiteProgressPopup.exe"]
+        RUN --> DET["Write detection registry key&lt;br/&gt;+ uninstall media"]
+    end
+      </pre>
+    </div>
+
+    <h2>Project map</h2>
+    <div class="doc-table-wrap">
+      <table>
+        <thead><tr><th>Project</th><th>Role</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>SuiteCreatorAvalonia</code></td><td>The editor UI (views, viewmodels, <code>SuiteBuilder</code>, settings)</td><td>Avalonia 12, MVVM via CommunityToolkit</td></tr>
+          <tr><td><code>SuiteCreatorAvalonia.Desktop</code></td><td>Thin desktop entry point for the Creator</td><td>Also owns the MSBuild targets that bundle the runtime exes (see below)</td></tr>
+          <tr><td><code>SuiteExecutor</code></td><td>Runs the suite on the target device: stages, packages, events, popups, detection, fail-safe, deferral</td><td><strong>AOT-published.</strong> Partial <code>Suite</code> class split across <code>Suite.*.cs</code> files by concern</td></tr>
+          <tr><td><code>SuiteUserPopup</code></td><td>The end-user warning/deferral popup shown before the suite runs</td><td><strong>AOT-published</strong> Avalonia app. Communicates its result back via exit codes</td></tr>
+          <tr><td><code>SuiteProgressPopup</code></td><td>The install-progress window end users see</td><td><strong>AOT-published</strong> Avalonia app</td></tr>
+          <tr><td><code>SuiteSfxStub</code></td><td>Self-extracting bootstrapper the payload zip is appended to</td><td><strong>AOT-published.</strong> Becomes the actual built suite exe</td></tr>
+          <tr><td><code>SuiteCreatorModels</code></td><td>Shared models &amp; enums, including <code>SuiteExecConfig</code> (the <code>.scfg</code> schema)</td><td>Referenced by both Creator and Executor — schema changes affect both sides</td></tr>
+          <tr><td><code>SuiteOperations</code></td><td>The <code>*ExecEvent</code> implementations (file, registry, env, cert, driver, PowerShell...)</td><td>Shared execution logic used by the Executor</td></tr>
+          <tr><td><code>Logger</code></td><td>Common logging</td><td>Referenced everywhere, including the popups</td></tr>
+          <tr><td><code>MSITools</code> / <code>MSIxTools</code></td><td>MSI / MSIX inspection and handling</td><td></td></tr>
+          <tr><td><code>SystemTools</code></td><td>Native helpers: robocopy wrapper, PowerShell invocation, environment refresh, native methods</td><td></td></tr>
+          <tr><td><code>UserTools</code></td><td>Impersonation — launching processes as the logged-in user from an elevated/SYSTEM context</td><td>This is how the Executor shows popups in the user's session</td></tr>
+          <tr><td><code>SuiteUITools</code></td><td>UI helpers (image loading, shell/browser helpers) shared by the Avalonia apps</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>How the runtime exes get into the Creator</h2>
+    <p>This is the most important non-obvious wiring in the repo.</p>
+    <p><code>SuiteExecutor</code>, <code>SuiteUserPopup</code>, <code>SuiteProgressPopup</code>, and <code>SuiteSfxStub</code> each have a <code>Properties/PublishProfiles/FolderProfile.pubxml</code> that publishes them <strong>self-contained, win-x64, Native AOT</strong> to <code>{project}\bin\publish\win-x64\net10.0-windows10.0.22000.0\</code>. AOT is used deliberately to keep the files small, because these exes get compiled into every built suite.</p>
+    <p><code>SuiteCreatorAvalonia.Desktop.csproj</code> contains custom MSBuild targets (<code>CopyOtherPublishFilesOutput</code>, and a publish-time equivalent) that run after every build:</p>
+    <ol>
+      <li>For each of the four runtime projects, check whether its publish folder exists and has files.</li>
+      <li>If not, run <code>dotnet publish ... /p:PublishProfile=FolderProfile</code> for it automatically.</li>
+      <li>Copy the published files (minus <code>.pdb</code> etc.) into a <strong><code>SuiteExec</code> subfolder</strong> of the Creator's own output directory.</li>
+    </ol>
+    <p>At runtime, <code>SuiteBuilder</code> reads everything it bundles from <code>{AppContext.BaseDirectory}\SuiteExec</code>.</p>
+
+    <div class="callout"><strong>Gotcha:</strong> the auto-publish only triggers when a publish folder is <em>missing</em>. If you change code in <code>SuiteExecutor</code> or the popups, the Creator will keep bundling the <strong>stale</strong> published copies until you either re-publish that project yourself (<code>dotnet publish -c Release /p:PublishProfile=FolderProfile</code>) or delete its <code>bin\publish</code> folder and rebuild the Desktop project. If a runtime fix "doesn't seem to do anything", check this first.</div>
+
+    <div class="callout"><strong>AOT gotcha:</strong> because these projects are trimmed + AOT, reflection-heavy code needs care. The Avalonia popups keep a <code>TrimmerRootDescriptor.xml</code> to protect types the trimmer would otherwise strip. Test runtime changes against the <em>published</em> AOT output, not just an F5 debug build — trimming failures only show up in the published exe.</div>
+
+    <h2>What happens when a packager presses Build</h2>
+    <p>All of this lives in <code>SuiteCreatorAvalonia/Services/SuiteBuilder.cs</code>:</p>
+    <ol>
+      <li>The in-memory project is converted to a <code>SuiteExecConfig</code> (from <code>SuiteCreatorModels</code>) and serialised as JSON to <code>SuiteConfig.scfg</code> in a temp folder.</li>
+      <li>The Creator's <code>SuiteExec</code> folder (the Executor and its files, excluding the stub and popup exes) is robocopied into the temp folder.</li>
+      <li>Package installers, file-event payloads, scripts, certificates, drivers, etc. are copied in.</li>
+      <li>If a popup is enabled, a <code>Popup\</code> subfolder is created containing <code>SuiteUserPopup.exe</code>, <code>SuiteProgressPopup.exe</code>, <code>popconfig.json</code>, the suite logo, and the company logo.</li>
+      <li>The temp folder is zipped, and the zip is appended to a copy of <code>SuiteSfxStub.exe</code> with a trailer of <code>[zip bytes][int32 zip length][int32 magic 'SUFX']</code>.</li>
+      <li>The result is a single exe, plus a detection rule string (a registry key under the suite's UpgradeCode with a <code>DisplayVersion</code> comparison) the packager pastes into their deployment tool.</li>
+    </ol>
+
+    <h2>What happens on the target device</h2>
+    <ol>
+      <li><strong><code>SuiteSfxStub.exe</code></strong> runs (elevated, from the deployment tool). It reads its own tail to find the zip and extracts it to <code>%windir%\SuiteInstallerCache\{suiteGUID}</code> — a deliberately admin-only, hardened location, since everything the elevated Executor later runs comes from here. The <code>Popup</code> folder gets Users read/execute so the popup can run in the user's session. If the cache already holds a strictly newer version of the same suite, extraction is skipped.</li>
+      <li>The stub then <strong>installs or updates</strong> <code>SuiteExecutor.exe</code>, <code>SuiteUserPopup.exe</code>, and <code>SuiteProgressPopup.exe</code> into <code>%ProgramFiles%\SuiteExecutor</code>, keeping the newest version, and launches the installed Executor pointing at the extracted <code>SuiteConfig.scfg</code>.</li>
+      <li><strong><code>SuiteExecutor</code></strong> takes over: acquires a mutex, works out the action (Deployment / Removal / Rollback), optionally registers a fail-safe scheduled task so an interrupted run restarts on next boot/logon, and evaluates the popup conditions (global admin condition first, then the per-suite condition — both PowerShell scripts that must output <code>$True</code>/<code>$False</code>).</li>
+      <li>If a popup should show, the Executor launches <code>SuiteUserPopup.exe</code> <strong>as the logged-in user</strong> (via <code>UserTools</code> impersonation, since the Executor itself runs elevated/SYSTEM). The popup reports back through exit codes: continue, device locked, error, defer (with a reminder time on stdout), or timer expired. A deferral schedules a reminder task and exits with 1602; the reminder task later re-runs the executor with <code>--reminder</code> so it proceeds instead of re-deferring.</li>
+      <li>The suite then executes: service/process closures, then stages of packages and events (implemented in <code>SuiteOperations</code>), with <code>SuiteProgressPopup.exe</code> showing progress if enabled. Finally it writes the detection registry key, drops uninstall media, refreshes the environment if configured, and cleans up.</li>
+    </ol>
+    <p>Useful Executor flags when debugging: <code>--debug</code> (debug builds only — waits in a loop until a debugger attaches, so you can F5-attach to a run started by the stub), <code>--reminder</code>, <code>--failsafe</code>, plus internal modes <code>--failsafe-unblock-all</code> and <code>--watch-pid</code>. <code>SuiteExecutor/DebugAssets</code> holds a sample <code>SuiteConfig.scfg</code> for running the Executor directly from the IDE.</p>
+
+    <h2>Conventions &amp; tips</h2>
+    <ul>
+      <li><strong>Code style:</strong> explicit type declarations over <code>var</code>; short type names with <code>using</code> directives rather than fully-qualified names; debug-only logic wrapped in <code>#if DEBUG</code>.</li>
+      <li><strong>Schema changes:</strong> anything in <code>SuiteCreatorModels</code> (especially <code>SuiteExecConfig</code>) is shared between the Creator (writer) and Executor (reader). Consider what an <em>older</em> installed Executor does with a config written by a <em>newer</em> Creator, and vice versa — the stub keeps the newest Executor version machine-wide across all suites.</li>
+      <li><strong>Fail-safe philosophy:</strong> the Executor consistently fails <em>open</em> — if a popup script errors, the popup is shown; if a popup can't be evaluated, the suite proceeds. When adding new checks, follow the same "don't strand the user, don't silently kill their apps" reasoning.</li>
+      <li><strong>Creator settings:</strong> per-user settings live in <code>%LocalAppData%\SuiteCreator\AppSettings.json</code>; admin-enforced settings come from an <code>AppSettings.json</code> next to the Creator exe and win over user settings (see the <a href="admin-guide.html">admin guide</a>).</li>
+      <li><strong>In-app help:</strong> pages declare <code>services:Help.Title</code> / <code>services:Help.PageSummary</code> attached properties in XAML — keep these updated when changing a page, as they drive the built-in help overlay.</li>
+    </ul>
+  </article>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span class="copy">MIT licensed · © Suite Creator contributors</span>
+    <div class="foot-links">
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia">GitHub</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">Releases</a>
+      <a href="https://github.com/KG-droid/SuiteCreatorAvalonia/issues">Issues</a>
+      <a href="https://github.com/sponsors/KG-droid">Sponsor</a>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="trademark-note">All product names, logos, and brands shown on this page are property of their respective owners and are used for illustration only. Use of these names does not imply endorsement.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  var mermaidColors = prefersLight ? {
+    background: '#ffffff',
+    primaryColor: '#ffffff',
+    primaryTextColor: '#0f1b2d',
+    primaryBorderColor: '#0284c7',
+    lineColor: '#5c7a9e',
+    secondaryColor: '#eef1f7',
+    tertiaryColor: '#eef1f7',
+    clusterBkg: '#eef1f7',
+    clusterBorder: '#dde3ee',
+    edgeLabelBackground: '#ffffff'
+  } : {
+    background: '#101c33',
+    primaryColor: '#101c33',
+    primaryTextColor: '#e7edf7',
+    primaryBorderColor: '#38bdf8',
+    lineColor: '#5c7a9e',
+    secondaryColor: '#0d1526',
+    tertiaryColor: '#0d1526',
+    clusterBkg: '#0d1526',
+    clusterBorder: '#1c2a45',
+    edgeLabelBackground: '#101c33'
+  };
+  mermaidColors.fontFamily = 'Arial, Helvetica, sans-serif';
+
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: mermaidColors,
+    flowchart: {
+      htmlLabels: false,
+      curve: 'basis',
+      padding: 16,
+      nodeSpacing: 55,
+      rankSpacing: 90
+    }
+  });
+</script>
+
+</body>
+</html>

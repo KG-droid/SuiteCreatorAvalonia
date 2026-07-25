@@ -33,138 +33,7 @@
 }
 </script>
 
-<style>
-  :root{
-    --bg: #0a0f1a;
-    --bg-alt: #0d1526;
-    --card: #101c33;
-    --card-border: #1c2a45;
-    --text: #e7edf7;
-    --text-dim: #9db0cc;
-    --accent: #38bdf8;
-    --accent-2: #fb923c;
-    --radius: 14px;
-  }
-  *{ box-sizing: border-box; }
-  html{ scroll-behavior: smooth; }
-  body{
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-  }
-  a{ color: inherit; }
-  img{ max-width: 100%; height: auto; display: block; }
-  .wrap{ max-width: 1120px; margin: 0 auto; padding: 0 24px; }
-
-  header{
-    position: sticky; top: 0; z-index: 20;
-    background: rgba(10,15,26,0.85);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--card-border);
-  }
-  .nav{ display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; }
-  .brand{ display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; text-decoration: none; }
-  .brand img{ width: 28px; height: 28px; border-radius: 7px; }
-  .nav-links{ display: flex; align-items: center; gap: 28px; }
-  .nav-links a{ text-decoration: none; color: var(--text-dim); font-size: 15px; font-weight: 600; }
-  .nav-links a:hover{ color: var(--text); }
-  .nav-cta{ display:flex; gap: 10px; align-items:center; }
-
-  .btn{
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 11px 20px; border-radius: 999px; font-weight: 700; font-size: 15px;
-    text-decoration: none; border: 1px solid transparent; white-space: nowrap;
-  }
-  .btn-primary{ background: linear-gradient(135deg, var(--accent), #60a5fa); color: #06111f; }
-  .btn-primary:hover{ filter: brightness(1.08); }
-  .btn-ghost{ border-color: var(--card-border); color: var(--text); }
-  .btn-ghost:hover{ border-color: var(--accent); }
-  .btn-sm{ padding: 8px 16px; font-size: 14px; }
-
-  .hero{ padding: 88px 0 40px; text-align: center; }
-  .eyebrow{
-    display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: .04em;
-    color: var(--accent); background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3);
-    padding: 6px 14px; border-radius: 999px; margin-bottom: 22px;
-  }
-  h1{ font-size: 46px; font-weight: 800; line-height: 1.15; margin: 0 0 20px; letter-spacing: -0.02em; }
-  h1 span{ background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .hero p.lead{ font-size: 19px; color: var(--text-dim); max-width: 640px; margin: 0 auto 32px; }
-  .hero-actions{ display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 56px; }
-
-  .shot{
-    border-radius: var(--radius); border: 1px solid var(--card-border);
-    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
-    overflow: hidden;
-  }
-  .hero-shot{ max-width: 980px; margin: 0 auto; }
-
-  section{ padding: 72px 0; }
-  .section-head{ text-align: center; max-width: 640px; margin: 0 auto 48px; }
-  .section-head h2{ font-size: 32px; font-weight: 800; margin: 0 0 14px; letter-spacing: -0.01em; }
-  .section-head p{ color: var(--text-dim); font-size: 16px; margin: 0; }
-
-  .grid{ display: grid; gap: 20px; }
-  .grid-features{ grid-template-columns: repeat(3, 1fr); }
-  .card{
-    background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
-    padding: 26px;
-  }
-  .card .icon{
-    width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    background: rgba(56,189,248,0.12); color: var(--accent); margin-bottom: 16px; font-size: 20px;
-  }
-  .card h3{ font-size: 17px; margin: 0 0 8px; font-weight: 700; }
-  .card p{ font-size: 14.5px; color: var(--text-dim); margin: 0; }
-
-  .grid-shots{ grid-template-columns: repeat(2, 1fr); }
-  figure{ margin: 0; }
-  figure figcaption{ text-align: center; font-size: 14px; color: var(--text-dim); margin-top: 12px; font-weight: 600; }
-
-  .strip{ background: var(--bg-alt); border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); }
-  .grid-strip{ grid-template-columns: repeat(3, 1fr); text-align: center; }
-  .grid-strip .num{ font-size: 15px; }
-
-  .docs-list{ display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); }
-  .doc-card{
-    background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
-    padding: 22px; text-decoration: none; transition: border-color .15s;
-  }
-  .doc-card:hover{ border-color: var(--accent); }
-  .doc-card h3{ margin: 0 0 6px; font-size: 16px; }
-  .doc-card p{ margin: 0; color: var(--text-dim); font-size: 14px; }
-
-  .cta{ text-align: center; }
-  .cta h2{ font-size: 30px; font-weight: 800; margin: 0 0 12px; }
-  .cta p{ color: var(--text-dim); margin: 0 0 28px; }
-
-  .note{
-    max-width: 760px; margin: 0 auto; text-align: center; color: var(--text-dim);
-    font-size: 14px; background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.25);
-    padding: 14px 20px; border-radius: 10px;
-  }
-
-  footer{ border-top: 1px solid var(--card-border); padding: 40px 0; }
-  .foot-row{ display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
-  .foot-links{ display: flex; gap: 20px; flex-wrap: wrap; }
-  .foot-links a{ color: var(--text-dim); text-decoration: none; font-size: 14px; font-weight: 600; }
-  .foot-links a:hover{ color: var(--text); }
-  .copy{ color: var(--text-dim); font-size: 13px; }
-
-  @media (max-width: 860px){
-    .nav-links{ display: none; }
-    h1{ font-size: 34px; }
-    .grid-features{ grid-template-columns: repeat(2, 1fr); }
-    .grid-shots{ grid-template-columns: 1fr; }
-    .grid-strip{ grid-template-columns: 1fr; }
-    .docs-list{ grid-template-columns: 1fr; }
-  }
-  @media (max-width: 480px){
-    .grid-features{ grid-template-columns: 1fr; }
-  }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -198,8 +67,17 @@
       <a class="btn btn-primary" href="https://github.com/KG-droid/SuiteCreatorAvalonia/releases/latest">⬇ Download the latest release</a>
       <a class="btn btn-ghost" href="https://github.com/KG-droid/SuiteCreatorAvalonia">View on GitHub</a>
     </div>
-    <div class="shot hero-shot">
-      <img src="images/hero.png" alt="Suite Creator editor showing the event list sidebar for a new suite" width="2580" height="1003" loading="eager">
+    <div class="hero-shot">
+      <div class="shot">
+        <picture>
+          <source srcset="images/light/hero.png" media="(prefers-color-scheme: light)">
+          <img src="images/hero.png" alt="Suite Creator editor showing the event list sidebar for a new suite" loading="eager">
+        </picture>
+      </div>
+      <picture>
+        <source srcset="images/light/user-popup-warning.png" media="(prefers-color-scheme: light)">
+        <img class="popup-float" src="images/user-popup-warning.png" alt="Suite Creator end-user upgrade popup showing apps to close and a deferral timer" loading="eager">
+      </picture>
     </div>
   </section>
 
@@ -209,77 +87,115 @@
       <p>Add as many of these as your deployment requires — each one gets its own install and uninstall behaviour.</p>
     </div>
     <div class="grid grid-features">
-      <div class="card">
+      <div class="card" data-feature="packages" tabindex="0">
         <div class="icon">📦</div>
         <h3>Packages</h3>
         <p>MSI, MSIX, or any installer executable, run in order, each with its own install/uninstall behaviour.</p>
+        <span class="expand-hint">Click to expand →</span>
       </div>
-      <div class="card">
+      <div class="card" data-feature="files" tabindex="0">
         <div class="icon">📁</div>
         <h3>Files &amp; Folders</h3>
         <p>Deploy files to the device — placed during install, removed on uninstall, or left permanently.</p>
+        <span class="expand-hint">Click to expand →</span>
       </div>
-      <div class="card">
+      <div class="card" data-feature="registry" tabindex="0">
         <div class="icon">🗝️</div>
         <h3>Registry</h3>
         <p>Create registry keys and values, with full control over whether they're removed on uninstall.</p>
+        <span class="expand-hint">Click to expand →</span>
       </div>
-      <div class="card">
+      <div class="card" data-feature="environment" tabindex="0">
         <div class="icon">🧩</div>
         <h3>Environment &amp; Extensions</h3>
         <p>Set environment variables like <code>PATH</code>, or install browser extensions as part of the suite.</p>
+        <span class="expand-hint">Click to expand →</span>
       </div>
-      <div class="card">
+      <div class="card" data-feature="popups" tabindex="0">
         <div class="icon">🪟</div>
         <h3>Popups</h3>
         <p>End-user messaging while the suite runs — warnings, install progress, and deferrals with a timer.</p>
+        <span class="expand-hint">Click to expand →</span>
       </div>
-      <div class="card">
+      <div class="card" data-feature="executables" tabindex="0">
         <div class="icon">⚙️</div>
         <h3>Executables &amp; PS Scripts</h3>
         <p>Run setup utilities, commands, or full PowerShell scripts with supporting files bundled alongside.</p>
+        <span class="expand-hint">Click to expand →</span>
       </div>
-      <div class="card">
+      <div class="card" data-feature="certificates" tabindex="0">
         <div class="icon">🛡️</div>
         <h3>Certificates &amp; Drivers</h3>
         <p>Install certificates into a chosen store, or install/remove Windows drivers from an <code>.inf</code>.</p>
+        <span class="expand-hint">Click to expand →</span>
       </div>
-      <div class="card">
+      <div class="card" data-feature="closures" tabindex="0">
         <div class="icon">✋</div>
         <h3>Service &amp; Process Closures</h3>
         <p>Stop services or close running processes before installs run, so files aren't locked.</p>
+        <span class="expand-hint">Click to expand →</span>
       </div>
-      <div class="card">
+      <div class="card" data-feature="rules" tabindex="0">
         <div class="icon">🔀</div>
         <h3>Rules &amp; Shortcuts</h3>
         <p>Gate any event on a file, registry value, or condition match, and create desktop or Start Menu shortcuts.</p>
+        <span class="expand-hint">Click to expand →</span>
       </div>
     </div>
   </section>
 
+  <div class="modal-overlay" id="feature-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="feature-modal-title">
+      <button class="modal-close" id="feature-modal-close" aria-label="Close">✕</button>
+      <div class="modal-icon" id="feature-modal-icon"></div>
+      <h3 id="feature-modal-title"></h3>
+      <p id="feature-modal-body"></p>
+      <a id="feature-modal-link" class="modal-link" href="#"></a>
+    </div>
+  </div>
+
   <section id="screenshots" class="strip">
-    <div class="wrap" style="padding-top:72px; padding-bottom:72px;">
+    <div class="wrap">
       <div class="section-head">
         <h2>See it in action</h2>
         <p>A visual editor for every step — no hand-rolled wrapper scripts.</p>
       </div>
-      <div class="grid grid-shots">
-        <figure class="shot">
-          <img src="images/files-folders.png" alt="Files and Folders configuration screen in Suite Creator" width="2580" height="1003" loading="lazy">
-          <figcaption>Files &amp; Folders</figcaption>
-        </figure>
-        <figure class="shot">
-          <img src="images/registry.png" alt="Registry configuration screen in Suite Creator" width="2580" height="1003" loading="lazy">
-          <figcaption>Registry</figcaption>
-        </figure>
-        <figure class="shot">
-          <img src="images/popups.png" alt="Popup designer screen in Suite Creator" width="2580" height="1003" loading="lazy">
-          <figcaption>Popups</figcaption>
-        </figure>
-        <figure class="shot">
-          <img src="images/build.png" alt="Build screen in Suite Creator" width="2580" height="1003" loading="lazy">
-          <figcaption>Build</figcaption>
-        </figure>
+      <div class="carousel" id="shots-carousel" tabindex="0">
+        <button class="carousel-arrow carousel-arrow-prev" aria-label="Previous screenshot">‹</button>
+        <div class="carousel-track">
+          <div class="carousel-slide" data-index="0">
+            <picture>
+              <source srcset="images/light/files-folders.png" media="(prefers-color-scheme: light)">
+              <img src="images/files-folders.png" alt="Files and Folders configuration screen in Suite Creator" loading="lazy">
+            </picture>
+          </div>
+          <div class="carousel-slide" data-index="1">
+            <picture>
+              <source srcset="images/light/registry.png" media="(prefers-color-scheme: light)">
+              <img src="images/registry.png" alt="Registry configuration screen in Suite Creator" loading="lazy">
+            </picture>
+          </div>
+          <div class="carousel-slide" data-index="2">
+            <picture>
+              <source srcset="images/light/popups.png" media="(prefers-color-scheme: light)">
+              <img src="images/popups.png" alt="Popup designer screen in Suite Creator" loading="lazy">
+            </picture>
+          </div>
+          <div class="carousel-slide" data-index="3">
+            <picture>
+              <source srcset="images/light/build.png" media="(prefers-color-scheme: light)">
+              <img src="images/build.png" alt="Build screen in Suite Creator" loading="lazy">
+            </picture>
+          </div>
+        </div>
+        <button class="carousel-arrow carousel-arrow-next" aria-label="Next screenshot">›</button>
+      </div>
+      <p class="carousel-caption" id="carousel-caption">Files &amp; Folders</p>
+      <div class="carousel-dots" id="carousel-dots">
+        <button class="carousel-dot is-active" data-index="0" aria-label="Go to slide 1"></button>
+        <button class="carousel-dot" data-index="1" aria-label="Go to slide 2"></button>
+        <button class="carousel-dot" data-index="2" aria-label="Go to slide 3"></button>
+        <button class="carousel-dot" data-index="3" aria-label="Go to slide 4"></button>
       </div>
     </div>
   </section>
@@ -302,6 +218,39 @@
         <h3>Centrally locked down</h3>
         <p>Admins can enforce the popup branding, log location, and a global PowerShell gate via an <code>AppSettings.json</code>, instead of leaving it to each packager.</p>
       </div>
+      <div class="card">
+        <h3>Import an existing suite</h3>
+        <p>Point Suite Creator at a suite <code>.exe</code> you've already built and it extracts everything back out — packages, files, registry, popups and all — into a ready-to-edit project, so the next version starts from the last one instead of a blank canvas.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-head">
+      <h2>A modern editor, not just a means to an end</h2>
+      <p>The app you'll actually spend your day in is built to feel like a proper native Windows app.</p>
+    </div>
+    <div class="grid grid-modern">
+      <div class="card">
+        <div class="icon">💾</div>
+        <h3>Auto-save &amp; crash recovery</h3>
+        <p>Your work is saved automatically a few seconds after every change. Close unexpectedly or crash mid-edit, and Suite Creator offers to restore exactly where you left off next time it opens.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🎨</div>
+        <h3>Themes &amp; accent colour</h3>
+        <p>Switch between light and dark, and pick your own accent colour from the Settings page — applied live, no restart required.</p>
+      </div>
+      <div class="card">
+        <div class="icon">✨</div>
+        <h3>Fluent UI</h3>
+        <p>Built on Avalonia's Fluent design system, so it looks and behaves like a modern native Windows app rather than a bolted-together utility.</p>
+      </div>
+      <div class="card">
+        <div class="icon">❓</div>
+        <h3>Integrated interactive help</h3>
+        <p>A dedicated Help button walks you through whichever page you're on with contextual tips — no separate manual to go hunting through.</p>
+      </div>
     </div>
   </section>
 
@@ -311,15 +260,15 @@
       <p>Guides for building suites, locking down settings, and understanding the runtime.</p>
     </div>
     <div class="docs-list">
-      <a class="doc-card" href="https://github.com/KG-droid/SuiteCreatorAvalonia/blob/main/docs/user-popup-guide.md">
+      <a class="doc-card" href="user-popup-guide.html">
         <h3>User popup guide →</h3>
         <p>What the end-user warning popup is for, and how the deferral flow works.</p>
       </a>
-      <a class="doc-card" href="https://github.com/KG-droid/SuiteCreatorAvalonia/blob/main/docs/admin-guide.md">
+      <a class="doc-card" href="admin-guide.html">
         <h3>Admin guide →</h3>
         <p>Centrally enforcing the company logo, log location, and global popup condition.</p>
       </a>
-      <a class="doc-card" href="https://github.com/KG-droid/SuiteCreatorAvalonia/blob/main/docs/developer-guide.md">
+      <a class="doc-card" href="developer-guide.html">
         <h3>Developer guide →</h3>
         <p>Solution architecture and the full build → deploy → execute flow.</p>
       </a>
@@ -350,7 +299,169 @@
       <a href="https://github.com/sponsors/KG-droid">Sponsor</a>
     </div>
   </div>
+  <div class="wrap">
+    <p class="trademark-note">All product names, logos, and brands shown on this page are property of their respective owners and are used for illustration only. Use of these names does not imply endorsement.</p>
+  </div>
 </footer>
+
+<script>
+  var FEATURE_DETAILS = {
+    packages: {
+      icon: '📦',
+      title: 'Packages',
+      body: 'Bundle any number of MSI, MSIX, or plain EXE installers into a single suite. Each package runs in the order you set, with its own install command, uninstall command, and success/failure handling — so a multi-app rollout still behaves like one deployment and one detection rule.'
+    },
+    files: {
+      icon: '📁',
+      title: 'Files & Folders',
+      body: 'Copy files and folders to the device as part of the suite. Choose whether each one is placed only during install, removed again on uninstall, or left behind permanently — useful for shared configs, licence files, or data that shouldn\'t vanish when the suite is removed.'
+    },
+    registry: {
+      icon: '🗝️',
+      title: 'Registry',
+      body: 'Create registry keys and values anywhere in the registry. Each value can be set to roll back automatically on uninstall, or persist — so you can layer in application settings and machine configuration without writing your own cleanup logic.'
+    },
+    environment: {
+      icon: '🧩',
+      title: 'Environment & Extensions',
+      body: 'Add or extend environment variables like PATH, scoped to install or uninstall, and install browser extensions alongside your packages — handy for dev tooling, CLI utilities, or line-of-business browser extensions that need to ship with the app.'
+    },
+    popups: {
+      icon: '🪟',
+      title: 'Popups',
+      body: 'Warn the logged-in user before the suite makes changes, show live install progress, and let them defer the run with a countdown timer. Preview exactly what end users will see before you ship, and optionally gate the whole popup behind a PowerShell condition.',
+      link: { href: 'user-popup-guide.html', text: 'Read the full user popup guide →' }
+    },
+    executables: {
+      icon: '⚙️',
+      title: 'Executables & PS Scripts',
+      body: 'Run any extra setup utility or command the built-in event types don\'t cover, or write a full PowerShell script with its own supporting files bundled alongside it — for the one-off logic every real-world deployment eventually needs.'
+    },
+    certificates: {
+      icon: '🛡️',
+      title: 'Certificates & Drivers',
+      body: 'Install certificates into whichever certificate store you choose, with automatic removal on uninstall, and install or remove Windows drivers directly from an .inf — no separate driver deployment package required.'
+    },
+    closures: {
+      icon: '✋',
+      title: 'Service & Process Closures',
+      body: 'Stop Windows services or close running processes before your installs run, so locked files never block an update. Link this to the user popup so people see exactly which of their apps are about to be closed, with a chance to save their work first.',
+      link: { href: 'user-popup-guide.html', text: 'See how this links to the user popup →' }
+    },
+    rules: {
+      icon: '🔀',
+      title: 'Rules & Shortcuts',
+      body: 'Gate any event — a package, a file, a registry change — behind a condition: a file existing, a registry value matching, or another rule passing. Also create desktop or Start Menu shortcuts as part of the suite.'
+    }
+  };
+
+  (function(){
+    var modal = document.getElementById('feature-modal');
+    var modalIcon = document.getElementById('feature-modal-icon');
+    var modalTitle = document.getElementById('feature-modal-title');
+    var modalBody = document.getElementById('feature-modal-body');
+    var modalLink = document.getElementById('feature-modal-link');
+    var modalClose = document.getElementById('feature-modal-close');
+    var lastFocused = null;
+
+    function openModal(key){
+      var detail = FEATURE_DETAILS[key];
+      if(!detail) return;
+      modalIcon.textContent = detail.icon;
+      modalTitle.textContent = detail.title;
+      modalBody.textContent = detail.body;
+      if(detail.link){
+        modalLink.href = detail.link.href;
+        modalLink.textContent = detail.link.text;
+        modalLink.style.display = 'inline-flex';
+      } else {
+        modalLink.style.display = 'none';
+      }
+      lastFocused = document.activeElement;
+      modal.classList.add('open');
+      modalClose.focus();
+    }
+
+    function closeModal(){
+      modal.classList.remove('open');
+      if(lastFocused) lastFocused.focus();
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('.card[data-feature]'), function(card){
+      card.addEventListener('click', function(){ openModal(card.getAttribute('data-feature')); });
+      card.addEventListener('keydown', function(e){
+        if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          openModal(card.getAttribute('data-feature'));
+        }
+      });
+    });
+
+    modalClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', function(e){ if(e.target === modal) closeModal(); });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+    });
+  })();
+
+  (function(){
+    var root = document.getElementById('shots-carousel');
+    if(!root) return;
+    var slides = Array.prototype.slice.call(root.querySelectorAll('.carousel-slide'));
+    var captions = ['Files & Folders', 'Registry', 'Popups', 'Build'];
+    var dots = Array.prototype.slice.call(document.querySelectorAll('.carousel-dot'));
+    var captionEl = document.getElementById('carousel-caption');
+    var n = slides.length;
+    var active = 0;
+
+    function render(){
+      slides.forEach(function(slide, i){
+        var rel = (i - active + n) % n;
+        slide.classList.remove('is-active', 'is-prev', 'is-next', 'is-hidden');
+        if(rel === 0) slide.classList.add('is-active');
+        else if(rel === 1) slide.classList.add('is-next');
+        else if(rel === n - 1) slide.classList.add('is-prev');
+        else slide.classList.add('is-hidden');
+      });
+      dots.forEach(function(dot, i){ dot.classList.toggle('is-active', i === active); });
+      captionEl.textContent = captions[active];
+    }
+
+    function go(delta){
+      active = (active + delta + n) % n;
+      render();
+    }
+
+    root.querySelector('.carousel-arrow-prev').addEventListener('click', function(){ go(-1); });
+    root.querySelector('.carousel-arrow-next').addEventListener('click', function(){ go(1); });
+
+    slides.forEach(function(slide, i){
+      slide.addEventListener('click', function(){
+        if(!slide.classList.contains('is-active')){ active = i; render(); }
+      });
+    });
+
+    dots.forEach(function(dot, i){
+      dot.addEventListener('click', function(){ active = i; render(); });
+    });
+
+    root.addEventListener('keydown', function(e){
+      if(e.key === 'ArrowLeft'){ e.preventDefault(); go(-1); }
+      if(e.key === 'ArrowRight'){ e.preventDefault(); go(1); }
+    });
+
+    var touchStartX = null;
+    root.addEventListener('touchstart', function(e){ touchStartX = e.touches[0].clientX; }, {passive: true});
+    root.addEventListener('touchend', function(e){
+      if(touchStartX === null) return;
+      var dx = e.changedTouches[0].clientX - touchStartX;
+      if(Math.abs(dx) > 40){ go(dx > 0 ? -1 : 1); }
+      touchStartX = null;
+    });
+
+    render();
+  })();
+</script>
 
 </body>
 </html>
