@@ -223,6 +223,41 @@
         <p>Point Suite Creator at a suite <code>.exe</code> you've already built and it extracts everything back out — packages, files, registry, popups and all — into a ready-to-edit project, so the next version starts from the last one instead of a blank canvas.</p>
       </div>
     </div>
+
+    <div class="usecase">
+      <div class="usecase-head">
+        <span class="usecase-tag">Real-world example</span>
+        <h3>Deploying Java x32 and x64, the way it actually goes</h3>
+        <p>Say you need to roll out Java 32-bit and 64-bit across the org. That's rarely just "run two MSIs" — it's a whole list of surrounding requirements, and normally each one means another block of PowerShell to write, test, and maintain.</p>
+      </div>
+      <div class="usecase-grid">
+        <div class="usecase-reqs">
+          <h4>What the deployment actually needs to do</h4>
+          <ul>
+            <li>Uninstall every prior version of Java before installing the new ones</li>
+            <li>Install Java x32 and x64</li>
+            <li>Import registry settings to disable Java Update, set <code>JavaHome</code>, and enable <code>HideSystemTrayIcon</code></li>
+            <li>Add the <code>JAVA_HOME</code> and <code>deployment.expiration.check.enabled</code> system environment variables</li>
+            <li>Force-close apps you know lock the Java runtime, so the install doesn't fail</li>
+            <li>Run a script to import a batch of certificates into the Java cert store</li>
+            <li>Warn end users first — they'll lose the apps you're about to close — but let them skip/defer if they need a minute</li>
+            <li>Log every step so you can prove what happened if a machine reports back broken</li>
+          </ul>
+        </div>
+        <div class="usecase-map">
+          <h4>Where each piece lives in Suite Creator</h4>
+          <ul>
+            <li><strong>Packages</strong> — one entry to uninstall old Java versions, two more for the x32 and x64 installers, ordered and chained into a single suite</li>
+            <li><strong>Registry</strong> — the Java Update, <code>JavaHome</code>, and <code>HideSystemTrayIcon</code> values, set on install and rolled back automatically on uninstall</li>
+            <li><strong>Environment &amp; Extensions</strong> — <code>JAVA_HOME</code> and <code>deployment.expiration.check.enabled</code> added as system variables</li>
+            <li><strong>Files &amp; Folders / Packages</strong> — the certificate-import script shipped and run as part of the sequence</li>
+            <li><strong>Popups</strong> — a skippable warning telling users which apps are about to close, previewable before you ship</li>
+            <li><strong>Built-in logging</strong> — every package, registry change, and script run is logged automatically, no extra transcript code needed</li>
+          </ul>
+        </div>
+      </div>
+      <p class="usecase-foot">The point isn't that any one of these is impossible to script individually — it's that normally you're the one gluing all seven together, testing the ordering, and hand-rolling the user warning. In Suite Creator each piece is just a step you add in the UI.</p>
+    </div>
   </section>
 
   <section class="wrap">
