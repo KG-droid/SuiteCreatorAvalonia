@@ -16,13 +16,13 @@ x:DataType="vm:ImportProjectViewModel">
 <StackPanel Margin="20" Spacing="14" Width="440">
 <TextBlock FontWeight="Bold" FontSize="16" Text="Import Suite Project"/>
 <Grid ColumnDefinitions="*,Auto">
-<TextBox Grid.Column="0" Watermark="Suite .exe path..." Text="{Binding SuiteExePath}" IsReadOnly="True"/>
+<TextBox Grid.Column="0" Watermark="Suite .exe path..." Text="{Binding SuiteExePath}"/>
 <Button Grid.Column="1" Margin="6,0,0,0" ToolTip.Tip="Browse for Suite exe" Command="{Binding BrowseSuiteExeCommand}">
 <mi:MaterialIcon Kind="FolderOpen" Width="18" Height="18"/>
 </Button>
 </Grid>
 <Grid ColumnDefinitions="*,Auto">
-<TextBox Grid.Column="0" Watermark="Output folder..." Text="{Binding OutputFolder}" IsReadOnly="True"/>
+<TextBox Grid.Column="0" Watermark="Output folder..." Text="{Binding OutputFolder}"/>
 <Button Grid.Column="1" Margin="6,0,0,0" ToolTip.Tip="Browse for output folder" Command="{Binding BrowseOutputFolderCommand}">
 <mi:MaterialIcon Kind="FolderOpen" Width="18" Height="18"/>
 </Button>
