@@ -24,6 +24,15 @@ namespace SuiteCreatorAvalonia.ViewModels
         {
         }
 
+        partial void OnSuiteExePathChanged(string? value) => SuiteExePath = TrimQuotes(value);
+
+        partial void OnOutputFolderChanged(string? value) => OutputFolder = TrimQuotes(value);
+
+        private static string? TrimQuotes(string? path) =>
+            path != null && path.Length >= 2 && path[0] == '"' && path[^1] == '"'
+                ? path[1..^1]
+                : path;
+
         [RelayCommand]
         private async Task BrowseSuiteExe()
         {
