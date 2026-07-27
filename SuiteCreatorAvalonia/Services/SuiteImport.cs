@@ -124,6 +124,7 @@ namespace SuiteCreatorAvalonia.Services
                     {
                         new Converters.ColorToJson(),
                         new Converters.BitmapToJson(),
+                        new Converters.TextDocumentToJson(),
                     },
                     MaxDepth = null,
                 });
