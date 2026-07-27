@@ -474,15 +474,20 @@ namespace SuiteCreatorAvalonia.Services
         {
             foreach (var fileEvent in fileEvents)
             {
-                string? fileDir = getEventDir("File", fileEvent.Id);
-                string? file = ExtractSingleFileFromDir(fileDir);
-                if (string.IsNullOrWhiteSpace(file)) throw new FileNotFoundException($"File cannot be found for FileEvent: {fileEvent.Id}");
+                List<VariableText>? sourcePath = fileEvent.SourcePath?.Select(v => v.Clone()).ToList();
+                if (fileEvent.Action == FileSysIOAction.Deploy)
+                {
+                    string? fileDir = getEventDir("File", fileEvent.Id);
+                    string? file = ExtractSingleFileFromDir(fileDir);
+                    if (string.IsNullOrWhiteSpace(file)) throw new FileNotFoundException($"File cannot be found for FileEvent: {fileEvent.Id}");
+                    sourcePath = new List<VariableText> { new LiteralText(file) };
+                }
                 config.FileEvents.Add(new FileIO
                 {
                     Id = fileEvent.Id,
                     Action = fileEvent.Action,
                     FileSysIOType = fileEvent.FileSysIOType,
-                    SourcePath = new List<VariableText> { new LiteralText(file) },
+                    SourcePath = sourcePath,
                     DestinationPath = fileEvent.DestinationPath?.Select(v => v.Clone()).ToList(),
                     ReplaceExisting = fileEvent.ReplaceExisting,
                     OverridePermissions = fileEvent.OverridePermissions,
