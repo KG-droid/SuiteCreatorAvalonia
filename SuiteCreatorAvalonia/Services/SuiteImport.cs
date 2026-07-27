@@ -351,6 +351,9 @@ namespace SuiteCreatorAvalonia.Services
             await AssignPowerShellEventFiles(execConfig.PowerShellEvents ?? new List<SuiteOperations.Events.PowerShellExecEvent>(), newConfig, GetEventDir);
             AssignRegistryEventFiles(execConfig.RegistryEvents ?? new List<SuiteOperations.Events.RegExecEvent>(), newConfig, GetEventDir);
 
+            // The .scfg config has now been fully read into newConfig; the extracted copy is no longer needed.
+            try { File.Delete(scfgPath); } catch { }
+
             return newConfig;
         }
 
