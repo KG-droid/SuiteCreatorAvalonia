@@ -47,6 +47,17 @@ namespace SuiteCreatorAvalonia.Models.Package
             {
                 return $"Package '{Name}' must have a detection rule set configured.";
             }
+            if (RemovalType == OtherRemovalType.RegEx && Removal is OtherRegexRemoval regexRemoval && regexRemoval.IsCreateLog)
+            {
+                if (string.IsNullOrWhiteSpace(regexRemoval.LogDirectory))
+                {
+                    return "A log directory is required when logging is enabled for regex removal.";
+                }
+                if (!Path.IsPathFullyQualified(regexRemoval.LogDirectory))
+                {
+                    return "Log directory must be a fully qualified path.";
+                }
+            }
             if (ExitCodes != null && ExitCodes.Count() > 0)
             {
                 foreach (ReturnCode returnCode in ExitCodes)
@@ -94,13 +105,17 @@ namespace SuiteCreatorAvalonia.Models.Package
         public string? Manufacturer { get; set; }
         public string? ProductName { get; set; }
         public string? RemovalParams { get; set; }
+        public bool IsCreateLog { get; set; }
+        public string? LogDirectory { get; set; }
         public override OtherRegexRemoval Clone()
         {
             return new OtherRegexRemoval
             {
                 Manufacturer = Manufacturer,
                 ProductName = ProductName,
-                RemovalParams = RemovalParams
+                RemovalParams = RemovalParams,
+                IsCreateLog = IsCreateLog,
+                LogDirectory = LogDirectory
             };
         }
 
@@ -112,6 +127,8 @@ namespace SuiteCreatorAvalonia.Models.Package
                 Manufacturer = otherCMDRemoval.Manufacturer;
                 ProductName = otherCMDRemoval.ProductName;
                 RemovalParams = otherCMDRemoval.RemovalParams;
+                IsCreateLog = otherCMDRemoval.IsCreateLog;
+                LogDirectory = otherCMDRemoval.LogDirectory;
             }
         }
     }

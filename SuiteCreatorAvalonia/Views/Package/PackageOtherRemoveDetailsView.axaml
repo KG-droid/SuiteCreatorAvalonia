@@ -226,7 +226,7 @@
 						x:Name="RemoveRegex_Grid"
 						IsVisible="False"
 						Margin="0,0,0,10"
-						RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+						RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
 						ColumnDefinitions="Auto,*,Auto,*">
 						<TextBlock
 							Grid.Column="0"
@@ -254,24 +254,61 @@
 							PlaceholderText="No optional parameters provided to run with the matching product removals"
 							Grid.Column="1"
 							Grid.ColumnSpan="3"/>
+
+						<!-- Logging Options -->
+						<CheckBox
+							Grid.Row="2"
+							Grid.Column="0"
+							Margin="0,5,0,0"
+							Name="RegexLog_CheckBox"
+							Content="Create Log"
+							IsChecked="{Binding RegexIsCreateLog}"
+							ToolTip.Tip="Adds a /l*v [LogPath] switch to each matched product's uninstall, using a file name built from that product's Manufacturer, Name, Version and Architecture"/>
+						<TextBox
+							Grid.Row="2"
+							Grid.Column="1"
+							Grid.ColumnSpan="2"
+							Margin="0,5,0,0"
+							IsVisible="{Binding IsChecked, ElementName=RegexLog_CheckBox}"
+							Text="{Binding RegexLogDirectory}"
+							PlaceholderText="Log folder e.g. C:\Modern-Workplace-Logs"/>
+						<StackPanel
+							Grid.Row="2"
+							Grid.Column="3"
+							Margin="5,5,0,0"
+							Orientation="Horizontal"
+							HorizontalAlignment="Left"
+							IsVisible="{Binding IsChecked, ElementName=RegexLog_CheckBox}">
+							<Button
+								Classes="IconButton"
+								Tag="Autofix"
+								Command="{Binding GenerateRegexLogDirectoryCommand}"
+								ToolTip.Tip="Auto Generate the log folder from the settings"/>
+							<Button
+								Classes="IconButton"
+								Tag="FolderOpen"
+								Command="{Binding BrowseRegexLogDirectoryCommand}"
+								ToolTip.Tip="Browse for a log folder"/>
+						</StackPanel>
+
 						<TextBlock
-							Text=" Use Regex to find and remove products based on Manufacturer and Product Name"
-							FontStyle="Italic"
-							FontSize="{DynamicResource InfoFontSize}"
-							Grid.ColumnSpan="4"
-							Grid.Row="2"/>
-						<TextBlock
-							Text=" Uses the remove command on the uninstall reg key if present, otherwise the MSI GUID will be used"
+							Text=" Use Regex to find and remove installed MSI products, matching Manufacturer against Publisher and Product Name against the installed DisplayName"
 							FontStyle="Italic"
 							FontSize="{DynamicResource InfoFontSize}"
 							Grid.ColumnSpan="4"
 							Grid.Row="3"/>
 						<TextBlock
-							Text=" This feature will not work for non MSI installations, that don't list an uninstall command on the uninstall reg key"
+							Text=" This feature only works for MSI-based installs: matches are found via the Windows Installer database and always removed with msiexec /x against the product's MSI GUID"
 							FontStyle="Italic"
 							FontSize="{DynamicResource InfoFontSize}"
 							Grid.ColumnSpan="4"
 							Grid.Row="4"/>
+						<TextBlock
+							Text=" Non-MSI installations will never match here, even if they list an uninstall command on the uninstall registry key"
+							FontStyle="Italic"
+							FontSize="{DynamicResource InfoFontSize}"
+							Grid.ColumnSpan="4"
+							Grid.Row="5"/>
 					</Grid>
 
 					<!--Remove CMD-->
