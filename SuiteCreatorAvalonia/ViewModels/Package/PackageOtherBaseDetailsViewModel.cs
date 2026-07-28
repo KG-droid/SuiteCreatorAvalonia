@@ -1,4 +1,5 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using AvaloniaEdit.Utils;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -18,6 +19,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SuiteCreatorAvalonia.ViewModels
 {
@@ -26,6 +28,7 @@ namespace SuiteCreatorAvalonia.ViewModels
         private readonly Dictionary<MSIRemoveItemViewModel, PropertyChangedEventHandler> _msiRemoveHandlers = new();
         private readonly DispatcherTimer _saveDebounceTimer;
         protected SuiteCoreManager _suiteCoreManager;
+        protected AppSettingsControl _settingsCtrl;
         protected bool _isLoading = false;
 
         [ObservableProperty]
@@ -81,6 +84,12 @@ namespace SuiteCreatorAvalonia.ViewModels
         private string? _regexRemoveParams;
 
         [ObservableProperty]
+        private bool _regexIsCreateLog;
+
+        [ObservableProperty]
+        private string? _regexLogDirectory;
+
+        [ObservableProperty]
         private RestartBehavior _restartBehavior = RestartBehavior.Ignore;
 
         partial void OnSelectedRemoveTypeChanged(OtherRemovalType value)
@@ -104,13 +113,18 @@ namespace SuiteCreatorAvalonia.ViewModels
             }
         }
 
-        public PackageOtherBaseDetailsViewModel() : this(new ViewFactory(type => { return (ViewModelBase)Activator.CreateInstance(type)!; }), new SuiteCoreManager())
+        public PackageOtherBaseDetailsViewModel() : this(new ViewFactory(type => { return (ViewModelBase)Activator.CreateInstance(type)!; }), new SuiteCoreManager(), new AppSettingsControl())
         {
             PropertyChanged += (sender, args) => SavePackage();
         }
 
-        public PackageOtherBaseDetailsViewModel(ViewFactory viewFactory, SuiteCoreManager suiteCoreManager) : base(viewFactory, suiteCoreManager)
+        public PackageOtherBaseDetailsViewModel(ViewFactory viewFactory, SuiteCoreManager suiteCoreManager) : this(viewFactory, suiteCoreManager, new AppSettingsControl())
         {
+        }
+
+        public PackageOtherBaseDetailsViewModel(ViewFactory viewFactory, SuiteCoreManager suiteCoreManager, AppSettingsControl settingsCtrl) : base(viewFactory, suiteCoreManager)
+        {
+            _settingsCtrl = settingsCtrl;
             _suiteCoreManager = suiteCoreManager;
             _saveDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
             _saveDebounceTimer.Tick += (s, e) => { _saveDebounceTimer.Stop(); SavePackage(); };
@@ -232,6 +246,20 @@ namespace SuiteCreatorAvalonia.ViewModels
             RemoveCMDs.Add(new List<VariableText> { new LiteralText(string.Empty) });
         }
 
+        [RelayCommand]
+        public async Task BrowseRegexLogDirectory()
+        {
+            IEnumerable<string>? results = await this.OpenFolderDialogAsync(new FolderPickerOpenOptions() { AllowMultiple = false, Title = "Browse for a log folder" });
+            if (results != null && results.Any())
+                RegexLogDirectory = results.First();
+        }
+
+        [RelayCommand]
+        public void GenerateRegexLogDirectory()
+        {
+            RegexLogDirectory = _settingsCtrl.GetLogLocation();
+        }
+
         public override void LoadPackage(Guid packageId)
         {
             bool wasLoading = _isLoading;
@@ -256,6 +284,8 @@ namespace SuiteCreatorAvalonia.ViewModels
                 RegexVendor = null;
                 RegexProductName = null;
                 RegexRemoveParams = null;
+                RegexIsCreateLog = false;
+                RegexLogDirectory = null;
                 RemoveMSIs.Clear();
                 RemoveCMDs.Clear();
                 DetachAllMSIRemoveHandlers();
@@ -281,6 +311,8 @@ namespace SuiteCreatorAvalonia.ViewModels
                         RegexVendor = regexRemoval.Manufacturer;
                         RegexProductName = regexRemoval.ProductName;
                         RegexRemoveParams = regexRemoval.RemovalParams;
+                        RegexIsCreateLog = regexRemoval.IsCreateLog;
+                        RegexLogDirectory = regexRemoval.LogDirectory;
                         break;
                     case OtherCMDRemoval cmdRemoval:
                         if (cmdRemoval.RemoveCommands != null)
@@ -352,7 +384,9 @@ namespace SuiteCreatorAvalonia.ViewModels
                     {
                         Manufacturer = RegexVendor,
                         ProductName = RegexProductName,
-                        RemovalParams = RegexRemoveParams
+                        RemovalParams = RegexRemoveParams,
+                        IsCreateLog = RegexIsCreateLog,
+                        LogDirectory = RegexLogDirectory
                     };
                     break;
             }

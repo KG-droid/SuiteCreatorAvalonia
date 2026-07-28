@@ -37,6 +37,11 @@ namespace SuiteCreatorAvalonia.ViewModels
             SetupEvents();
         }
 
+        public PackageOtherRemoveDetailsViewModel(ViewFactory viewFactory, SuiteCoreManager suiteCoreManager, AppSettingsControl settingsCtrl) : base(viewFactory, suiteCoreManager, settingsCtrl)
+        {
+            SetupEvents();
+        }
+
         partial void OnSelectedPowerShellFileChanged(FileSystemNode? value)
         {
             if (!_isLoading)

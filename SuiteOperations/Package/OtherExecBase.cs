@@ -144,7 +144,8 @@ namespace SuiteOperations.Package
             foreach (var prod in matches)
             {
                 _log.WriteLog($"Uninstalling product: {prod.DisplayName} ({prod.ProductCode})", "OtherPkg", Log.Severity.Info);
-                var result = MSITools.UninstallMSI(prod.ProductCode, null);
+                string? logPath = BuildRegexRemovalLogPath(regex, prod);
+                var result = MSITools.UninstallMSI(prod.ProductCode, logPath, null, regex.RemovalParams);
                 _log.WriteLog($"Uninstall command: {result.CommandRun}", "OtherPkg", Log.Severity.Info);
                 if (!result.Success)
                 {
@@ -154,6 +155,42 @@ namespace SuiteOperations.Package
             }
 
             _log.WriteLog("Regex Uninstall Complete", "OtherPkg", Log.Severity.Info);
+        }
+
+        private static readonly char[] InvalidLogFileNameChars = Path.GetInvalidFileNameChars();
+
+        /// <summary>
+        /// Regex removal can match several installed products in one run, so there is no single
+        /// user-supplied log path to reuse (unlike the fixed MSI removal items). Instead build a
+        /// distinct file name per match from its own MSI details, e.g. "Acme_MyApp_1.0.0_x64_Uninstall.log".
+        /// </summary>
+        internal string? BuildRegexRemovalLogPath(OtherRegexRemoval regex, MSITools.MSIProductInfo product)
+        {
+            if (!regex.IsCreateLog || string.IsNullOrWhiteSpace(regex.LogDirectory))
+                return null;
+
+            string[] nameParts = new[]
+            {
+                SanitizeForLogFileName(product.Publisher),
+                SanitizeForLogFileName(product.DisplayName),
+                SanitizeForLogFileName(product.ProductVersion?.ToString()),
+                SanitizeForLogFileName(product.Architecture?.ToString().ToLowerInvariant())
+            };
+            string fileName = string.Join("_", nameParts.Where(part => !string.IsNullOrWhiteSpace(part))) + "_Uninstall.log";
+
+            return Path.Combine(regex.LogDirectory, fileName);
+        }
+
+        private static string SanitizeForLogFileName(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+            char[] chars = value.ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (Array.IndexOf(InvalidLogFileNameChars, chars[i]) >= 0)
+                    chars[i] = '_';
+            }
+            return new string(chars).Trim();
         }
 
         internal void HandleCMDRemoval(OtherCMDRemoval cmd)
