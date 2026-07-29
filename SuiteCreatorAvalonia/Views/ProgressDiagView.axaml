@@ -12,18 +12,25 @@
 		<vm:ProgressDiagViewModel/>
 	</Design.DataContext>
 
-	<StackPanel 
-		HorizontalAlignment="Center" 
-		VerticalAlignment="Center" 
+	<StackPanel
+		HorizontalAlignment="Center"
+		VerticalAlignment="Center"
 		Spacing="10">
-        <TextBlock 
-			Text="{Binding Message}" 
-			FontWeight="Bold" 
+        <TextBlock
+			Text="{Binding Message}"
+			FontWeight="Bold"
 			FontSize="16"/>
-        <ProgressBar 
-			IsIndeterminate="True" 
+        <ProgressBar
+			IsIndeterminate="{Binding !IsZipProgressActive}"
+			Minimum="0"
+			Maximum="100"
+			Value="{Binding ZipPercentValue}"
 			Width="200"/>
-        <Button 
+        <TextBlock
+			IsVisible="{Binding IsZipProgressActive}"
+			Text="{Binding ZipPercentValue, StringFormat='{}{0:0}%'}"
+			HorizontalAlignment="Center"/>
+        <Button
 			HorizontalAlignment="Right"
 			Content="   Cancel  "/>
     </StackPanel>

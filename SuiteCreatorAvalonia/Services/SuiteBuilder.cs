@@ -26,6 +26,8 @@ using Environment = SuiteCreatorAvalonia.Models.Events.Environment;
 
 namespace SuiteCreatorAvalonia.Services
 {
+    public readonly record struct BuildProgress(string Stage, double? ZipPercent = null);
+
     public class SuiteBuilder
     {
         private SuiteCoreManager _suiteCoreManager;
@@ -50,10 +52,12 @@ namespace SuiteCreatorAvalonia.Services
             _appSettingsControl = appSettingsControl;
         }
 
-        internal async Task<List<SuiteValidationError>?> Build(CancellationToken cancellationToken, IProgress<string>? progress = null)
+        internal async Task<List<SuiteValidationError>?> Build(CancellationToken cancellationToken, IProgress<BuildProgress>? progress = null)
         {
+            void Report(string s) => progress?.Report(new BuildProgress(s));
+
             AppLog.Info($"Build started for project: {_suiteCoreManager.GetProjectName()}", "SuiteBuilder");
-            progress?.Report("Validating configuration");
+            Report("Validating configuration");
             ValidateConfig();
             if (_validationReport != null)
             {
@@ -61,10 +65,10 @@ namespace SuiteCreatorAvalonia.Services
                 SuiteBuilt?.Invoke(this, new SuiteBuiltEventArgs(string.Empty, null));
                 return _validationReport;
             }
-            progress?.Report("Saving project");
+            Report("Saving project");
             await _suiteCoreManager.SaveAsync();
             // Pre-fetch all UI-thread-bound data before entering Task.Run
-            progress?.Report("Preparing build configuration");
+            Report("Preparing build configuration");
             SuiteExecConfig suiteExecConfig = CreateSuiteExecConfig();
             List<BrowserExt> extensionEvents = _suiteCoreManager.GetExtensionEvents().ToList();
             List<Cert> certEvents = _suiteCoreManager.GetCertEvents().ToList();
@@ -109,7 +113,7 @@ namespace SuiteCreatorAvalonia.Services
                     throw new OperationCanceledException(cancellationToken);
                 buildPath = CreateSuiteFiles(suiteExecConfig, extensionEvents, certEvents, driverEvents, packages, fileEvents, executableEvents, powerShellEvents, registryEvents, popupSettings, companyLogoBase64, companyLogoBytes, companyLogoExt, progress);
             }, cancellationToken);
-            progress?.Report("Finalizing build");
+            Report("Finalizing build");
             Build buildSettings = _suiteCoreManager.GetBuildSettings();
             buildSettings.Detection = $@"Set to a Detection Reg Key of: {(buildSettings.Architecture == SuiteCreatorAvalonia.Enums.Architecture.x64 ? _uninstallKeyBase64 : _uninstallKeyBase32)}\{buildSettings.UpgradeCode}, with a Property detection of: DisplayVersion greater or equal to {buildSettings.SuiteVersion}";
             _suiteCoreManager.UpdateBuildSettings(buildSettings);
@@ -469,8 +473,15 @@ namespace SuiteCreatorAvalonia.Services
             string? companyLogoBase64,
             byte[]? companyLogoBytes,
             string? companyLogoExt,
-            IProgress<string>? progress = null)
+            IProgress<BuildProgress>? progress = null)
         {
+            string stage = string.Empty;
+            void Report(string s)
+            {
+                stage = s;
+                progress?.Report(new BuildProgress(s));
+            }
+
             string projectName = _suiteCoreManager.GetProjectName();
             string? savePath = _suiteCoreManager.GetSavePath();
             if (string.IsNullOrWhiteSpace(savePath))
@@ -479,8 +490,7 @@ namespace SuiteCreatorAvalonia.Services
             string saveFileName = Path.GetFileNameWithoutExtension(savePath);
             string tempRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             string buildDir = Path.Combine(saveDir, $"{saveFileName}-Build");
-            string stage = "Initializing";
-            progress?.Report(stage);
+            Report("Initializing");
             try
             {
                 if (Directory.Exists(tempRoot))
@@ -495,13 +505,11 @@ namespace SuiteCreatorAvalonia.Services
                 Directory.CreateDirectory(tempRoot);
 
                 // Create config file
-                stage = "Creating configuration file";
-                progress?.Report(stage);
+                Report("Creating configuration file");
                 suiteExecConfig.ToJson(Path.Combine(tempRoot, "SuiteConfig.scfg"));
 
                 // Copy over suite executor
-                stage = "Copying SuiteExecutor";
-                progress?.Report(stage);
+                Report("Copying SuiteExecutor");
                 var suiteExecSourceDir = Path.Combine(AppContext.BaseDirectory, "SuiteExec");
                 if (Directory.Exists(suiteExecSourceDir))
                 {
@@ -513,8 +521,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
 
                 // Brower Extension Files
-                stage = "Copying browser extension files";
-                progress?.Report(stage);
+                Report("Copying browser extension files");
                 foreach (BrowserExt browEvent in extensionEvents)
                 {
                     if (browEvent.Action == Enums.ExtAction.Install && !string.IsNullOrWhiteSpace(browEvent.ExtPath))
@@ -525,8 +532,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
 
                 // Cert files
-                stage = "Copying certificate files";
-                progress?.Report(stage);
+                Report("Copying certificate files");
                 foreach (Cert certEvent in certEvents)
                 {
                     if (certEvent.Action == Enums.CertAction.Add && !string.IsNullOrWhiteSpace(certEvent.FilePath))
@@ -537,8 +543,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
 
                 // Driver files (copy the whole folder the .inf sits in, since the .sys/.cat files are needed alongside it)
-                stage = "Copying driver files";
-                progress?.Report(stage);
+                Report("Copying driver files");
                 foreach (Driver driverEvent in driverEvents)
                 {
                     if (driverEvent.Action == Enums.DriverAction.Install && !string.IsNullOrWhiteSpace(driverEvent.InfPath))
@@ -554,8 +559,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
 
                 // Package files
-                stage = "Copying package files";
-                progress?.Report(stage);
+                Report("Copying package files");
                 foreach (PackageBase pkgBase in packages)
                 {
                     switch (pkgBase)
@@ -602,8 +606,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
 
                 // File event files
-                stage = "Copying file event files";
-                progress?.Report(stage);
+                Report("Copying file event files");
                 foreach (FileSysIO fileEvent in fileEvents)
                 {
                     if (fileEvent.Action == Enums.FileSysIOAction.Deploy)
@@ -617,8 +620,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
 
                 // Executable event files
-                stage = "Copying executable event files";
-                progress?.Report(stage);
+                Report("Copying executable event files");
                 foreach (Executable exeEvent in executableEvents)
                 {
                     if (exeEvent.TreeNodes != null && exeEvent.TreeNodes.Count > 0)
@@ -630,8 +632,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
 
                 // PowerShell event files
-                stage = "Copying PowerShell event files";
-                progress?.Report(stage);
+                Report("Copying PowerShell event files");
                 foreach (PowerShell psEvent in powerShellEvents)
                 {
                     if (!string.IsNullOrWhiteSpace(psEvent.ScriptPath))
@@ -647,8 +648,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
 
                 // Registry event files
-                stage = "Copying registry event files";
-                progress?.Report(stage);
+                Report("Copying registry event files");
                 foreach (Registry regEvent in registryEvents)
                 {
                     if (regEvent.RegFilePath != null && regEvent.RegFilePath.IsFile)
@@ -667,8 +667,7 @@ namespace SuiteCreatorAvalonia.Services
                 // Popup files
                 if (popupSettings.ShowPopupWarning || popupSettings.ShowProgress || hasBlockingProcClosures)
                 {
-                    stage = "Creating popup files";
-                    progress?.Report(stage);
+                    Report("Creating popup files");
 
                     var popDIR = Path.Combine(tempRoot, "Popup");
                     Directory.CreateDirectory(popDIR);
@@ -685,8 +684,7 @@ namespace SuiteCreatorAvalonia.Services
 
                     if (popupSettings.ShowPopupWarning || hasBlockingProcClosures)
                     {
-                        stage = "Creating warning popup files";
-                        progress?.Report(stage);
+                        Report("Creating warning popup files");
 
                         var popConfig = CreatePopConfig(popupSettings, suiteExecConfig);
                         var popJsonPath = Path.Combine(popDIR, "popconfig.json");
@@ -721,8 +719,7 @@ namespace SuiteCreatorAvalonia.Services
 
                     if (popupSettings.ShowProgress)
                     {
-                        stage = "Creating progress popup files";
-                        progress?.Report(stage);
+                        Report("Creating progress popup files");
 
                         var suiteProgressPopPath = Path.Combine(AppContext.BaseDirectory, "SuiteExec", _suiteProgressPopupName);
                         if (File.Exists(suiteProgressPopPath))
@@ -739,11 +736,10 @@ namespace SuiteCreatorAvalonia.Services
                 // Move temp to final location and create bootstrapper
                 if (Directory.EnumerateFiles(tempRoot, "*", SearchOption.AllDirectories).Any())
                 {
-                    stage = "Compressing suite files";
-                    progress?.Report(stage);
+                    Report("Compressing suite files");
                     string zipGuid = Guid.NewGuid().ToString();
                     string zipPath = Path.Combine(Path.GetTempPath(), $"{zipGuid}.zip");
-                    ZipFile.CreateFromDirectory(tempRoot, zipPath, CompressionLevel.Optimal, includeBaseDirectory: false);
+                    CreateZipWithProgress(tempRoot, zipPath, CompressionLevel.Optimal, stage, progress);
                     if (Directory.Exists(buildDir))
                     {
                         Directory.Delete(buildDir, true);
@@ -751,16 +747,14 @@ namespace SuiteCreatorAvalonia.Services
                     Directory.CreateDirectory(buildDir);
                     var finalZipPath = Path.Combine(buildDir, "SuiteFiles.zip");
                     File.Move(zipPath, finalZipPath, true);
-                    stage = "Creating self-extracting bootstrapper";
-                    progress?.Report(stage);
+                    Report("Creating self-extracting bootstrapper");
                     var sfxPath = Path.Combine(buildDir, $"{projectName}.exe");
                     if (TryCreateSelfExtractingBootstrapper(finalZipPath, sfxPath))
                     {
                         try { File.Delete(finalZipPath); } catch { }
                     }
                 }
-                stage = "Cleaning up temporary files";
-                progress?.Report(stage);
+                Report("Cleaning up temporary files");
                 DeleteDIR(tempRoot);
                 return Path.Combine(saveDir, buildDir);
             }
@@ -779,6 +773,29 @@ namespace SuiteCreatorAvalonia.Services
                 }
                 throw new Exception($"Build failed at stage: {stage}, error: {ex.Message}", ex);
             }
+        }
+
+        private static void CreateZipWithProgress(string sourceDir, string destinationZipPath, CompressionLevel compressionLevel, string stage, IProgress<BuildProgress>? progress)
+        {
+            List<string> files = Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories).ToList();
+            long totalBytes = files.Sum(f => new FileInfo(f).Length);
+            long processedBytes = 0;
+            progress?.Report(new BuildProgress(stage, 0));
+            using (var zipStream = new FileStream(destinationZipPath, FileMode.Create))
+            using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
+            {
+                foreach (string file in files)
+                {
+                    string entryName = Path.GetRelativePath(sourceDir, file).Replace('\\', '/');
+                    archive.CreateEntryFromFile(file, entryName, compressionLevel);
+                    processedBytes += new FileInfo(file).Length;
+                    if (totalBytes > 0)
+                    {
+                        progress?.Report(new BuildProgress(stage, (double)processedBytes / totalBytes * 100.0));
+                    }
+                }
+            }
+            progress?.Report(new BuildProgress(stage, 100));
         }
 
         private void DeleteDIR(string tempRoot)
@@ -1079,11 +1096,10 @@ namespace SuiteCreatorAvalonia.Services
             }
         }
 
-        private static void CopyFileSystemNodeRecursive(FileSystemNode node, string destinationRoot)
+        private static void CopyFileSystemNodeRecursive(FileSystemNode node, string destinationDir)
         {
             if (string.IsNullOrWhiteSpace(node.FullPath)) return;
-            string relativePath = GetRelativePath(node.FullPath);
-            string targetPath = Path.Combine(destinationRoot, relativePath);
+            string targetPath = Path.Combine(destinationDir, Path.GetFileName(node.FullPath));
             if (node.IsFile)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
@@ -1096,7 +1112,7 @@ namespace SuiteCreatorAvalonia.Services
                 {
                     foreach (var sub in node.SubNodes)
                     {
-                        CopyFileSystemNodeRecursive(sub, destinationRoot);
+                        CopyFileSystemNodeRecursive(sub, targetPath);
                     }
                 }
             }
@@ -1118,11 +1134,6 @@ namespace SuiteCreatorAvalonia.Services
                     .ToList();
             }
             return cloned;
-        }
-
-        private static string GetRelativePath(string fullPath)
-        {
-            return Path.GetFileName(fullPath);
         }
 
         private PopConfigDto CreatePopConfig(Popup popupSettings, SuiteExecConfig suiteExecCfg)
