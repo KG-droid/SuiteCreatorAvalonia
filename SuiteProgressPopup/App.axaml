@@ -12,22 +12,6 @@
 
 	<Application.Styles>
 		<FluentTheme />
-
-		<Style Selector="ProgressBar.Pulse">
-			<Style.Animations>
-				<Animation Duration="0:0:1.2" IterationCount="INFINITE" Easing="SineEaseInOut">
-					<KeyFrame Cue="0%">
-						<Setter Property="Opacity" Value="0.55" />
-					</KeyFrame>
-					<KeyFrame Cue="50%">
-						<Setter Property="Opacity" Value="1.0" />
-					</KeyFrame>
-					<KeyFrame Cue="100%">
-						<Setter Property="Opacity" Value="0.55" />
-					</KeyFrame>
-				</Animation>
-			</Style.Animations>
-		</Style>
 	</Application.Styles>
 
 </Application>

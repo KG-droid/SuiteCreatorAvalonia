@@ -26,7 +26,7 @@ using Environment = SuiteCreatorAvalonia.Models.Events.Environment;
 
 namespace SuiteCreatorAvalonia.Services
 {
-    public readonly record struct BuildProgress(string Stage, double? ZipPercent = null);
+    public readonly record struct BuildProgress(string Stage, double? PercentComplete = null);
 
     public class SuiteBuilder
     {
@@ -109,9 +109,7 @@ namespace SuiteCreatorAvalonia.Services
             DateTime buildTime = DateTime.Now;
             await Task.Run(() =>
             {
-                if (cancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(cancellationToken);
-                buildPath = CreateSuiteFiles(suiteExecConfig, extensionEvents, certEvents, driverEvents, packages, fileEvents, executableEvents, powerShellEvents, registryEvents, popupSettings, companyLogoBase64, companyLogoBytes, companyLogoExt, progress);
+                buildPath = CreateSuiteFiles(suiteExecConfig, extensionEvents, certEvents, driverEvents, packages, fileEvents, executableEvents, powerShellEvents, registryEvents, popupSettings, companyLogoBase64, companyLogoBytes, companyLogoExt, progress, cancellationToken);
             }, cancellationToken);
             Report("Finalizing build");
             Build buildSettings = _suiteCoreManager.GetBuildSettings();
@@ -473,11 +471,13 @@ namespace SuiteCreatorAvalonia.Services
             string? companyLogoBase64,
             byte[]? companyLogoBytes,
             string? companyLogoExt,
-            IProgress<BuildProgress>? progress = null)
+            IProgress<BuildProgress>? progress = null,
+            CancellationToken cancellationToken = default)
         {
             string stage = string.Empty;
             void Report(string s)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 stage = s;
                 progress?.Report(new BuildProgress(s));
             }
@@ -513,7 +513,7 @@ namespace SuiteCreatorAvalonia.Services
                 var suiteExecSourceDir = Path.Combine(AppContext.BaseDirectory, "SuiteExec");
                 if (Directory.Exists(suiteExecSourceDir))
                 {
-                    NativeTools.CopyWithRoboCopy(suiteExecSourceDir, tempRoot, false, null, excludeFiles: new[] { _suiteSfxStubName, _suiteUserPopupName, _suiteProgressPopupName });
+                    NativeTools.CopyWithRoboCopy(suiteExecSourceDir, tempRoot, false, null, excludeFiles: new[] { _suiteSfxStubName, _suiteUserPopupName, _suiteProgressPopupName }, cancellationToken: cancellationToken);
                 }
                 else
                 {
@@ -527,7 +527,7 @@ namespace SuiteCreatorAvalonia.Services
                     if (browEvent.Action == Enums.ExtAction.Install && !string.IsNullOrWhiteSpace(browEvent.ExtPath))
                     {
                         string fileDir = Path.Combine(tempRoot, "BrowserExt", browEvent.Id.ToString());
-                        NativeTools.CopyWithRoboCopy(browEvent.ExtPath, fileDir, false);
+                        NativeTools.CopyWithRoboCopy(browEvent.ExtPath, fileDir, false, cancellationToken: cancellationToken);
                     }
                 }
 
@@ -538,7 +538,7 @@ namespace SuiteCreatorAvalonia.Services
                     if (certEvent.Action == Enums.CertAction.Add && !string.IsNullOrWhiteSpace(certEvent.FilePath))
                     {
                         string fileDir = Path.Combine(tempRoot, "Certificate", certEvent.Id.ToString());
-                        NativeTools.CopyWithRoboCopy(certEvent.FilePath, fileDir, false);
+                        NativeTools.CopyWithRoboCopy(certEvent.FilePath, fileDir, false, cancellationToken: cancellationToken);
                     }
                 }
 
@@ -554,12 +554,29 @@ namespace SuiteCreatorAvalonia.Services
                             throw new InvalidOperationException($"Could not determine the folder containing the driver .inf file: {driverEvent.InfPath}");
                         }
                         string fileDir = Path.Combine(tempRoot, "Driver", driverEvent.Id.ToString());
-                        NativeTools.CopyWithRoboCopy(driverSourceDir, fileDir, false);
+                        NativeTools.CopyWithRoboCopy(driverSourceDir, fileDir, false, cancellationToken: cancellationToken);
                     }
                 }
 
                 // Package files
                 Report("Copying package files");
+                long packageTotalBytes = GetPackagesTotalBytes(packages);
+                long packageProcessedBytes = 0;
+                void ReportPackageProgress(long bytesJustCopied)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    packageProcessedBytes += bytesJustCopied;
+                    if (packageTotalBytes > 0)
+                    {
+                        progress?.Report(new BuildProgress(stage, (double)packageProcessedBytes / packageTotalBytes * 100.0));
+                    }
+                }
+                void CopyPackageFileWithProgress(string sourceFilePath, string destDir)
+                {
+                    Directory.CreateDirectory(destDir);
+                    string destFilePath = Path.Combine(destDir, Path.GetFileName(sourceFilePath));
+                    CopyFileWithProgress(sourceFilePath, destFilePath, ReportPackageProgress, cancellationToken);
+                }
                 foreach (PackageBase pkgBase in packages)
                 {
                     switch (pkgBase)
@@ -568,7 +585,7 @@ namespace SuiteCreatorAvalonia.Services
                             if (!string.IsNullOrWhiteSpace(msiPkg.MSIPath) && File.Exists(msiPkg.MSIPath))
                             {
                                 string pkgDir = Path.Combine(tempRoot, "Package", msiPkg.Id.ToString());
-                                NativeTools.CopyWithRoboCopy(msiPkg.MSIPath, pkgDir);
+                                CopyPackageFileWithProgress(msiPkg.MSIPath, pkgDir);
                             }
                             else
                             {
@@ -580,7 +597,7 @@ namespace SuiteCreatorAvalonia.Services
                             {
                                 string pkgDir = Path.Combine(tempRoot, "Package", other.Id.ToString());
                                 if (other.Files.FirstOrDefault()?.SubNodes != null && other.Files.FirstOrDefault()?.SubNodes?.Count > 0 )
-                                    CopyFileSystemNodes(other.Files.FirstOrDefault().SubNodes, pkgDir); // Go into first node, as its the root of the package files
+                                    CopyFileSystemNodes(other.Files.FirstOrDefault().SubNodes, pkgDir, ReportPackageProgress, cancellationToken); // Go into first node, as its the root of the package files
                             }
                             break;
                         case OtherRemovalPkg otherRem:
@@ -588,14 +605,14 @@ namespace SuiteCreatorAvalonia.Services
                             {
                                 string pkgDir = Path.Combine(tempRoot, "Package", otherRem.Id.ToString());
                                 if (otherRem.Files.FirstOrDefault()?.SubNodes != null && otherRem.Files.FirstOrDefault()?.SubNodes?.Count > 0)
-                                    CopyFileSystemNodes(otherRem.Files.FirstOrDefault()?.SubNodes, pkgDir); // Go into first node, as its the root of the package files
+                                    CopyFileSystemNodes(otherRem.Files.FirstOrDefault()?.SubNodes, pkgDir, ReportPackageProgress, cancellationToken); // Go into first node, as its the root of the package files
                             }
                             break;
                         case MSIxPkg msix:
                             if (!string.IsNullOrWhiteSpace(msix.MSIxPath) && File.Exists(msix.MSIxPath))
                             {
                                 string pkgDir = Path.Combine(tempRoot, "Package", msix.Id.ToString());
-                                NativeTools.CopyWithRoboCopy(msix.MSIxPath, pkgDir);
+                                CopyPackageFileWithProgress(msix.MSIxPath, pkgDir);
                             }
                             else
                             {
@@ -607,15 +624,51 @@ namespace SuiteCreatorAvalonia.Services
 
                 // File event files
                 Report("Copying file event files");
-                foreach (FileSysIO fileEvent in fileEvents)
-                {
-                    if (fileEvent.Action == Enums.FileSysIOAction.Deploy)
+                List<(FileSysIO Event, string SourcePath)> fileDeploys = fileEvents
+                    .Where(fe => fe.Action == Enums.FileSysIOAction.Deploy)
+                    .Select(fe =>
                     {
-                        string fileDir = Path.Combine(tempRoot, "File", fileEvent.Id.ToString());
-                        string? sourcePath = GetVarPathAsString(fileEvent.SourcePath);
+                        string? sourcePath = GetVarPathAsString(fe.SourcePath);
                         if (string.IsNullOrWhiteSpace(sourcePath))
-                            throw new FileNotFoundException($"File deploy event '{fileEvent.Id}' has no source path set; cannot build the suite.");
-                        NativeTools.CopyWithRoboCopy(sourcePath, fileDir, false);
+                            throw new FileNotFoundException($"File deploy event '{fe.Id}' has no source path set; cannot build the suite.");
+                        return (Event: fe, SourcePath: sourcePath);
+                    })
+                    .ToList();
+                long fileEventTotalBytes = fileDeploys.Sum(d => NativeTools.GetPathSizeOnDisk(d.SourcePath));
+                long fileEventProcessedBytes = 0;
+                void ReportFileEventProgress(long bytesJustCopied)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    fileEventProcessedBytes += bytesJustCopied;
+                    if (fileEventTotalBytes > 0)
+                    {
+                        progress?.Report(new BuildProgress(stage, (double)fileEventProcessedBytes / fileEventTotalBytes * 100.0));
+                    }
+                }
+                foreach (var deploy in fileDeploys)
+                {
+                    string fileDir = Path.Combine(tempRoot, "File", deploy.Event.Id.ToString());
+                    if (File.Exists(deploy.SourcePath))
+                    {
+                        // A single file's progress is reported far more reliably by copying it ourselves
+                        // than by polling robocopy's destination file size from the outside (see
+                        // CopyPackageFileWithProgress above for why).
+                        Directory.CreateDirectory(fileDir);
+                        string destFilePath = Path.Combine(fileDir, Path.GetFileName(deploy.SourcePath));
+                        CopyFileWithProgress(deploy.SourcePath, destFilePath, ReportFileEventProgress, cancellationToken);
+                    }
+                    else
+                    {
+                        long lastReportedBytes = 0;
+                        NativeTools.CopyWithRoboCopy(deploy.SourcePath, fileDir, false, onBytesCopied: currentBytes =>
+                        {
+                            long delta = currentBytes - lastReportedBytes;
+                            if (delta > 0)
+                            {
+                                lastReportedBytes = currentBytes;
+                                ReportFileEventProgress(delta);
+                            }
+                        }, cancellationToken: cancellationToken);
                     }
                 }
 
@@ -627,7 +680,7 @@ namespace SuiteCreatorAvalonia.Services
                     {
                         string exeDir = Path.Combine(tempRoot, "Executable", exeEvent.Id.ToString());
                         if (exeEvent.TreeNodes.FirstOrDefault()?.SubNodes != null && exeEvent.TreeNodes.FirstOrDefault()?.SubNodes?.Count > 0)
-                            CopyFileSystemNodes(exeEvent.TreeNodes.FirstOrDefault()?.SubNodes, exeDir); // Go into first node, as its the root of the event
+                            CopyFileSystemNodes(exeEvent.TreeNodes.FirstOrDefault()?.SubNodes, exeDir, cancellationToken: cancellationToken); // Go into first node, as its the root of the event
                     }
                 }
 
@@ -638,12 +691,12 @@ namespace SuiteCreatorAvalonia.Services
                     if (!string.IsNullOrWhiteSpace(psEvent.ScriptPath))
                     {
                         string exeDir = Path.Combine(tempRoot, "PowerShell", psEvent.Id.ToString());
-                        NativeTools.CopyWithRoboCopy(psEvent.ScriptPath, exeDir, false);
+                        NativeTools.CopyWithRoboCopy(psEvent.ScriptPath, exeDir, false, cancellationToken: cancellationToken);
                     }
                     if (psEvent.SupportingFiles != null && psEvent.SupportingFiles.Count > 0)
                     {
                         string supportDir = Path.Combine(tempRoot, "PowerShell", psEvent.Id.ToString(), "Support");
-                        CopyFileSystemNodes(psEvent.SupportingFiles, supportDir);
+                        CopyFileSystemNodes(psEvent.SupportingFiles, supportDir, cancellationToken: cancellationToken);
                     }
                 }
 
@@ -654,7 +707,7 @@ namespace SuiteCreatorAvalonia.Services
                     if (regEvent.RegFilePath != null && regEvent.RegFilePath.IsFile)
                     {
                         string exeDir = Path.Combine(tempRoot, "Registry", regEvent.Id.ToString());
-                        NativeTools.CopyWithRoboCopy(regEvent.RegFilePath.LocalPath, exeDir, false);
+                        NativeTools.CopyWithRoboCopy(regEvent.RegFilePath.LocalPath, exeDir, false, cancellationToken: cancellationToken);
                     }
                 }
 
@@ -739,7 +792,7 @@ namespace SuiteCreatorAvalonia.Services
                     Report("Compressing suite files");
                     string zipGuid = Guid.NewGuid().ToString();
                     string zipPath = Path.Combine(Path.GetTempPath(), $"{zipGuid}.zip");
-                    CreateZipWithProgress(tempRoot, zipPath, CompressionLevel.Optimal, stage, progress);
+                    CreateZipWithProgress(tempRoot, zipPath, CompressionLevel.Fastest, stage, progress, cancellationToken);
                     if (Directory.Exists(buildDir))
                     {
                         Directory.Delete(buildDir, true);
@@ -771,27 +824,73 @@ namespace SuiteCreatorAvalonia.Services
                 {
                     AppLog.Warning($"Failed to clean up build temp folder: {tempRoot}, error: {cleanupEx.Message}", "SuiteBuilder");
                 }
+                if (ex is OperationCanceledException)
+                {
+                    throw;
+                }
                 throw new Exception($"Build failed at stage: {stage}, error: {ex.Message}", ex);
             }
         }
 
-        private static void CreateZipWithProgress(string sourceDir, string destinationZipPath, CompressionLevel compressionLevel, string stage, IProgress<BuildProgress>? progress)
+        /// <summary>
+        /// Copies a single file in chunks, reporting bytes copied as it goes. Used instead of robocopy for
+        /// single-file sources — polling an external process's destination file size for progress turned out to be
+        /// unreliable (a file another process is mid-write to doesn't necessarily grow visibly on disk in the
+        /// meantime), whereas doing the read/write ourselves gives progress we know is accurate.
+        /// </summary>
+        private static void CopyFileWithProgress(string sourceFilePath, string destFilePath, Action<long> onBytesCopied, CancellationToken cancellationToken)
+        {
+            const int bufferSize = 1024 * 1024; // 1MB chunks
+            byte[] buffer = new byte[bufferSize];
+            using (var sourceStream = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize))
+            using (var destStream = new FileStream(destFilePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize))
+            {
+                int bytesRead;
+                while ((bytesRead = sourceStream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    destStream.Write(buffer, 0, bytesRead);
+                    onBytesCopied(bytesRead);
+                }
+            }
+            File.SetLastWriteTimeUtc(destFilePath, File.GetLastWriteTimeUtc(sourceFilePath));
+        }
+
+        private static void CreateZipWithProgress(string sourceDir, string destinationZipPath, CompressionLevel compressionLevel, string stage, IProgress<BuildProgress>? progress, CancellationToken cancellationToken = default)
         {
             List<string> files = Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories).ToList();
             long totalBytes = files.Sum(f => new FileInfo(f).Length);
             long processedBytes = 0;
+            long lastReportedBytes = -1;
+            // Report at most every ~256KB of progress — fine enough that a single huge file still shows visible
+            // movement instead of looking frozen, without flooding the UI dispatcher for lots of small files.
+            const long reportThresholdBytes = 262144;
             progress?.Report(new BuildProgress(stage, 0));
             using (var zipStream = new FileStream(destinationZipPath, FileMode.Create))
             using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
             {
+                byte[] buffer = new byte[81920];
                 foreach (string file in files)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     string entryName = Path.GetRelativePath(sourceDir, file).Replace('\\', '/');
-                    archive.CreateEntryFromFile(file, entryName, compressionLevel);
-                    processedBytes += new FileInfo(file).Length;
-                    if (totalBytes > 0)
+                    ZipArchiveEntry entry = archive.CreateEntry(entryName, compressionLevel);
+                    entry.LastWriteTime = File.GetLastWriteTime(file);
+                    using (var entryStream = entry.Open())
+                    using (var sourceStream = File.OpenRead(file))
                     {
-                        progress?.Report(new BuildProgress(stage, (double)processedBytes / totalBytes * 100.0));
+                        int bytesRead;
+                        while ((bytesRead = sourceStream.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            entryStream.Write(buffer, 0, bytesRead);
+                            processedBytes += bytesRead;
+                            if (totalBytes > 0 && processedBytes - lastReportedBytes >= reportThresholdBytes)
+                            {
+                                lastReportedBytes = processedBytes;
+                                progress?.Report(new BuildProgress(stage, (double)processedBytes / totalBytes * 100.0));
+                            }
+                        }
                     }
                 }
             }
@@ -1087,23 +1186,78 @@ namespace SuiteCreatorAvalonia.Services
             }
         }
 
-        private static void CopyFileSystemNodes(IEnumerable<FileSystemNode> nodes, string destinationRoot)
+        private static long GetPackagesTotalBytes(List<PackageBase> packages)
+        {
+            long total = 0;
+            foreach (PackageBase pkgBase in packages)
+            {
+                switch (pkgBase)
+                {
+                    case MSIPkg msiPkg when !string.IsNullOrWhiteSpace(msiPkg.MSIPath) && File.Exists(msiPkg.MSIPath):
+                        total += new FileInfo(msiPkg.MSIPath).Length;
+                        break;
+                    case OtherPkg other:
+                        total += GetFileSystemNodesTotalBytes(other.Files?.FirstOrDefault()?.SubNodes);
+                        break;
+                    case OtherRemovalPkg otherRem:
+                        total += GetFileSystemNodesTotalBytes(otherRem.Files?.FirstOrDefault()?.SubNodes);
+                        break;
+                    case MSIxPkg msix when !string.IsNullOrWhiteSpace(msix.MSIxPath) && File.Exists(msix.MSIxPath):
+                        total += new FileInfo(msix.MSIxPath).Length;
+                        break;
+                }
+            }
+            return total;
+        }
+
+        private static long GetFileSystemNodesTotalBytes(IEnumerable<FileSystemNode>? nodes)
+        {
+            if (nodes == null) return 0;
+            long total = 0;
+            foreach (var node in nodes)
+            {
+                total += GetFileSystemNodeTotalBytesRecursive(node);
+            }
+            return total;
+        }
+
+        private static long GetFileSystemNodeTotalBytesRecursive(FileSystemNode node)
+        {
+            if (string.IsNullOrWhiteSpace(node.FullPath)) return 0;
+            if (node.IsFile)
+            {
+                return File.Exists(node.FullPath) ? new FileInfo(node.FullPath).Length : 0;
+            }
+            long total = 0;
+            if (node.SubNodes != null)
+            {
+                foreach (var sub in node.SubNodes)
+                {
+                    total += GetFileSystemNodeTotalBytesRecursive(sub);
+                }
+            }
+            return total;
+        }
+
+        private static void CopyFileSystemNodes(IEnumerable<FileSystemNode> nodes, string destinationRoot, Action<long>? onFileCopied = null, CancellationToken cancellationToken = default)
         {
             if (nodes == null) return;
             foreach (var node in nodes)
             {
-                CopyFileSystemNodeRecursive(node, destinationRoot);
+                CopyFileSystemNodeRecursive(node, destinationRoot, onFileCopied, cancellationToken);
             }
         }
 
-        private static void CopyFileSystemNodeRecursive(FileSystemNode node, string destinationDir)
+        private static void CopyFileSystemNodeRecursive(FileSystemNode node, string destinationDir, Action<long>? onFileCopied = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(node.FullPath)) return;
             string targetPath = Path.Combine(destinationDir, Path.GetFileName(node.FullPath));
             if (node.IsFile)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-                File.Copy(node.FullPath, targetPath, true);
+                // Chunked copy so a single large file reports progress as it goes, instead of only after the
+                // whole file finishes (see CopyFileWithProgress for why this beats a plain File.Copy here).
+                CopyFileWithProgress(node.FullPath, targetPath, bytes => onFileCopied?.Invoke(bytes), cancellationToken);
             }
             else
             {
@@ -1112,7 +1266,7 @@ namespace SuiteCreatorAvalonia.Services
                 {
                     foreach (var sub in node.SubNodes)
                     {
-                        CopyFileSystemNodeRecursive(sub, targetPath);
+                        CopyFileSystemNodeRecursive(sub, targetPath, onFileCopied, cancellationToken);
                     }
                 }
             }

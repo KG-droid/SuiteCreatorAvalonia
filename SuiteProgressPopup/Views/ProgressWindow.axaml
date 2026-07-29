@@ -1,8 +1,9 @@
-<Window 
+<Window
 	xmlns="https://github.com/avaloniaui"
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-	xmlns:vm="clr-namespace:SuiteProgressPopup.ViewModels"  
+	xmlns:vm="clr-namespace:SuiteProgressPopup.ViewModels"
+	xmlns:controls="using:SuiteCreatorControls.Controls"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	mc:Ignorable="d"
 	Topmost="True"
@@ -31,7 +32,7 @@
 				<ResourceDictionary x:Key='Light'>
 					<BoxShadows x:Key="MainBoxShadow">-3 3 10 1 LightGray</BoxShadows>
 					<Color x:Key="MainBoxShadowColor">LightGray</Color>
-				</ResourceDictionary>		
+				</ResourceDictionary>
 				<ResourceDictionary x:Key='Dark'>
 					<BoxShadows x:Key="MainBoxShadow">-4 1 15 1 Black</BoxShadows>
 					<Color x:Key="MainBoxShadowColor">Black</Color>
@@ -49,7 +50,7 @@
 		CornerRadius="20"
 		BoxShadow="{DynamicResource MainBoxShadow}">
 
-		<Grid 
+		<Grid
 			ColumnDefinitions="Auto,10,*">
 
 			<!-- Suite logo; the outline (when the logo is too close in colour to the theme background) is baked into SuiteLogo itself -->
@@ -77,17 +78,14 @@
 					ToolTip.Tip="{Binding StatusText}"
 					TextTrimming="CharacterEllipsis" />
 
-				<ProgressBar
+				<controls:ShimmerProgress
 					Grid.Column="0"
-					Classes="Pulse"
 					Height="8"
-					CornerRadius="4"
-					Minimum="0"
-					Maximum="100"
 					MinWidth="50"
 					Value="{Binding Percentage}"
 					IsIndeterminate="{Binding IsIndeterminate}"
-					Foreground="{Binding ProgressColourBrush}"
+					Accent="{Binding ProgressColourBrush}"
+					TrackBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
 					VerticalAlignment="Center" />
 
 			</StackPanel>
