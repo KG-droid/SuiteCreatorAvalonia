@@ -247,7 +247,7 @@ namespace SuiteCreatorAvalonia.Services
                             DetectionRuleSetId = otherPkg.DetectionRuleSetId,
                             RollbackDetectionRuleSetId = otherPkg.RollbackDetectionRuleSetId,
                             RemovalType = otherPkg.RemovalType,
-                            Removal = otherPkg.Removal?.Clone(),
+                            Removal = ResolveRemovalFileVars(otherPkg.Removal),
                             Context = otherPkg.Context,
                             SecureParams = otherPkg.SecureParams,
                             LegacyLongFilePath = otherPkg.LegacyLongFilePath,
@@ -266,7 +266,7 @@ namespace SuiteCreatorAvalonia.Services
                             RequirementRuleSetId = otherRemPkg.RequirementRuleSetId,
                             DetectionRuleSetId = otherRemPkg.DetectionRuleSetId,
                             RemovalType = otherRemPkg.RemovalType,
-                            Removal = otherRemPkg.Removal?.Clone(),
+                            Removal = ResolveRemovalFileVars(otherRemPkg.Removal),
                             Context = otherRemPkg.Context,
                             SecureParams = otherRemPkg.SecureParams,
                             RestartBehavior = otherRemPkg.RestartBehavior,
@@ -1100,6 +1100,24 @@ namespace SuiteCreatorAvalonia.Services
                     }
                 }
             }
+        }
+
+        // Removal.RemoveCommands can hold FileVar entries picked via the file browser (an absolute-path,
+        // UI-only VariableText backed by FileSystemNode). SuiteExecutor never references the Avalonia
+        // project FileVar lives in, so it must be rebased onto a RelativeFileVar before it reaches the
+        // exec config - same conversion already applied to InstallCommand/RollbackCommand above.
+        private static OtherRemovalObject? ResolveRemovalFileVars(OtherRemovalObject? removal)
+        {
+            OtherRemovalObject? cloned = removal?.Clone();
+            if (cloned is OtherCMDRemoval cmdRemoval && cmdRemoval.RemoveCommands != null)
+            {
+                cmdRemoval.RemoveCommands = cmdRemoval.RemoveCommands
+                    .Select(cmdList => cmdList
+                        .Select(cmd => cmd is FileVar fv ? (VariableText)new RelativeFileVar(Path.GetFileName(fv.Node.FullPath)) : cmd)
+                        .ToList())
+                    .ToList();
+            }
+            return cloned;
         }
 
         private static string GetRelativePath(string fullPath)
