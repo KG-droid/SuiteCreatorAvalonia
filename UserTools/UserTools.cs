@@ -387,7 +387,8 @@ namespace SuiteTools
                 bool isWindowVisibleToUser,
                 bool wait,
                 TimeSpan? waitTimeout,
-                bool? killWithParent)
+                bool? killWithParent,
+                Action<string, string?>? onOutputLine = null)
             {
                 // Ensure a healthy state for permission to impersonate.
                 NativeMethods.RevertToSelf();
@@ -522,7 +523,9 @@ namespace SuiteTools
                             using System.IO.StreamReader stdoutReader = new System.IO.StreamReader(stdoutStream);
                             using System.IO.StreamReader stderrReader = new System.IO.StreamReader(stderrStream);
 
-                            Task<string> stdoutTask = stdoutReader.ReadToEndAsync();
+                            Task<string> stdoutTask = ReadStreamWithLineCallbackAsync(
+                                stdoutReader,
+                                onOutputLine == null ? null : (Action<string>)(line => onOutputLine(line, session.UserName)));
                             Task<string> stderrTask = stderrReader.ReadToEndAsync();
 
                             try
@@ -595,16 +598,19 @@ namespace SuiteTools
                 }
             }
 
+            // onOutputLine, when supplied, is invoked with (line, userName) for each line of standard output
+            // as the process writes it, letting callers stream progress instead of waiting for completion.
             public static List<ImpersonatedProcessResult> StartProcessAsAllUsers(
                 string exePath,
                 string? arguments,
                 string workingDirectory,
                 bool isWindowVisibleToUser = false,
-                bool wait = true
+                bool wait = true,
+                Action<string, string?>? onOutputLine = null
                 )
             {
                 if (!HasSeTcbPrivilege())
-                    return new List<ImpersonatedProcessResult> { StartProcessDirectly(exePath, arguments, workingDirectory, isWindowVisibleToUser, wait) };
+                    return new List<ImpersonatedProcessResult> { StartProcessDirectly(exePath, arguments, workingDirectory, isWindowVisibleToUser, wait, false, onOutputLine) };
 
                 List<UserExtensions.UserSessionInfo>? sessions = UserExtensions.GetUserSessions();
                 if (sessions == null || sessions.Count == 0)
@@ -616,9 +622,26 @@ namespace SuiteTools
                     // Only run for active sessions
                     if (string.IsNullOrEmpty(session.UserName) || session.State != NativeHelpers.WTS_CONNECTSTATE_CLASS.WTSActive)
                         continue;
-                    results.Add(RunProcessInSession(session, exePath, arguments, workingDirectory, isWindowVisibleToUser, wait, null, false));
+                    results.Add(RunProcessInSession(session, exePath, arguments, workingDirectory, isWindowVisibleToUser, wait, null, false, onOutputLine));
                 }
                 return results;
+            }
+
+            // Reads a stream line-by-line, invoking onLine for each as it arrives, while still returning the
+            // full text at the end (matching ReadToEndAsync's contract for callers that don't pass a callback).
+            private static async Task<string> ReadStreamWithLineCallbackAsync(StreamReader reader, Action<string>? onLine)
+            {
+                if (onLine == null)
+                    return await reader.ReadToEndAsync();
+
+                string fullText = string.Empty;
+                string? line;
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    fullText += (fullText.Length == 0 ? string.Empty : "\n") + line;
+                    onLine(line);
+                }
+                return fullText;
             }
 
             private static ImpersonatedProcessResult StartProcessDirectly(
@@ -627,7 +650,8 @@ namespace SuiteTools
                 string workingDirectory,
                 bool isWindowVisibleToUser,
                 bool wait,
-                bool? killWithParent = false)
+                bool? killWithParent = false,
+                Action<string, string?>? onOutputLine = null)
             {
                 ProcessStartInfo psi = new ProcessStartInfo();
                 psi.FileName = exePath;
@@ -652,7 +676,9 @@ namespace SuiteTools
                     if (wait)
                     {
                         // Read stdout and stderr asynchronously to avoid deadlock when both streams have data
-                        Task<string> stdOutTask = proc.StandardOutput.ReadToEndAsync();
+                        Task<string> stdOutTask = ReadStreamWithLineCallbackAsync(
+                            proc.StandardOutput,
+                            onOutputLine == null ? null : (Action<string>)(line => onOutputLine(line, null)));
                         Task<string> stdErrTask = proc.StandardError.ReadToEndAsync();
                         proc.WaitForExit();
                         stdOut = stdOutTask.GetAwaiter().GetResult();
