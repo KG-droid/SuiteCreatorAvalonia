@@ -134,9 +134,17 @@ namespace SuiteOperations.Events
             var values = current.Split(sep, StringSplitOptions.RemoveEmptyEntries).ToList();
             if (values.Remove(Value))
             {
-                var newValue = string.Join(sep, values);
-                System.Environment.SetEnvironmentVariable(Name, newValue, EnvironmentVariableTarget.Machine);
-                _log.WriteLog("Environment variable value has been removed.");
+                if (values.Count == 0)
+                {
+                    System.Environment.SetEnvironmentVariable(Name, null, EnvironmentVariableTarget.Machine);
+                    _log.WriteLog("Environment variable value has been removed, and variable was left empty, so it has been fully removed.");
+                }
+                else
+                {
+                    var newValue = string.Join(sep, values);
+                    System.Environment.SetEnvironmentVariable(Name, newValue, EnvironmentVariableTarget.Machine);
+                    _log.WriteLog("Environment variable value has been removed.");
+                }
             }
             else
             {
