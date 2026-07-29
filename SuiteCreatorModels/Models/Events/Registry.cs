@@ -12,6 +12,13 @@ namespace SuiteCreatorAvalonia.Models.Events
         public string? PropertyValue { get; set; }
         public bool Overwrite { get; set; }
 
+        // Set at execution time (see RegExecEvent.AddAmendValue) to record whether KeyPath already existed
+        // before this event touched it: null means never executed/unknown, true means it pre-existed (so a
+        // later Removal must leave it alone even if it ends up empty), false means this event created it (so
+        // it's safe to prune once empty). Only meaningful for a direct (non-Import) KeyPath; Import events
+        // track this per-section instead, in a sidecar file next to the .reg file - see RegExecEvent.
+        public bool? KeyAlreadyExisted { get; set; }
+
         public override Registry Clone()
         {
             return new Registry
@@ -24,6 +31,7 @@ namespace SuiteCreatorAvalonia.Models.Events
                 PropertyName = PropertyName,
                 PropertyValue = PropertyValue,
                 Overwrite = Overwrite,
+                KeyAlreadyExisted = KeyAlreadyExisted,
                 Schedules = Schedules.ConvertAll(s => s.Clone()),
                 IsPermanent = IsPermanent
             };
@@ -40,6 +48,7 @@ namespace SuiteCreatorAvalonia.Models.Events
             PropertyName = reg.PropertyName;
             PropertyValue = reg.PropertyValue;
             Overwrite = reg.Overwrite;
+            KeyAlreadyExisted = reg.KeyAlreadyExisted;
             Schedules = reg.Schedules.ConvertAll(s => s.Clone());
             IsPermanent = reg.IsPermanent;
         }

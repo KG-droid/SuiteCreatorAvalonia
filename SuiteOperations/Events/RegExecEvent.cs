@@ -3,6 +3,7 @@ using Microsoft.Win32;
 using SuiteCreatorAvalonia.Enums;
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace SuiteOperations.Events
@@ -456,6 +457,13 @@ namespace SuiteOperations.Events
 
         private void AddAmendValue(RegistryKey hiveRoot, string subKeyPath)
         {
+            // Record whether this key already existed before the suite touched it (across every hive this
+            // runs against, e.g. one per user profile for HKCU) - PruneEmptyKeysAfterRemoval later needs this
+            // to know it's safe to delete the key once it's empty, rather than deleting a key Windows itself
+            // creates by default that just happens to hold nothing right now. Sticky: once true, stays true.
+            bool existedBefore = hiveRoot.OpenSubKey(subKeyPath) != null;
+            KeyAlreadyExisted = KeyAlreadyExisted == true || existedBefore;
+
             using RegistryKey? key = hiveRoot.CreateSubKey(subKeyPath);
             if (key == null)
             {
@@ -572,6 +580,16 @@ namespace SuiteOperations.Events
                     // which already deleted the key outright in RemoveKeyOrValue - nothing left to prune.
                     if (string.IsNullOrWhiteSpace(PropertyName)) return;
 
+                    // Only prune a key this suite actually created. If it already existed before the suite's
+                    // AddAmend ran (or that was never recorded, e.g. the value was removed without the Add
+                    // ever having executed in this install), leave it - it may be a key Windows creates by
+                    // default that's simply empty right now, not something safe to delete.
+                    if (KeyAlreadyExisted != false)
+                    {
+                        _log.WriteLog($"Skipping prune of '{KeyPath}': key existed before the suite created/amended it, or that isn't known.");
+                        return;
+                    }
+
                     (RegistryKey baseKey, string subKeyPath) = ParseRegistryKeyPath(KeyPath, requireSubKey: true);
                     if (baseKey == Registry.CurrentUser)
                         ApplyAcrossUserHives(hiveRoot => PruneKeyIfEmpty(hiveRoot, subKeyPath), $"Registry key prune '{KeyPath}'");
@@ -581,8 +599,18 @@ namespace SuiteOperations.Events
                 else if (RegFilePath != null && File.Exists(RegFilePath.LocalPath))
                 {
                     string[] lines = File.ReadAllLines(RegFilePath.LocalPath);
+                    Dictionary<string, bool> preExisted = LoadSectionPreExistence(RegFilePath.LocalPath);
                     foreach (ImportedRegSection section in ParseImportedRegSections(lines))
                     {
+                        // Only prune a key this Import actually created. If it already existed before the
+                        // import ran, or that was never recorded (e.g. an older suite build), leave it -
+                        // it may be a key Windows creates by default that's simply empty right now.
+                        if (!preExisted.TryGetValue(section.SubKeyPath, out bool existedBeforeImport) || existedBeforeImport)
+                        {
+                            _log.WriteLog($"Skipping prune of '{section.SubKeyPath}': key existed before the suite imported into it, or that isn't known.");
+                            continue;
+                        }
+
                         if (section.IsUserHive)
                             ApplyAcrossUserHives(hiveRoot => PruneKeyIfEmpty(hiveRoot, section.SubKeyPath), $"Registry key prune '{section.SubKeyPath}'");
                         else
@@ -607,6 +635,84 @@ namespace SuiteOperations.Events
             _log.WriteLog($"Removed now-empty registry key: {subKeyPath}");
         }
 
+        // Public so Suite.UninstallMedia.CopyUninstallRegistryFiles can stage this alongside the .reg file
+        // it copies into the uninstall media, using the same naming convention as here.
+        public static string GetPreExistenceSidecarPath(string regFilePath) => regFilePath + ".precreated.json";
+
+        // Records, per section of an imported .reg file, whether its key already existed before this Import
+        // ran - so a later Removal (PruneEmptyKeysAfterRemoval) only deletes a key it's undoing if the import
+        // itself is what created it, not one Windows (or something else) already had in place that just
+        // happens to be empty now. Persisted next to the .reg file so Suite.UninstallMedia.
+        // CopyUninstallRegistryFiles can carry it into the uninstall media alongside the .reg file itself,
+        // for the later Removal run - which reads a different copy of this same file - to read back.
+        private void RecordSectionPreExistence(string[] regFileLines, string regFilePath)
+        {
+            try
+            {
+                List<ImportedRegSection> sections = ParseImportedRegSections(regFileLines);
+                if (sections.Count == 0) return;
+
+                Dictionary<string, bool> preExisted = new(StringComparer.OrdinalIgnoreCase);
+
+                foreach (ImportedRegSection section in sections.Where(s => !s.IsUserHive))
+                {
+                    using RegistryKey? key = section.BaseKey!.OpenSubKey(section.SubKeyPath);
+                    preExisted[section.SubKeyPath] = key != null;
+                }
+
+                List<string> userSubKeyPaths = sections.Where(s => s.IsUserHive)
+                    .Select(s => s.SubKeyPath)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (userSubKeyPaths.Count > 0)
+                {
+                    foreach (string subKeyPath in userSubKeyPaths) preExisted[subKeyPath] = false;
+                    try
+                    {
+                        ApplyAcrossUserHives(hiveRoot =>
+                        {
+                            foreach (string subKeyPath in userSubKeyPaths)
+                            {
+                                if (preExisted[subKeyPath]) continue;
+                                using RegistryKey? key = hiveRoot.OpenSubKey(subKeyPath);
+                                if (key != null) preExisted[subKeyPath] = true;
+                            }
+                        }, "Registry Import pre-existence check");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Couldn't confirm one way or the other for any profile - default those keys to
+                        // "already existed" so Removal errs on the side of leaving them rather than risking
+                        // deleting one it shouldn't.
+                        _log.WriteLog($"Could not determine pre-existence of imported HKCU keys, treating them as pre-existing so they won't be pruned: {ex.Message}", "RegExecEvent", Log.Severity.Warning);
+                        foreach (string subKeyPath in userSubKeyPaths) preExisted[subKeyPath] = true;
+                    }
+                }
+
+                File.WriteAllText(GetPreExistenceSidecarPath(regFilePath), JsonSerializer.Serialize(preExisted));
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"Failed to record registry key pre-existence for '{regFilePath}': {ex.Message}", "RegExecEvent", Log.Severity.Warning);
+            }
+        }
+
+        private static Dictionary<string, bool> LoadSectionPreExistence(string regFilePath)
+        {
+            string sidecarPath = GetPreExistenceSidecarPath(regFilePath);
+            if (!File.Exists(sidecarPath)) return new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                Dictionary<string, bool>? raw = JsonSerializer.Deserialize<Dictionary<string, bool>>(File.ReadAllText(sidecarPath));
+                return raw != null ? new Dictionary<string, bool>(raw, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
         public void ExecuteEvent()
         {
             if (Action == null)
@@ -627,6 +733,8 @@ namespace SuiteOperations.Events
 
                         string[] regFileLines = File.ReadAllLines(RegFilePath.LocalPath);
                         (string? regHeader, List<RegFileBlock> hkcuBlocks, List<string> otherHiveBlocks) = SplitRegFileByHive(regFileLines);
+
+                        RecordSectionPreExistence(regFileLines, RegFilePath.LocalPath);
 
                         if (hkcuBlocks.Count == 0)
                         {
