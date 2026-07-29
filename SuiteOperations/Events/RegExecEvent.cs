@@ -500,8 +500,9 @@ namespace SuiteOperations.Events
                 using RegistryKey? key = hiveRoot.OpenSubKey(subKeyPath, writable: true);
                 if (key == null)
                 {
-                    _log.WriteLog($"Registry key not found: {KeyPath}", "RegExecEvent", Log.Severity.Error);
-                    throw new InvalidOperationException($"Registry key not found: {KeyPath}");
+                    // Key already gone means the value is already gone too - nothing left to do.
+                    _log.WriteLog($"Registry key not found, nothing to remove: {KeyPath} [{PropertyName}]");
+                    return;
                 }
                 key.DeleteValue(PropertyName, false);
                 _log.WriteLog($"Deleted registry value: {KeyPath} [{PropertyName}]");
