@@ -53,7 +53,7 @@ namespace SuiteCreatorAvalonia.Services
             }
         }
 
-        public static async Task<SuiteProjectConfig> ImportSuiteAsync(string? importFilePath, string outputFolder)
+        public static async Task<SuiteProjectConfig> ImportSuiteAsync(string? importFilePath, string outputFolder, IProgress<string>? progress = null)
         {
             if (string.IsNullOrWhiteSpace(importFilePath))
                 throw new ArgumentNullException(nameof(importFilePath));
@@ -64,7 +64,10 @@ namespace SuiteCreatorAvalonia.Services
             if (string.IsNullOrWhiteSpace(outputFolder))
                 throw new ArgumentNullException(nameof(outputFolder));
 
+            void Report(string s) => progress?.Report(s);
+
             // Extract zip payload from the SFX exe to a temp path, then extract into outputFolder
+            Report("Extracting suite package");
             string tempZipPath = Path.Combine(Path.GetTempPath(), $"SuiteImport_{Guid.NewGuid():N}.zip");
             try
             {
@@ -113,6 +116,7 @@ namespace SuiteCreatorAvalonia.Services
 
             string extractRoot = Path.GetDirectoryName(scfgPath)!;
 
+            Report("Reading suite configuration");
             SuiteOperations.SuiteExecConfig? execConfig = null;
             await Task.Run(() =>
             {
@@ -194,6 +198,7 @@ namespace SuiteCreatorAvalonia.Services
                 PopupSettings = execConfig.PopupSettings ?? new Popup()
             };
 
+            Report("Importing packages");
             foreach (PackageBase pkg in execConfig.Packages ?? new List<PackageBase>())
             {
                 switch (pkg)
@@ -343,6 +348,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
             }
 
+            Report("Importing events");
             AssignCertEventFiles(execConfig.CertEvents ?? new List<SuiteOperations.Events.CertExecEvent>(), newConfig, GetEventDir);
             AssignDriverEventFiles(execConfig.DriverEvents ?? new List<SuiteOperations.Events.DriverExecEvent>(), newConfig, GetEventDir);
             await AssignExecutableEventFiles(execConfig.ExecutableEvents ?? new List<SuiteOperations.Events.ExecutableExecEvent>(), newConfig, GetEventDir);

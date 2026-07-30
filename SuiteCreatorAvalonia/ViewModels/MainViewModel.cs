@@ -459,15 +459,25 @@ namespace SuiteCreatorAvalonia.ViewModels
                     return;
             }
 
+            var progressDialogVM = new ProgressDiagViewModel
+            {
+                Message = "Starting Import",
+            };
+            _ = this.ShowDialogAsync(progressDialogVM);
             try
             {
                 ResetBuildPanel();
-                await _suiteCoreManager.ImportSuiteAsync(importFilePath, outputFolder);
+                var progress = new Progress<string>(stage => progressDialogVM.Message = stage);
+                await _suiteCoreManager.ImportSuiteAsync(importFilePath, outputFolder, progress);
             }
             catch (Exception ex)
             {
                 AppLog.Error($"Failed to import suite from: {importFilePath}", ex, "SuiteCore");
                 await ShowErrorPop($"Failed to import suite {Path.GetFileName(importFilePath)}", ex.Message);
+            }
+            finally
+            {
+                this.CloseDialog();
             }
         }
 
