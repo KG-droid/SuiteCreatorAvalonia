@@ -15,9 +15,9 @@
 	<PropertyGroup>
 		<PackageIcon>SuiteCreatorLogoImage.png</PackageIcon>
 		<ApplicationIcon>SuiteCreatorLogo.ico</ApplicationIcon>
-		<Version>1.0.1</Version>
-		<AssemblyVersion>1.0.1</AssemblyVersion>
-		<FileVersion>1.0.1</FileVersion>
+		<Version>1.0.2</Version>
+		<AssemblyVersion>1.0.2</AssemblyVersion>
+		<FileVersion>1.0.2</FileVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<Content Include="SuiteCreatorLogo.ico" />
@@ -41,6 +41,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Logger\Logger.csproj" />
+	  <ProjectReference Include="..\SuiteCreatorControls\SuiteCreatorControls.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -15,14 +15,21 @@ namespace SuiteTools
         /// <param name="copyDirectoryItself">If true and source is a directory, copies the directory itself into destination; otherwise, copies only its contents.</param>
         /// <param name="excludeDirectories">Directories to exclude (passed to RoboCopy as /XD entries).</param>
         /// <param name="excludeFiles">Files to exclude (passed to RoboCopy as /XF entries).</param>
+        /// <param name="onBytesCopied">Optional callback invoked periodically with the cumulative number of bytes copied so far, measured by polling the destination path's size on disk.</param>
+        /// <param name="cancellationToken">Token used to cancel the copy. If triggered, the RoboCopy process is killed immediately and an <see cref="OperationCanceledException"/> is thrown.</param>
         /// <exception cref="InvalidOperationException">Throws if RoboCopy fails, skips files, or is not found.</exception>
+        /// <exception cref="OperationCanceledException">Throws if <paramref name="cancellationToken"/> is cancelled before or during the copy.</exception>
         public static void CopyWithRoboCopy(
             string source,
             string destination,
             bool copyDirectoryItself = false,
             IEnumerable<string>? excludeDirectories = null,
-            IEnumerable<string>? excludeFiles = null)
+            IEnumerable<string>? excludeFiles = null,
+            Action<long>? onBytesCopied = null,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(destination))
                 throw new ArgumentException("Source and destination paths must be specified.");
 
@@ -152,13 +159,122 @@ namespace SuiteTools
             using var process = Process.Start(psi);
             if (process == null)
                 throw new InvalidOperationException("Failed to start RoboCopy process.");
-            process.WaitForExit();
+
+            using var cancellationRegistration = cancellationToken.Register(() =>
+            {
+                try
+                {
+                    if (!process.HasExited)
+                        process.Kill(entireProcessTree: true);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Process already exited between the HasExited check and Kill.
+                }
+            });
+
+            using var progressCts = onBytesCopied != null ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken) : null;
+            Task? progressTask = null;
+            if (onBytesCopied != null)
+            {
+                progressTask = Task.Run(async () =>
+                {
+                    while (!process.HasExited)
+                    {
+                        try
+                        {
+                            onBytesCopied(GetPathSizeOnDisk(destination));
+                        }
+                        catch
+                        {
+                            // Best-effort progress reporting; never let it take down the copy.
+                        }
+
+                        try
+                        {
+                            await Task.Delay(500, progressCts!.Token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            break;
+                        }
+                    }
+                });
+            }
+
+            try
+            {
+                process.WaitForExit();
+            }
+            finally
+            {
+                progressCts?.Cancel();
+                progressTask?.Wait();
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (onBytesCopied != null)
+            {
+                onBytesCopied(GetPathSizeOnDisk(destination));
+            }
+
             if (process.ExitCode > 7)
             {
                 var error = process.StandardError.ReadToEnd();
                 var output = process.StandardOutput.ReadToEnd();
                 throw new InvalidOperationException($"RoboCopy did not copy all files successfully. Exit code: {process.ExitCode}. Output: {output}. Error: {error}");
             }
+        }
+
+        /// <summary>
+        /// Computes the total size in bytes of a file, or the sum of all files within a directory (recursively).
+        /// Returns 0 if the path does not exist. Files that cannot be accessed while enumerating (e.g. still being
+        /// written to by another process) are skipped rather than failing the whole calculation.
+        /// </summary>
+        /// <param name="path">A file or directory path.</param>
+        public static long GetPathSizeOnDisk(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return 0;
+
+            if (File.Exists(path))
+            {
+                try
+                {
+                    return new FileInfo(path).Length;
+                }
+                catch (IOException)
+                {
+                    return 0;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return 0;
+                }
+            }
+
+            if (!Directory.Exists(path))
+                return 0;
+
+            long total = 0;
+            foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+            {
+                try
+                {
+                    total += new FileInfo(file).Length;
+                }
+                catch (IOException)
+                {
+                    // File may have been deleted or is mid-write; skip it.
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // Skip inaccessible files rather than failing the whole calculation.
+                }
+            }
+
+            return total;
         }
     }
 }

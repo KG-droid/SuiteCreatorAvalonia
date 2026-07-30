@@ -375,6 +375,10 @@ namespace SuiteExecutor
             {
                 serviceClosure.ClearFailsafe();
             }
+
+            // One teardown check for everything unblocked/cleared above, not one per exe/service — see
+            // ClosureFailsafe.TeardownIfEmpty.
+            ClosureFailsafe.TeardownIfEmpty(_log, _suiteConfig.BuildSettings.UpgradeCode.ToString());
         }
     }
 }

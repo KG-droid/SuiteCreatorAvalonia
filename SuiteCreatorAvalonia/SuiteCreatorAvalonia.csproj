@@ -23,9 +23,9 @@
 		<IsRidAgnostic>true</IsRidAgnostic>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>1.0.6</Version>
-		<AssemblyVersion>1.0.6</AssemblyVersion>
-		<FileVersion>1.0.6</FileVersion>
+		<Version>1.0.9</Version>
+		<AssemblyVersion>1.0.9</AssemblyVersion>
+		<FileVersion>1.0.9</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -90,6 +90,7 @@
 		<ProjectReference Include="..\Logger\Logger.csproj" />
 		<ProjectReference Include="..\MSITools\MSITools.csproj" />
 		<ProjectReference Include="..\MSIxTools\MSIxTools.csproj" />
+		<ProjectReference Include="..\SuiteCreatorControls\SuiteCreatorControls.csproj" />
 		<ProjectReference Include="..\SuiteCreatorModels\SuiteCreatorModels.csproj" />
 		<ProjectReference Include="..\SuiteOperations\SuiteOperations.csproj" />
 		<ProjectReference Include="..\SuiteUITools\SuiteUITools.csproj" />

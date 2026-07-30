@@ -1524,10 +1524,10 @@ namespace SuiteCreatorAvalonia.Services
             }
         }
 
-        internal async Task ImportSuiteAsync(string? importFilePath, string outputFolder)
+        internal async Task ImportSuiteAsync(string? importFilePath, string outputFolder, IProgress<string>? progress = null)
         {
             AppLog.Info($"Importing suite from: {importFilePath}", "SuiteCore");
-            SuiteProjectConfig newConfig = await SuiteImport.ImportSuiteAsync(importFilePath, outputFolder);
+            SuiteProjectConfig newConfig = await SuiteImport.ImportSuiteAsync(importFilePath, outputFolder, progress);
             _suiteConfig = newConfig;
             SetDefaultStages();
             PopulateStagesOnEvents();

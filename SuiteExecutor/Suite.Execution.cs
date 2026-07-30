@@ -74,6 +74,9 @@ namespace SuiteExecutor
                     evt.Action = ProcAction.Unblock;
                     evt.ExecuteEvent();
                 }
+
+                // One teardown check for the whole batch above, not one per exe — see ClosureFailsafe.TeardownIfEmpty.
+                ClosureFailsafe.TeardownIfEmpty(_log, _suiteConfig.BuildSettings.UpgradeCode.ToString());
             }
         }
 

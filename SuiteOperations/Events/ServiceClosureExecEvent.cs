@@ -151,19 +151,14 @@ namespace SuiteOperations.Events
         // EnableAndStart explicitly restores a service, and unconditionally at the end of every suite run (see
         // Suite.cs) so a suite that finishes on its own — with or without ever running EnableAndStart — doesn't
         // leave a background ONSTART task watching a service indefinitely (that would wrongly undo a
-        // deliberately permanent Stop/Disable on some unrelated future reboot).
+        // deliberately permanent Stop/Disable on some unrelated future reboot). Doesn't tear the shared task
+        // down itself — see ClosureFailsafe.TeardownIfEmpty and its call sites for the single, once-per-batch
+        // teardown.
         public void ClearFailsafe(string serviceName)
         {
             string taskName = ClosureFailsafe.SharedFailsafeTaskName();
             string blockListPath = ClosureFailsafe.SharedBlockListPath(taskName, _suiteId);
-
             ClosureFailsafe.RemoveServiceEntry(blockListPath, serviceName);
-
-            if (ClosureFailsafe.ListEmpty(blockListPath))
-            {
-                ClosureFailsafe.DeleteFailsafeTask(taskName, blockListPath);
-                _log.WriteLog($"Cleaned up shared failsafe task: {taskName}", "ServiceClosureExecEvent");
-            }
         }
 
         // Called unconditionally at the end of every suite run (success or failure) for every configured

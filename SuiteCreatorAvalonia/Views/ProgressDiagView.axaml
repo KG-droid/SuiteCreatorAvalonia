@@ -4,6 +4,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:vm="using:SuiteCreatorAvalonia.ViewModels"
+	xmlns:controls="using:SuiteCreatorControls.Controls"
 	mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="200"
     x:Class="SuiteCreatorAvalonia.Views.ProgressDiagView"
 	x:DataType="vm:ProgressDiagViewModel">
@@ -12,20 +13,29 @@
 		<vm:ProgressDiagViewModel/>
 	</Design.DataContext>
 
-	<StackPanel 
-		HorizontalAlignment="Center" 
-		VerticalAlignment="Center" 
+	<StackPanel
+		HorizontalAlignment="Center"
+		VerticalAlignment="Center"
 		Spacing="10">
-        <TextBlock 
-			Text="{Binding Message}" 
-			FontWeight="Bold" 
+        <TextBlock
+			Text="{Binding Message}"
+			FontWeight="Bold"
 			FontSize="16"/>
-        <ProgressBar 
-			IsIndeterminate="True" 
-			Width="200"/>
-        <Button 
+        <controls:ShimmerProgress
+			Width="200"
+			Height="9"
+			IsIndeterminate="{Binding !IsProgressDetermined}"
+			Value="{Binding PercentCompleteValue}"
+			TrackBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+			Accent="{DynamicResource AccentVariant2}"/>
+        <TextBlock
+			IsVisible="{Binding IsProgressDetermined}"
+			Text="{Binding PercentCompleteValue, StringFormat='{}{0:0}%'}"
+			HorizontalAlignment="Center"/>
+        <Button
 			HorizontalAlignment="Right"
+			Command="{Binding CancelCommand}"
 			Content="   Cancel  "/>
     </StackPanel>
-	
+
 </UserControl>

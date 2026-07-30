@@ -58,6 +58,11 @@ namespace SuiteCreatorAvalonia.Models.Events
             // Already a Remove: nothing to reverse, so leave the schedule alone (it should only run on the side it was configured for).
             if (Behaviour == Environmentbehaviour.Remove) return;
             base.Reverse();
+            // Replace overwrote the whole variable, so Value held the entire content rather than one
+            // delimited fragment. Clear it so the reversed Remove deletes the whole variable instead of
+            // trying to strip Value out of it as a list item.
+            if (Behaviour == Environmentbehaviour.Replace)
+                Value = null;
             Behaviour = Environmentbehaviour.Remove;
         }
     }

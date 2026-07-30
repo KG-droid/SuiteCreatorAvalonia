@@ -88,6 +88,15 @@ namespace SuiteExecutor
                 string destinationFile = Path.Combine(destinationDir, Path.GetFileName(reg.RegFilePath.LocalPath));
                 File.Copy(reg.RegFilePath.LocalPath, destinationFile, true);
                 _log.WriteLog($"Copied uninstall registry file for event '{reg.Id}': {destinationFile}", "Execution", Log.Severity.Info);
+
+                // Carries the record of which imported keys the Import itself created (see
+                // RegExecEvent.RecordSectionPreExistence) alongside the .reg file, so the later Removal run
+                // reading this copy can still tell which now-empty keys are safe to prune.
+                string sourceSidecar = RegExecEvent.GetPreExistenceSidecarPath(reg.RegFilePath.LocalPath);
+                if (File.Exists(sourceSidecar))
+                {
+                    File.Copy(sourceSidecar, RegExecEvent.GetPreExistenceSidecarPath(destinationFile), true);
+                }
             }
         }
 

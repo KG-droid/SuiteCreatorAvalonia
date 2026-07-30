@@ -26,8 +26,9 @@ namespace Logger
         }
         public void WriteLog(string Message, string Component = "Application", Severity Sev = Severity.Info)
         {
+            // CMTrace colors rows off a numeric type code (1=Info, 2=Warning/yellow, 3=Error/red), not the
             string logEntry = $"<![LOG[{Message}]LOG]!><time=\"{DateTime.Now:HH:mm:ss.fffff}\" " +
-                $"date=\"{DateTime.Now:MM-dd-yyyy}\" component=\"{Component}\" context=\"{WindowsIdentity.GetCurrent().Name}\" type=\"{Sev.ToString()}\" " +
+                $"date=\"{DateTime.Now:MM-dd-yyyy}\" component=\"{Component}\" context=\"{WindowsIdentity.GetCurrent().Name}\" type=\"{(int)Sev + 1}\" " +
                 $"thread=\"{Process.GetCurrentProcess().Id}\" file=\"{Assembly.GetExecutingAssembly().Location}\">";
             RotateLogFiles();
             AppendLog(logEntry);

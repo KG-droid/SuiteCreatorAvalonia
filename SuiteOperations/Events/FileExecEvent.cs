@@ -59,22 +59,15 @@ namespace SuiteOperations.Events
             }
             ValidatePathStructure(varPath);
 
-            SpecialDIR? specialDIR = varPath.OfType<SpecialDIR>().FirstOrDefault();
-            if (specialDIR != null)
-            {
-                string parsedSpecial = Environment.GetFolderPath((Environment.SpecialFolder)specialDIR.Value);
-                string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                if (parsedSpecial.StartsWith(userProfile, StringComparison.OrdinalIgnoreCase))
-                {
-                    // If the special directory is under the user profile, we need to get paths for all users
-
-                }
-            }
-
             List<string> converted = varPath
                 .Select(v => v.GetValue())
                 .Where(val => val != null)
                 .ToList()!;
+            return JoinPathParts(converted);
+        }
+
+        private static string JoinPathParts(List<string> converted)
+        {
             if (converted.Count > 1)
             {
                 // Add the seprator if the user hasn't already
@@ -90,11 +83,107 @@ namespace SuiteOperations.Events
             return converted.First();
         }
 
+        // A SpecialDIR (e.g. %appdata%) that resolves under the current user's profile only means something
+        // for the account SuiteExecutor happens to be running as (typically SYSTEM or the invoking admin) -
+        // it says nothing about where real users' profiles keep the same folder. Detecting that case lets
+        // Copy/Delete/Deploy/Move/Rename fan the relevant side of the operation out across every human user's
+        // profile instead, mirroring RegExecEvent.ApplyAcrossUserHives for HKCU.
+        private static SpecialDIR? GetUserProfileRelativeSpecialDir(List<VariableText>? varPath)
+        {
+            SpecialDIR? specialDIR = varPath?.OfType<SpecialDIR>().FirstOrDefault();
+            if (specialDIR == null) return null;
+
+            string parsedSpecial = Environment.GetFolderPath((Environment.SpecialFolder)specialDIR.Value);
+            string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            return parsedSpecial.StartsWith(userProfile, StringComparison.OrdinalIgnoreCase) ? specialDIR : null;
+        }
+
+        // Resolves varPath the same way ParseVarPath does, except the given SpecialDIR is substituted with
+        // its equivalent path under a specific user's profile instead of the running process's own profile.
+        private static string ParseVarPathForProfile(List<VariableText> varPath, SpecialDIR specialDIR, SuiteTools.UserTools.UserExtensions.UserProfile profile)
+        {
+            string resolvedSpecialDir = profile.GetSpecialFolder((Environment.SpecialFolder)specialDIR.Value);
+            List<string> converted = varPath
+                .Select(v => ReferenceEquals(v, specialDIR) ? resolvedSpecialDir : v.GetValue())
+                .Where(val => val != null)
+                .ToList()!;
+            return JoinPathParts(converted);
+        }
+
+        // Gets the Default profile's own local path (not its NTUSER.DAT - see RegExecEvent's equivalent for
+        // that), so a per-profile-fanned-out deploy can also seed new users who log on for the first time
+        // after this runs.
+        private static string GetDefaultProfileLocalPath()
+        {
+            using Microsoft.Win32.RegistryKey? profileListKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList");
+            string profilesDirectory = profileListKey?.GetValue("ProfilesDirectory") as string ?? @"%SystemDrive%\Users";
+            profilesDirectory = Environment.ExpandEnvironmentVariables(profilesDirectory);
+            return Path.Combine(profilesDirectory, "Default");
+        }
+
+        // Runs action once per human user's resolved path (source or destination - whichever side of the
+        // operation carries the user-profile SpecialDIR), plus once for the Default profile, so a
+        // user-profile-relative path (e.g. %appdata%\MyApp) reaches every real user instead of just whichever
+        // account SuiteExecutor happens to be running as. A failure for one user doesn't stop the others; the
+        // whole event only fails if every user failed. The Default profile is always best-effort.
+        private void ApplyAcrossUserProfiles(List<VariableText> varPath, SpecialDIR specialDIR, Action<string> action, string context)
+        {
+            List<SuiteTools.UserTools.UserExtensions.UserProfile> profiles =
+                new SuiteTools.UserTools.UserExtensions().GetHumanUserAccountInfo() ?? new();
+
+            List<(string Label, bool Success, string? Error)> userResults = new();
+            foreach (SuiteTools.UserTools.UserExtensions.UserProfile profile in profiles)
+            {
+                try
+                {
+                    action(ParseVarPathForProfile(varPath, specialDIR, profile));
+                    userResults.Add((profile.Sid, true, null));
+                    _log.WriteLog($"{context} succeeded for user {profile.Sid}");
+                }
+                catch (Exception ex)
+                {
+                    userResults.Add((profile.Sid, false, ex.Message));
+                    _log.WriteLog($"{context} failed for user {profile.Sid}: {ex.Message}", "FileExecEvent", Log.Severity.Warning);
+                }
+            }
+
+            if (userResults.Count > 0 && userResults.All(r => !r.Success))
+            {
+                throw new InvalidOperationException($"{context} failed for every user profile: {string.Join("; ", userResults.Select(r => $"{r.Label}: {r.Error}"))}");
+            }
+
+            try
+            {
+                SuiteTools.UserTools.UserExtensions.UserProfile defaultProfile = new()
+                {
+                    Sid = "Default",
+                    LocalPath = GetDefaultProfileLocalPath()
+                };
+                action(ParseVarPathForProfile(varPath, specialDIR, defaultProfile));
+                _log.WriteLog($"{context} succeeded for Default profile");
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"{context} failed for Default profile (new users won't inherit this change): {ex.Message}", "FileExecEvent", Log.Severity.Warning);
+            }
+        }
+
         private void Copy()
         {
             string sourcePath = ParseVarPath(SourcePath!);
-            string destinationPath = ParseVarPath(DestinationPath!);
 
+            SpecialDIR? userSpecialDir = GetUserProfileRelativeSpecialDir(DestinationPath);
+            if (userSpecialDir != null)
+            {
+                ApplyAcrossUserProfiles(DestinationPath!, userSpecialDir, destinationPath => CopyTo(sourcePath, destinationPath), $"Copy '{sourcePath}'");
+                return;
+            }
+
+            CopyTo(sourcePath, ParseVarPath(DestinationPath!));
+        }
+
+        private void CopyTo(string sourcePath, string destinationPath)
+        {
             ExecuteWithFileLockRetry(() =>
             {
                 if (FileSysIOType == FileSysIOType.File)
@@ -130,7 +219,18 @@ namespace SuiteOperations.Events
 
         private void Delete()
         {
-            string deletionPath = ParseVarPath(SourcePath!);
+            SpecialDIR? userSpecialDir = GetUserProfileRelativeSpecialDir(SourcePath);
+            if (userSpecialDir != null)
+            {
+                ApplyAcrossUserProfiles(SourcePath!, userSpecialDir, DeleteFrom, $"Delete {(FileSysIOType == FileSysIOType.File ? "file" : "directory")} from user profile");
+                return;
+            }
+
+            DeleteFrom(ParseVarPath(SourcePath!));
+        }
+
+        private void DeleteFrom(string deletionPath)
+        {
             _log.WriteLog($"Deleting {(FileSysIOType == FileSysIOType.File ? "file" : "directory")}: {deletionPath}");
 
             ExecuteWithFileLockRetry(() =>
@@ -334,8 +434,19 @@ namespace SuiteOperations.Events
             if (SourcePath == null || SourcePath.Count == 0 || SourcePath[0] is not LiteralText literal)
                 throw new InvalidOperationException("Deploy action requires SourcePath to be a single LiteralText");
             string sourcePath = literal.GetValue()!;
-            string destinationPath = ParseVarPath(DestinationPath!);
 
+            SpecialDIR? userSpecialDir = GetUserProfileRelativeSpecialDir(DestinationPath);
+            if (userSpecialDir != null)
+            {
+                ApplyAcrossUserProfiles(DestinationPath!, userSpecialDir, destinationPath => DeployTo(sourcePath, destinationPath), $"Deploy '{sourcePath}'");
+                return;
+            }
+
+            DeployTo(sourcePath, ParseVarPath(DestinationPath!));
+        }
+
+        private void DeployTo(string sourcePath, string destinationPath)
+        {
             ExecuteWithFileLockRetry(() =>
             {
                 if (FileSysIOType == FileSysIOType.File)
@@ -378,7 +489,19 @@ namespace SuiteOperations.Events
         private void Move()
         {
             string sourcePath = ParseVarPath(SourcePath!);
-            string destinationPath = ParseVarPath(DestinationPath!);
+
+            SpecialDIR? userSpecialDir = GetUserProfileRelativeSpecialDir(DestinationPath);
+            if (userSpecialDir != null)
+            {
+                MoveAcrossUserProfiles(sourcePath, DestinationPath!, userSpecialDir);
+                return;
+            }
+
+            MoveTo(sourcePath, ParseVarPath(DestinationPath!));
+        }
+
+        private void MoveTo(string sourcePath, string destinationPath)
+        {
             _log.WriteLog($"Moving {(FileSysIOType == FileSysIOType.File ? "file" : "directory")}: {sourcePath} to {destinationPath}");
 
             ExecuteWithFileLockRetry(() =>
@@ -413,11 +536,86 @@ namespace SuiteOperations.Events
             ApplyPermissions(destinationPath);
         }
 
+        // A Move whose destination is user-profile-relative can't literally "move" a single source into N
+        // different profiles - only one destination could ever really take ownership of the file. Instead
+        // this copies the source into every human user's profile plus Default (via CopyTo, so it gets the
+        // same directory-creation and permission handling as a normal Copy), and only deletes the original
+        // source once every one of those copies has succeeded - including the Default profile, unlike the
+        // lenient best-effort handling ApplyAcrossUserProfiles gives Default elsewhere, because deleting the
+        // only copy of the source on a partial failure would be data loss, not just a missed nice-to-have.
+        private void MoveAcrossUserProfiles(string sourcePath, List<VariableText> destPath, SpecialDIR specialDIR)
+        {
+            bool isFile = FileSysIOType == FileSysIOType.File;
+            if (isFile ? !File.Exists(sourcePath) : !Directory.Exists(sourcePath))
+            {
+                string message = $"{(isFile ? "File" : "Directory")} not found: {sourcePath}";
+                _log.WriteLog(message, "Application", Log.Severity.Error);
+                throw isFile ? new FileNotFoundException(message, sourcePath) : new DirectoryNotFoundException(message);
+            }
+
+            List<SuiteTools.UserTools.UserExtensions.UserProfile> profiles =
+                new SuiteTools.UserTools.UserExtensions().GetHumanUserAccountInfo() ?? new();
+            profiles.Add(new SuiteTools.UserTools.UserExtensions.UserProfile
+            {
+                Sid = "Default",
+                LocalPath = GetDefaultProfileLocalPath()
+            });
+
+            List<(string Label, string DestinationPath, Exception? Error)> results = new();
+            foreach (SuiteTools.UserTools.UserExtensions.UserProfile profile in profiles)
+            {
+                string destinationPath = ParseVarPathForProfile(destPath, specialDIR, profile);
+                try
+                {
+                    CopyTo(sourcePath, destinationPath);
+                    results.Add((profile.Sid, destinationPath, null));
+                    _log.WriteLog($"Move (copy phase) '{sourcePath}' to '{destinationPath}' succeeded for profile {profile.Sid}");
+                }
+                catch (Exception ex)
+                {
+                    results.Add((profile.Sid, destinationPath, ex));
+                    _log.WriteLog($"Move (copy phase) '{sourcePath}' to '{destinationPath}' failed for profile {profile.Sid}: {ex.Message}", "FileExecEvent", Log.Severity.Error);
+                }
+            }
+
+            if (results.Any(r => r.Error != null))
+            {
+                throw new InvalidOperationException(
+                    $"Move '{sourcePath}' across user profiles only partially succeeded, so the original was left in place: " +
+                    string.Join("; ", results.Where(r => r.Error != null).Select(r => $"{r.Label}: {r.Error!.Message}")));
+            }
+
+            ExecuteWithFileLockRetry(() =>
+            {
+                SeizeAccessForDelete(sourcePath);
+                if (isFile)
+                {
+                    File.Delete(sourcePath);
+                }
+                else
+                {
+                    DeleteDirectoryRecursive(sourcePath);
+                }
+            }, $"delete original '{sourcePath}' after copying it to every user profile");
+        }
+
         private void Rename()
         {
-            string sourcePath = ParseVarPath(SourcePath!);
-            string destinationPath = ParseVarPath(DestinationPath!);
-            _log.WriteLog($"Renaming {(FileSysIOType == FileSysIOType.File ? "file" : "directory")}: {sourcePath} to {destinationPath}");
+            string destinationName = ParseVarPath(DestinationPath!);
+
+            SpecialDIR? userSpecialDir = GetUserProfileRelativeSpecialDir(SourcePath);
+            if (userSpecialDir != null)
+            {
+                ApplyAcrossUserProfiles(SourcePath!, userSpecialDir, sourcePath => RenameFrom(sourcePath, destinationName), $"Rename to '{destinationName}'");
+                return;
+            }
+
+            RenameFrom(ParseVarPath(SourcePath!), destinationName);
+        }
+
+        private void RenameFrom(string sourcePath, string destinationName)
+        {
+            _log.WriteLog($"Renaming {(FileSysIOType == FileSysIOType.File ? "file" : "directory")}: {sourcePath} to {destinationName}");
 
             ExecuteWithFileLockRetry(() =>
             {
@@ -429,7 +627,7 @@ namespace SuiteOperations.Events
                         throw new FileNotFoundException($"File not found: {sourcePath}", sourcePath);
                     }
                     string destDir = Path.GetDirectoryName(sourcePath)!;
-                    string destFile = Path.Combine(destDir, destinationPath);
+                    string destFile = Path.Combine(destDir, destinationName);
                     File.Move(sourcePath, destFile, ReplaceExisting);
                 }
                 else
@@ -440,10 +638,10 @@ namespace SuiteOperations.Events
                         throw new DirectoryNotFoundException($"Directory not found: {sourcePath}");
                     }
                     string destDir = Path.GetDirectoryName(sourcePath)!;
-                    string destFolder = Path.Combine(destDir, destinationPath);
+                    string destFolder = Path.Combine(destDir, destinationName);
                     Directory.Move(sourcePath, destFolder);
                 }
-            }, $"rename '{sourcePath}' to '{destinationPath}'");
+            }, $"rename '{sourcePath}' to '{destinationName}'");
         }
 
         private void ExecuteWithFileLockRetry(Action action, string operationDescription)

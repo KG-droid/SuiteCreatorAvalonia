@@ -69,19 +69,14 @@ namespace SuiteOperations.Events
                     case ProcAction.Unblock:
                     {
                         // The failsafe task/list are shared by every process (and service — see
-                        // ServiceClosureExecEvent) touched during this suite run. Only tear the task down once
-                        // the list is fully empty.
+                        // ServiceClosureExecEvent) touched during this suite run. Just remove this exe's own
+                        // entry here — the caller tears the shared task down once, after every exe (and
+                        // service) in this unblock batch has had its entry removed (see
+                        // ClosureFailsafe.TeardownIfEmpty and its call sites in Suite/Suite.Execution).
                         string taskName = ClosureFailsafe.SharedFailsafeTaskName();
                         string blockListPath = ClosureFailsafe.SharedBlockListPath(taskName, _suiteId);
 
                         ClosureFailsafe.RemoveProcessEntry(blockListPath, processExe);
-
-                        if (ClosureFailsafe.ListEmpty(blockListPath))
-                        {
-                            ClosureFailsafe.DeleteFailsafeTask(taskName, blockListPath);
-                            _log.WriteLog($"Cleaned up shared failsafe task: {taskName}");
-                        }
-
                         ClosureFailsafe.UnblockProcess(processExe, _suiteId);
                         _log.WriteLog($"Unblocked process: {processExe}");
                         break;

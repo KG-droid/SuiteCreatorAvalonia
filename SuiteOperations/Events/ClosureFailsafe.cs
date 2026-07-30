@@ -116,6 +116,21 @@ namespace SuiteOperations.Events
             log.WriteLog($"Started background unblock watcher (PID {watcherProcess.Id}) for suite PID {suitePid}");
         }
 
+        // Call once per unblock/clear batch (after every process/service entry that batch is touching has
+        // already been removed) rather than after each individual entry — tearing the task down mid-batch,
+        // just because the list is transiently empty, would only force it straight back up again for the
+        // next entry in the same batch (new task, new orphaned --watch-pid watcher) instead of leaving it be.
+        public static void TeardownIfEmpty(Log log, string? suiteId)
+        {
+            string taskName = SharedFailsafeTaskName();
+            string blockListPath = SharedBlockListPath(taskName, suiteId);
+            if (ListEmpty(blockListPath))
+            {
+                DeleteFailsafeTask(taskName, blockListPath);
+                log.WriteLog($"Cleaned up shared failsafe task: {taskName}");
+            }
+        }
+
         public static void DeleteFailsafeTask(string taskName, string blockListPath)
         {
             ProcessStartInfo deleteTaskPsi = new ProcessStartInfo("schtasks", $"/Delete /TN \"{taskName}\" /F")

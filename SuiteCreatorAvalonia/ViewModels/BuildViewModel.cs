@@ -188,8 +188,13 @@ namespace SuiteCreatorAvalonia.ViewModels
                 {
                     Message = "Starting Build",
                 };
+                progressDialogVM.CancelCommand = new RelayCommand(() => _buildCancellationTokenSource.Cancel());
                 _ = this.ShowDialogAsync(progressDialogVM);
-                var progress = new Progress<string>(message => progressDialogVM.Message = message);
+                var progress = new Progress<BuildProgress>(buildProgress =>
+                {
+                    progressDialogVM.Message = buildProgress.Stage;
+                    progressDialogVM.PercentComplete = buildProgress.PercentComplete;
+                });
                 List<SuiteValidationError>? validationErrors = await _suiteBuilder.Build(_buildCancellationTokenSource.Token, progress);
                 if (validationErrors != null)
                 {

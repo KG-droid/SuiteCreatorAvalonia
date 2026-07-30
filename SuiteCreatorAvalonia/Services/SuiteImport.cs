@@ -53,7 +53,7 @@ namespace SuiteCreatorAvalonia.Services
             }
         }
 
-        public static async Task<SuiteProjectConfig> ImportSuiteAsync(string? importFilePath, string outputFolder)
+        public static async Task<SuiteProjectConfig> ImportSuiteAsync(string? importFilePath, string outputFolder, IProgress<string>? progress = null)
         {
             if (string.IsNullOrWhiteSpace(importFilePath))
                 throw new ArgumentNullException(nameof(importFilePath));
@@ -64,7 +64,10 @@ namespace SuiteCreatorAvalonia.Services
             if (string.IsNullOrWhiteSpace(outputFolder))
                 throw new ArgumentNullException(nameof(outputFolder));
 
+            void Report(string s) => progress?.Report(s);
+
             // Extract zip payload from the SFX exe to a temp path, then extract into outputFolder
+            Report("Extracting suite package");
             string tempZipPath = Path.Combine(Path.GetTempPath(), $"SuiteImport_{Guid.NewGuid():N}.zip");
             try
             {
@@ -113,6 +116,7 @@ namespace SuiteCreatorAvalonia.Services
 
             string extractRoot = Path.GetDirectoryName(scfgPath)!;
 
+            Report("Reading suite configuration");
             SuiteOperations.SuiteExecConfig? execConfig = null;
             await Task.Run(() =>
             {
@@ -194,6 +198,7 @@ namespace SuiteCreatorAvalonia.Services
                 PopupSettings = execConfig.PopupSettings ?? new Popup()
             };
 
+            Report("Importing packages");
             foreach (PackageBase pkg in execConfig.Packages ?? new List<PackageBase>())
             {
                 switch (pkg)
@@ -343,6 +348,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
             }
 
+            Report("Importing events");
             AssignCertEventFiles(execConfig.CertEvents ?? new List<SuiteOperations.Events.CertExecEvent>(), newConfig, GetEventDir);
             AssignDriverEventFiles(execConfig.DriverEvents ?? new List<SuiteOperations.Events.DriverExecEvent>(), newConfig, GetEventDir);
             await AssignExecutableEventFiles(execConfig.ExecutableEvents ?? new List<SuiteOperations.Events.ExecutableExecEvent>(), newConfig, GetEventDir);
@@ -509,14 +515,17 @@ namespace SuiteCreatorAvalonia.Services
                 string? file = ExtractSingleFileFromDir(psDir, "*.ps1");
                 if (file != null) psEvent.ScriptPath = file;
 
+                // Supporting files live in a "Support" subfolder (see SuiteBuilder.BuildAsync), flattened
+                // directly beneath it — not nested under a "Support" node — so re-nesting it here would
+                // double up the path on the next build and break the script's relative file lookups.
                 ObservableCollection<FileSystemNode> supportingFiles = new ObservableCollection<FileSystemNode>();
-                if (Directory.Exists(psDir))
+                string supportDir = Path.Combine(psDir, "Support");
+                if (Directory.Exists(supportDir))
                 {
-                    List<FileSystemNode> psNodes = await NodeFileSystem.GetNodesFromDirectoryAsync(psDir, new Progress<NodeFileSystem.NodeProgress>(), CancellationToken.None);
-                    foreach (FileSystemNode node in psNodes)
+                    List<FileSystemNode> supportNodes = await NodeFileSystem.GetNodesFromDirectoryAsync(supportDir, new Progress<NodeFileSystem.NodeProgress>(), CancellationToken.None);
+                    foreach (FileSystemNode node in supportNodes)
                     {
-                        if (!string.Equals(node.FullPath, file, StringComparison.OrdinalIgnoreCase))
-                            supportingFiles.Add(node);
+                        supportingFiles.Add(node);
                     }
                 }
 
