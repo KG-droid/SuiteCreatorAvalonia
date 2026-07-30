@@ -509,14 +509,17 @@ namespace SuiteCreatorAvalonia.Services
                 string? file = ExtractSingleFileFromDir(psDir, "*.ps1");
                 if (file != null) psEvent.ScriptPath = file;
 
+                // Supporting files live in a "Support" subfolder (see SuiteBuilder.BuildAsync), flattened
+                // directly beneath it — not nested under a "Support" node — so re-nesting it here would
+                // double up the path on the next build and break the script's relative file lookups.
                 ObservableCollection<FileSystemNode> supportingFiles = new ObservableCollection<FileSystemNode>();
-                if (Directory.Exists(psDir))
+                string supportDir = Path.Combine(psDir, "Support");
+                if (Directory.Exists(supportDir))
                 {
-                    List<FileSystemNode> psNodes = await NodeFileSystem.GetNodesFromDirectoryAsync(psDir, new Progress<NodeFileSystem.NodeProgress>(), CancellationToken.None);
-                    foreach (FileSystemNode node in psNodes)
+                    List<FileSystemNode> supportNodes = await NodeFileSystem.GetNodesFromDirectoryAsync(supportDir, new Progress<NodeFileSystem.NodeProgress>(), CancellationToken.None);
+                    foreach (FileSystemNode node in supportNodes)
                     {
-                        if (!string.Equals(node.FullPath, file, StringComparison.OrdinalIgnoreCase))
-                            supportingFiles.Add(node);
+                        supportingFiles.Add(node);
                     }
                 }
 
