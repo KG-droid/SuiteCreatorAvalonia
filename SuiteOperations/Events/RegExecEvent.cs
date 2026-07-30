@@ -586,7 +586,10 @@ namespace SuiteOperations.Events
                     // default that's simply empty right now, not something safe to delete.
                     if (KeyAlreadyExisted != false)
                     {
-                        _log.WriteLog($"Skipping prune of '{KeyPath}': key existed before the suite created/amended it, or that isn't known.");
+                        string reason = KeyAlreadyExisted == null
+                            ? "it isn't known whether the key existed before the suite created/amended it"
+                            : "the key existed before the suite created/amended it";
+                        _log.WriteLog($"Skipping prune of '{KeyPath}': {reason}.");
                         return;
                     }
 
@@ -605,9 +608,13 @@ namespace SuiteOperations.Events
                         // Only prune a key this Import actually created. If it already existed before the
                         // import ran, or that was never recorded (e.g. an older suite build), leave it -
                         // it may be a key Windows creates by default that's simply empty right now.
-                        if (!preExisted.TryGetValue(section.SubKeyPath, out bool existedBeforeImport) || existedBeforeImport)
+                        bool recorded = preExisted.TryGetValue(section.SubKeyPath, out bool existedBeforeImport);
+                        if (!recorded || existedBeforeImport)
                         {
-                            _log.WriteLog($"Skipping prune of '{section.SubKeyPath}': key existed before the suite imported into it, or that isn't known.");
+                            string reason = !recorded
+                                ? "it isn't known whether the key existed before the suite imported into it"
+                                : "the key existed before the suite imported into it";
+                            _log.WriteLog($"Skipping prune of '{section.SubKeyPath}': {reason}.");
                             continue;
                         }
 
@@ -690,7 +697,7 @@ namespace SuiteOperations.Events
                     }
                 }
 
-                File.WriteAllText(GetPreExistenceSidecarPath(regFilePath), JsonSerializer.Serialize(preExisted));
+                File.WriteAllText(GetPreExistenceSidecarPath(regFilePath), JsonSerializer.Serialize(preExisted, RegExecEventJsonContext.Default.DictionaryStringBoolean));
             }
             catch (Exception ex)
             {
@@ -704,7 +711,7 @@ namespace SuiteOperations.Events
             if (!File.Exists(sidecarPath)) return new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
             try
             {
-                Dictionary<string, bool>? raw = JsonSerializer.Deserialize<Dictionary<string, bool>>(File.ReadAllText(sidecarPath));
+                Dictionary<string, bool>? raw = JsonSerializer.Deserialize(File.ReadAllText(sidecarPath), RegExecEventJsonContext.Default.DictionaryStringBoolean);
                 return raw != null ? new Dictionary<string, bool>(raw, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
             }
             catch
