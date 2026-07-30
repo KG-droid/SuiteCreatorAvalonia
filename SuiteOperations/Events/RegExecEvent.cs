@@ -587,8 +587,8 @@ namespace SuiteOperations.Events
                     if (KeyAlreadyExisted != false)
                     {
                         string reason = KeyAlreadyExisted == null
-                            ? "it isn't known whether the key existed before the suite created/amended it"
-                            : "the key existed before the suite created/amended it";
+                            ? "it isn't known whether the key existed before this event ran"
+                            : "the key already existed when this event ran - note this only means it predates this event, not necessarily the whole suite; an earlier stage in this same suite (e.g. a vendor installer) may have created it first";
                         _log.WriteLog($"Skipping prune of '{KeyPath}': {reason}.");
                         return;
                     }
@@ -612,8 +612,8 @@ namespace SuiteOperations.Events
                         if (!recorded || existedBeforeImport)
                         {
                             string reason = !recorded
-                                ? "it isn't known whether the key existed before the suite imported into it"
-                                : "the key existed before the suite imported into it";
+                                ? "it isn't known whether the key existed before this import ran"
+                                : "the key already existed when this import ran - note this only means it predates this import, not necessarily the whole suite; an earlier stage in this same suite (e.g. a vendor installer) may have created it first";
                             _log.WriteLog($"Skipping prune of '{section.SubKeyPath}': {reason}.");
                             continue;
                         }
