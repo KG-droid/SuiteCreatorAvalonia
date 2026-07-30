@@ -180,7 +180,10 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             }
             else
             {
-                AddPropertyButton();
+                if (!string.IsNullOrWhiteSpace(PropertyName))
+                    AddPropertyRemovalTextbox();
+                else
+                    AddPropertyButton();
             }
 
         }
@@ -196,7 +199,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
 
         private void AddPropertyRemovalTextbox()
         {
-            Button? buttonToRemove = CardInnerView?.Children?.Where(x => x.Name == "AddPropertyRemoval_Button")?.First() as Button;
+            Button? buttonToRemove = CardInnerView?.Children?.Where(x => x.Name == "AddPropertyRemoval_Button")?.FirstOrDefault() as Button;
             if (null != buttonToRemove)
             {
                 CardInnerView?.Children?.Remove(buttonToRemove);
