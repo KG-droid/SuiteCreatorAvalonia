@@ -1,17 +1,11 @@
+using AvaloniaEdit.Document;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace SuiteCreatorAvalonia.ViewModels
 {
-    public class RegexMatchItem
-    {
-        public int Index { get; init; }
-        public int Length { get; init; }
-        public string Value { get; init; } = string.Empty;
-    }
-
     // Sample text is scratch input for testing only - never persisted back to the rule. Pattern
     // mirrors Rule.EvaluateStringComparator's case-insensitive matching so results here reflect
     // what the rule will actually do at detection time.
@@ -21,7 +15,7 @@ namespace SuiteCreatorAvalonia.ViewModels
         private string? _pattern;
 
         [ObservableProperty]
-        private string? _sampleText;
+        private TextDocument _sampleDoc = new();
 
         [ObservableProperty]
         private bool _isMatch;
@@ -32,21 +26,29 @@ namespace SuiteCreatorAvalonia.ViewModels
         [ObservableProperty]
         private string _resultSummary = "Enter a pattern and some sample text to test against";
 
-        [ObservableProperty]
-        private ObservableCollection<RegexMatchItem> _matches = new();
+        private List<(int Start, int Length)> _matchRanges = new();
+        public IReadOnlyList<(int Start, int Length)> MatchRanges => _matchRanges;
+
+        // Raised whenever MatchRanges changes, so the view can redraw the highlighted sample text.
+        public event Action? MatchesUpdated;
+
+        public RegexTesterWindowViewModel()
+        {
+            SampleDoc.TextChanged += (s, e) => Evaluate();
+        }
 
         partial void OnPatternChanged(string? value) => Evaluate();
-        partial void OnSampleTextChanged(string? value) => Evaluate();
 
         private void Evaluate()
         {
-            Matches.Clear();
+            _matchRanges.Clear();
             ErrorMessage = null;
 
             if (string.IsNullOrEmpty(Pattern))
             {
                 IsMatch = false;
                 ResultSummary = "Enter a pattern to test";
+                MatchesUpdated?.Invoke();
                 return;
             }
 
@@ -60,20 +62,26 @@ namespace SuiteCreatorAvalonia.ViewModels
                 IsMatch = false;
                 ErrorMessage = $"Invalid regular expression: {ex.Message}";
                 ResultSummary = "Pattern is not valid";
+                MatchesUpdated?.Invoke();
                 return;
             }
 
-            string sample = SampleText ?? string.Empty;
-            IsMatch = regex.IsMatch(sample);
-
+            string sample = SampleDoc.Text ?? string.Empty;
+            int count = 0;
             foreach (Match match in regex.Matches(sample))
             {
-                Matches.Add(new RegexMatchItem { Index = match.Index, Length = match.Length, Value = match.Value });
+                count++;
+                if (match.Length > 0)
+                {
+                    _matchRanges.Add((match.Index, match.Length));
+                }
             }
+            IsMatch = count > 0;
 
             ResultSummary = IsMatch
-                ? $"Matches - {Matches.Count} match{(Matches.Count == 1 ? string.Empty : "es")} found"
+                ? $"Matches - {count} match{(count == 1 ? string.Empty : "es")} found"
                 : "No match";
+            MatchesUpdated?.Invoke();
         }
     }
 }

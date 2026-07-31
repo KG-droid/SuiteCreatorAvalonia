@@ -4,6 +4,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
 	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	xmlns:AvaloniaEdit="using:AvaloniaEdit"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
 	d:DesignWidth="550"
@@ -27,7 +28,7 @@
 
 	<Grid
 		Margin="10"
-		RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+		RowDefinitions="Auto,Auto,Auto,*,Auto,Auto">
 
 		<!-- Header -->
 		<TextBlock
@@ -74,25 +75,33 @@
 		</StackPanel>
 
 		<!-- Sample text -->
-		<StackPanel
+		<TextBlock
 			Grid.Row="2"
-			Margin="0,0,0,10">
-			<TextBlock
-				Classes="FieldName"
-				Text="Sample text (for testing only, not saved to the rule):"
-				Margin="0,0,0,5"/>
-			<TextBox
-				Text="{Binding SampleText}"
-				Watermark="Paste a sample Registry value or PowerShell output here to test the pattern against"
-				AcceptsReturn="True"
-				TextWrapping="Wrap"
-				Height="90"
-				VerticalContentAlignment="Top"/>
-		</StackPanel>
+			Classes="FieldName"
+			Text="Sample text (for testing only, not saved to the rule) - matches highlight below:"
+			TextWrapping="Wrap"
+			Margin="0,0,0,5"/>
+
+		<!-- Sample text editor - matches are highlighted live via RegexMatchColorizer -->
+		<Border
+			Grid.Row="3"
+			Margin="0,0,0,10"
+			BorderBrush="{DynamicResource SystemChromeMediumLowColor}"
+			Background="{DynamicResource SystemControlBackgroundAltMediumLowBrush}"
+			BorderThickness="1">
+			<AvaloniaEdit:TextEditor
+				x:Name="SampleEditor"
+				Document="{Binding SampleDoc}"
+				FontFamily="Consolas,Courier New,monospace"
+				ShowLineNumbers="False"
+				WordWrap="True"
+				Background="Transparent"
+				Padding="4"/>
+		</Border>
 
 		<!-- Result banner -->
 		<Border
-			Grid.Row="3"
+			Grid.Row="4"
 			CornerRadius="4"
 			Padding="10,6"
 			Margin="0,0,0,10"
@@ -107,7 +116,7 @@
 				Foreground="Green"/>
 		</Border>
 		<Border
-			Grid.Row="3"
+			Grid.Row="4"
 			CornerRadius="4"
 			Padding="10,6"
 			Margin="0,0,0,10"
@@ -120,30 +129,6 @@
 				HorizontalAlignment="Center"
 				FontWeight="DemiBold"
 				Foreground="IndianRed"/>
-		</Border>
-
-		<!-- Matches list -->
-		<Border
-			Grid.Row="4"
-			BorderBrush="{DynamicResource SystemChromeMediumLowColor}"
-			BorderThickness="1"
-			CornerRadius="4"
-			Margin="0,0,0,10">
-			<ScrollViewer>
-				<ItemsControl ItemsSource="{Binding Matches}" Margin="8">
-					<ItemsControl.ItemTemplate>
-						<DataTemplate x:DataType="vm:RegexMatchItem">
-							<TextBlock
-								FontFamily="Consolas,Courier New,monospace"
-								TextWrapping="Wrap"
-								Margin="0,0,0,4">
-								<Run Text="{Binding Index, StringFormat='[{0}] '}" Foreground="{DynamicResource ShadedText}"/>
-								<Run Text="{Binding Value}" FontWeight="Bold"/>
-							</TextBlock>
-						</DataTemplate>
-					</ItemsControl.ItemTemplate>
-				</ItemsControl>
-			</ScrollViewer>
 		</Border>
 
 		<!-- Footer -->
