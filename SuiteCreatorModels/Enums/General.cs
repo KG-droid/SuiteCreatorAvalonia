@@ -28,6 +28,8 @@
         LessThanOrEqual,
         True,
         False,
+        Matches,
+        DoesNotMatch,
     }
     public enum Comparator
     {

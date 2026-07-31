@@ -96,7 +96,9 @@ namespace SuiteCreatorAvalonia.Models.Rules
                 DetectionTypes.String, new List<ComparatorPlus>
                 {
                     ComparatorPlus.Equal,
-                    ComparatorPlus.NotEqual
+                    ComparatorPlus.NotEqual,
+                    ComparatorPlus.Matches,
+                    ComparatorPlus.DoesNotMatch
                 }
             },
             {
@@ -153,7 +155,9 @@ namespace SuiteCreatorAvalonia.Models.Rules
             { ComparatorPlus.LessThan, MaterialIconKind.CodeLessThan },
             { ComparatorPlus.LessThanOrEqual, MaterialIconKind.CodeLessThanOrEqual },
             { ComparatorPlus.True, MaterialIconKind.Check },
-            { ComparatorPlus.False, MaterialIconKind.Close }
+            { ComparatorPlus.False, MaterialIconKind.Close },
+            { ComparatorPlus.Matches, MaterialIconKind.Regex },
+            { ComparatorPlus.DoesNotMatch, MaterialIconKind.CodeNotEqualVariant }
         };
     }
 }

@@ -1,0 +1,161 @@
+<Window
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+	d:DesignWidth="550"
+	d:DesignHeight="550"
+	ShowInTaskbar="false"
+	WindowStartupLocation="CenterOwner"
+	x:CompileBindings="True"
+	services:DialogManager.Register="{Binding}"
+	WindowDecorations="BorderOnly"
+	ExtendClientAreaToDecorationsHint="true"
+    x:Class="SuiteCreatorAvalonia.Views.RegexTesterWindow"
+    x:DataType="vm:RegexTesterWindowViewModel"
+	Width="550"
+	Height="550"
+	MinWidth="420"
+	MinHeight="420">
+
+	<Design.DataContext>
+		<vm:RegexTesterWindowViewModel/>
+	</Design.DataContext>
+
+	<Grid
+		Margin="10"
+		RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+
+		<!-- Header -->
+		<TextBlock
+			Classes="FieldName"
+			Text="RegEx Tester"
+			Grid.Row="0"
+			HorizontalAlignment="Center"
+			IsHitTestVisible="False"/>
+
+		<!-- Close Button -->
+		<Button
+			Click="CloseWindow"
+			Classes="IconButton"
+			ToolTip.Tip="Close"
+			Tag="Close"
+			Grid.Row="0"
+			HorizontalAlignment="Right"
+			VerticalAlignment="Top"
+			Margin="0,-8,-8,0"/>
+
+		<!-- Pattern -->
+		<StackPanel
+			Grid.Row="1"
+			Margin="0,10,0,10">
+			<TextBlock
+				Classes="FieldName"
+				Text="Pattern:"
+				Margin="0,0,0,5"/>
+			<TextBox
+				Text="{Binding Pattern}"
+				Watermark="e.g. ^\d+\.\d+\.\d+\.\d+$"
+				FontFamily="Consolas,Courier New,monospace"/>
+			<TextBlock
+				Text="Matching is case-insensitive, the same as it will be when the rule runs."
+				Foreground="{DynamicResource ShadedText}"
+				FontSize="11"
+				Margin="0,4,0,0"/>
+			<TextBlock
+				Text="{Binding ErrorMessage}"
+				Foreground="Red"
+				TextWrapping="Wrap"
+				IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+				Margin="0,4,0,0"/>
+		</StackPanel>
+
+		<!-- Sample text -->
+		<StackPanel
+			Grid.Row="2"
+			Margin="0,0,0,10">
+			<TextBlock
+				Classes="FieldName"
+				Text="Sample text (for testing only, not saved to the rule):"
+				Margin="0,0,0,5"/>
+			<TextBox
+				Text="{Binding SampleText}"
+				Watermark="Paste a sample Registry value or PowerShell output here to test the pattern against"
+				AcceptsReturn="True"
+				TextWrapping="Wrap"
+				Height="90"
+				VerticalContentAlignment="Top"/>
+		</StackPanel>
+
+		<!-- Result banner -->
+		<Border
+			Grid.Row="3"
+			CornerRadius="4"
+			Padding="10,6"
+			Margin="0,0,0,10"
+			Background="#332E7D32"
+			BorderBrush="Green"
+			BorderThickness="1"
+			IsVisible="{Binding IsMatch}">
+			<TextBlock
+				Text="{Binding ResultSummary}"
+				HorizontalAlignment="Center"
+				FontWeight="DemiBold"
+				Foreground="Green"/>
+		</Border>
+		<Border
+			Grid.Row="3"
+			CornerRadius="4"
+			Padding="10,6"
+			Margin="0,0,0,10"
+			Background="#33B71C1C"
+			BorderBrush="IndianRed"
+			BorderThickness="1"
+			IsVisible="{Binding !IsMatch}">
+			<TextBlock
+				Text="{Binding ResultSummary}"
+				HorizontalAlignment="Center"
+				FontWeight="DemiBold"
+				Foreground="IndianRed"/>
+		</Border>
+
+		<!-- Matches list -->
+		<Border
+			Grid.Row="4"
+			BorderBrush="{DynamicResource SystemChromeMediumLowColor}"
+			BorderThickness="1"
+			CornerRadius="4"
+			Margin="0,0,0,10">
+			<ScrollViewer>
+				<ItemsControl ItemsSource="{Binding Matches}" Margin="8">
+					<ItemsControl.ItemTemplate>
+						<DataTemplate x:DataType="vm:RegexMatchItem">
+							<TextBlock
+								FontFamily="Consolas,Courier New,monospace"
+								TextWrapping="Wrap"
+								Margin="0,0,0,4">
+								<Run Text="{Binding Index, StringFormat='[{0}] '}" Foreground="{DynamicResource ShadedText}"/>
+								<Run Text="{Binding Value}" FontWeight="Bold"/>
+							</TextBlock>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</ScrollViewer>
+		</Border>
+
+		<!-- Footer -->
+		<StackPanel
+			Grid.Row="5"
+			Orientation="Horizontal"
+			HorizontalAlignment="Right">
+			<Button
+				Content="  Use This Pattern  "
+				Click="UsePattern"/>
+		</StackPanel>
+
+	</Grid>
+
+</Window>

@@ -114,6 +114,16 @@ namespace SuiteCreatorAvalonia.ViewModels.RuleBuilder
             ConfigureType();
         }
 
+        // The RegEx tester button's visibility depends on which comparator is selected (Matches/DoesNotMatch),
+        // so the card layout needs rebuilding here too, not just on DetectionType/RuleType changes.
+        partial void OnComparatorChanged(ComparatorPlus? value)
+        {
+            if (!_isLoading)
+            {
+                ConfigureType();
+            }
+        }
+
         public RuleCardViewModel()
         {
             FileBasePathVM.CMDUpdated += (s, e) =>
@@ -507,15 +517,31 @@ namespace SuiteCreatorAvalonia.ViewModels.RuleBuilder
                     Comparator = null;
                 }
                 // Comparator Value
+                bool isRegexComparator = Comparator == ComparatorPlus.Matches || Comparator == ComparatorPlus.DoesNotMatch;
                 if (Comparator != null)
                 {
                     TextBox addComparatorValueTextBox = new TextBox();
-                    addComparatorValueTextBox.PlaceholderText = "Value to compare";
+                    addComparatorValueTextBox.PlaceholderText = isRegexComparator ? "RegEx pattern to compare" : "Value to compare";
                     addComparatorValueTextBox.Bind(TextBox.TextProperty, new Binding("ComparatorValue") { Mode = BindingMode.TwoWay });
                     Grid.SetColumn(addComparatorValueTextBox, gridColumn);
                     gridColumn++;
                     CardInnerView.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
                     CardInnerView.Children.Add(addComparatorValueTextBox);
+                }
+                // RegEx Tester Button
+                if (isRegexComparator)
+                {
+                    Button regexTesterButton = new Button();
+                    regexTesterButton.Classes.Add("IconButton");
+                    regexTesterButton.Tag = "Regex";
+                    regexTesterButton.Background = null;
+                    regexTesterButton.BorderThickness = new Thickness(0);
+                    ToolTip.SetTip(regexTesterButton, "Test this RegEx pattern");
+                    regexTesterButton.Command = new RelayCommand(OpenRegexTesterWindow);
+                    Grid.SetColumn(regexTesterButton, gridColumn);
+                    gridColumn++;
+                    CardInnerView.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+                    CardInnerView.Children.Add(regexTesterButton);
                 }
             }
             catch
@@ -560,6 +586,24 @@ namespace SuiteCreatorAvalonia.ViewModels.RuleBuilder
             else
             {
                 Script = new TextDocument();
+            }
+        }
+
+        private async void OpenRegexTesterWindow()
+        {
+            Window regexWindow = new RegexTesterWindow();
+            RegexTesterWindowViewModel vm = new RegexTesterWindowViewModel { Pattern = ComparatorValue };
+            Window? parent = TopLevel.GetTopLevel(CardInnerView) as Window;
+            if (parent == null)
+            {
+                throw new InvalidOperationException("Could not find parent window to open a modal RegexTesterWindow");
+            }
+            regexWindow.DataContext = vm;
+
+            bool? applied = await regexWindow.ShowDialog<bool?>(parent);
+            if (applied == true)
+            {
+                ComparatorValue = vm.Pattern;
             }
         }
 

@@ -140,6 +140,21 @@ namespace SuiteCreatorAvalonia.Models.Rules
             {
                 return "A number-based rule detection must have a valid numeric value.";
             }
+            if (Comparator == ComparatorPlus.Matches || Comparator == ComparatorPlus.DoesNotMatch)
+            {
+                if (string.IsNullOrEmpty(ComparatorValue))
+                {
+                    return "A RegEx match detection must have a regular expression pattern specified.";
+                }
+                try
+                {
+                    _ = new Regex(ComparatorValue);
+                }
+                catch (ArgumentException)
+                {
+                    return $"'{ComparatorValue}' is not a valid regular expression.";
+                }
+            }
             if (DetectionType == DetectionTypes.Binary)
             {
                 if (!string.IsNullOrWhiteSpace(ComparatorValue))
@@ -389,9 +404,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
                 case DetectionTypes.String:
                     if (Comparator == null || string.IsNullOrWhiteSpace(ComparatorValue))
                         throw new ArgumentNullException(nameof(Comparator), "Comparator and ComparatorValue must be defined for String detection.");
-                    ruleResult.IsMet = Comparator == ComparatorPlus.Equal
-                        ? output.Equals(ComparatorValue, StringComparison.OrdinalIgnoreCase)
-                        : !output.Equals(ComparatorValue, StringComparison.OrdinalIgnoreCase);
+                    ruleResult.IsMet = EvaluateStringComparator((ComparatorPlus)Comparator, output, ComparatorValue);
                     ruleResult.Summary = ruleResult.IsMet ?
                         $"PowerShell output: '{output}', is {Comparator}, compared to '{ComparatorValue}'" :
                         $"PowerShell output: '{output}', is not {Comparator}, compared to '{ComparatorValue}'";
@@ -523,9 +536,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
                     switch (DetectionType)
                     {
                         case DetectionTypes.String:
-                            ruleResult.IsMet = Comparator == ComparatorPlus.Equal ?
-                                actualString.Equals(ComparatorValue, StringComparison.OrdinalIgnoreCase) :
-                                !actualString.Equals(ComparatorValue, StringComparison.OrdinalIgnoreCase);
+                            ruleResult.IsMet = EvaluateStringComparator((ComparatorPlus)Comparator, actualString, ComparatorValue);
                             ruleResult.Summary = $"Registry value '{ComparatorProperty}' is '{actualString}', compared to '{ComparatorValue}'";
                             return ruleResult;
 
@@ -654,6 +665,35 @@ namespace SuiteCreatorAvalonia.Models.Rules
         {
             int compareResult = CompareVersionStrings(actualVersion, referenceVersion);
             return EvaluateComparator(compareResult, comparator);
+        }
+
+        // Shared by Registry and PowerShell String detections. referencePattern is the admin-authored
+        // ComparatorValue; an invalid RegEx here means it slipped past Rule.Validate(), so it errors rather
+        // than reporting "not met" - unlike actualValue, which is just an observed string and always valid input.
+        public static bool EvaluateStringComparator(ComparatorPlus comparator, string actualValue, string referencePattern)
+        {
+            switch (comparator)
+            {
+                case ComparatorPlus.Equal:
+                    return actualValue.Equals(referencePattern, StringComparison.OrdinalIgnoreCase);
+                case ComparatorPlus.NotEqual:
+                    return !actualValue.Equals(referencePattern, StringComparison.OrdinalIgnoreCase);
+                case ComparatorPlus.Matches:
+                case ComparatorPlus.DoesNotMatch:
+                    Regex regex;
+                    try
+                    {
+                        regex = new Regex(referencePattern, RegexOptions.IgnoreCase);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new ArgumentException($"'{referencePattern}' is not a valid regular expression.", nameof(referencePattern), ex);
+                    }
+                    bool isMatch = regex.IsMatch(actualValue);
+                    return comparator == ComparatorPlus.Matches ? isMatch : !isMatch;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(comparator), $"Comparator: {comparator}, is not supported for String detection.");
+            }
         }
 
         public static bool ProcessComparator(Comparator comparator, string actualVersion, string referenceVersion)
