@@ -24,6 +24,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
         FileVersion,
         ProductVersion,
         Boolean,
+        StringVersion,
     }
 
     public class RuleResult
@@ -99,6 +100,15 @@ namespace SuiteCreatorAvalonia.Models.Rules
             {
                 return "This rule key path must start with Computer\\HKEY_ or HKEY_";
             }
+            if (
+                Type == RuleType.Registry &&
+                DetectionType != DetectionTypes.Exists &&
+                DetectionType != DetectionTypes.NotExists &&
+                string.IsNullOrWhiteSpace(ComparatorProperty)
+            )
+            {
+                return "A Registry rule with this Detection type must have a Registry property/value name specified.";
+            }
             if (Type == RuleType.PowerShell && string.IsNullOrWhiteSpace(ScriptName) && string.IsNullOrWhiteSpace(Script?.Text))
             {
                 return "A powershell rule must have either a script file and embedded script";
@@ -119,7 +129,8 @@ namespace SuiteCreatorAvalonia.Models.Rules
                 (
                     DetectionType == DetectionTypes.Version ||
                     DetectionType == DetectionTypes.FileVersion ||
-                    DetectionType == DetectionTypes.ProductVersion
+                    DetectionType == DetectionTypes.ProductVersion ||
+                    DetectionType == DetectionTypes.StringVersion
                 ) && !Version.TryParse(ComparatorValue, out _)
             )
             {
@@ -481,6 +492,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
 
                 case DetectionTypes.String:
                 case DetectionTypes.Number:
+                case DetectionTypes.StringVersion:
                 case DetectionTypes.Binary:
                     if (!keyExists)
                     {
@@ -490,15 +502,15 @@ namespace SuiteCreatorAvalonia.Models.Rules
                     }
                     if (string.IsNullOrWhiteSpace(ComparatorProperty))
                     {
-                        throw new ArgumentNullException(nameof(ComparatorProperty), "ComparatorProperty must be defined on a String, Number, Or Binary detection");
+                        throw new ArgumentNullException(nameof(ComparatorProperty), "ComparatorProperty must be defined on a String, Number, StringVersion, Or Binary detection");
                     }
                     if (string.IsNullOrWhiteSpace(ComparatorValue))
                     {
-                        throw new ArgumentNullException(nameof(ComparatorProperty), "ComparatorValue must be defined on a String, Number, Or Binary detection");
+                        throw new ArgumentNullException(nameof(ComparatorProperty), "ComparatorValue must be defined on a String, Number, StringVersion, Or Binary detection");
                     }
                     if (Comparator == null)
                     {
-                        throw new ArgumentNullException(nameof(ComparatorProperty), "A Comparator must be defined on a String, Number, Or Binary detection");
+                        throw new ArgumentNullException(nameof(ComparatorProperty), "A Comparator must be defined on a String, Number, StringVersion, Or Binary detection");
                     }
                     object? value = subKey.GetValue(ComparatorProperty);
                     if (value == null)
@@ -524,6 +536,21 @@ namespace SuiteCreatorAvalonia.Models.Rules
                             }
                             ruleResult.IsMet = ProcessComparator((ComparatorPlus)Comparator, actualString, ComparatorValue);
                             ruleResult.Summary = $"Registry value name: '{ComparatorProperty}' is '{ComparatorValue}', compared to '{ComparatorValue}'";
+                            return ruleResult;
+
+                        case DetectionTypes.StringVersion:
+                            if (!Version.TryParse(ComparatorValue, out _))
+                            {
+                                throw new ArgumentOutOfRangeException(nameof(ComparatorValue), $"Registry reference: '{ComparatorValue}' is not a valid version.");
+                            }
+                            if (!Version.TryParse(actualString, out _))
+                            {
+                                ruleResult.IsMet = false;
+                                ruleResult.Summary = $"Registry value: '{ComparatorProperty}' is '{actualString}', which is not a valid version string, detection not met.";
+                                return ruleResult;
+                            }
+                            ruleResult.IsMet = ProcessComparator((ComparatorPlus)Comparator, actualString, ComparatorValue);
+                            ruleResult.Summary = $"Registry value '{ComparatorProperty}' version is '{actualString}', is {Comparator}, compared to '{ComparatorValue}'";
                             return ruleResult;
 
                         case DetectionTypes.Binary:

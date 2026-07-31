@@ -14,6 +14,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
                     DetectionTypes.NotExists,
                     DetectionTypes.String,
                     DetectionTypes.Number,
+                    DetectionTypes.StringVersion,
                     DetectionTypes.Binary,
                 }
             },
@@ -121,6 +122,17 @@ namespace SuiteCreatorAvalonia.Models.Rules
             },
             {
                 DetectionTypes.Version, new List<ComparatorPlus>
+                {
+                    ComparatorPlus.Equal,
+                    ComparatorPlus.NotEqual,
+                    ComparatorPlus.GreaterThan,
+                    ComparatorPlus.GreaterThanOrEqual,
+                    ComparatorPlus.LessThan,
+                    ComparatorPlus.LessThanOrEqual
+                }
+            },
+            {
+                DetectionTypes.StringVersion, new List<ComparatorPlus>
                 {
                     ComparatorPlus.Equal,
                     ComparatorPlus.NotEqual,

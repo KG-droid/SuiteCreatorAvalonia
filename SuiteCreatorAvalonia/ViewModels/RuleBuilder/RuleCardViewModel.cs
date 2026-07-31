@@ -193,6 +193,7 @@ namespace SuiteCreatorAvalonia.ViewModels.RuleBuilder
                     DetectionType == DetectionTypes.Number ||
                     DetectionType == DetectionTypes.ProductVersion ||
                     DetectionType == DetectionTypes.String ||
+                    DetectionType == DetectionTypes.StringVersion ||
                     DetectionType == DetectionTypes.Version
                 ) && (Comparator == null || ComparatorValue == null)
             )
