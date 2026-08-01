@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using SuiteCreatorAvalonia.Models.Package;
 using SuiteCreatorAvalonia.ViewModels;
 using System;
+using System.Threading.Tasks;
 
 namespace SuiteCreatorAvalonia.Views;
 
@@ -89,5 +90,29 @@ public partial class PackageOtherInstallDetailsView : UserControl
     {
         if (sender is Control ctrl)
             MSIRemoves_DataGrid.SelectedItem = ctrl.DataContext;
+    }
+
+    private async void TestVendorRegex_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not PackageOtherInstallDetailsViewModel vm) return;
+        string? result = await OpenRegexTester(vm.RegexVendor);
+        if (result != null) vm.RegexVendor = result;
+    }
+
+    private async void TestProductNameRegex_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not PackageOtherInstallDetailsViewModel vm) return;
+        string? result = await OpenRegexTester(vm.RegexProductName);
+        if (result != null) vm.RegexProductName = result;
+    }
+
+    private async Task<string?> OpenRegexTester(string? currentPattern)
+    {
+        if (TopLevel.GetTopLevel(this) is not Window parent) return null;
+
+        RegexTesterWindowViewModel vm = new() { Pattern = currentPattern };
+        RegexTesterWindow regexWindow = new() { DataContext = vm };
+        bool? applied = await regexWindow.ShowDialog<bool?>(parent);
+        return applied == true ? vm.Pattern : null;
     }
 }

@@ -1,7 +1,10 @@
 using AvaloniaEdit.Document;
 using CommunityToolkit.Mvvm.ComponentModel;
+using SuiteCreatorAvalonia.Views;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SuiteCreatorAvalonia.ViewModels
@@ -12,10 +15,18 @@ namespace SuiteCreatorAvalonia.ViewModels
     internal partial class RegexTesterWindowViewModel : ViewModelBase
     {
         [ObservableProperty]
-        private string? _pattern;
+        private TextDocument _patternDoc = new();
 
         [ObservableProperty]
         private TextDocument _sampleDoc = new();
+
+        // Plain string wrapper over PatternDoc, for callers (e.g. RuleCardViewModel) that just
+        // want to get/set the pattern without depending on AvaloniaEdit.Document.
+        public string? Pattern
+        {
+            get => PatternDoc.Text;
+            set => PatternDoc.Text = value ?? string.Empty;
+        }
 
         [ObservableProperty]
         private bool _isMatch;
@@ -29,15 +40,44 @@ namespace SuiteCreatorAvalonia.ViewModels
         private List<(int Start, int Length)> _matchRanges = new();
         public IReadOnlyList<(int Start, int Length)> MatchRanges => _matchRanges;
 
+        private List<RegexToken> _patternTokens = new();
+        public IReadOnlyList<RegexToken> PatternTokens => _patternTokens;
+
+        [ObservableProperty]
+        private string? _snippetFilter;
+
+        [ObservableProperty]
+        private ObservableCollection<RegexSnippet> _filteredSnippets = new(RegexSnippetLibrary.All);
+
         // Raised whenever MatchRanges changes, so the view can redraw the highlighted sample text.
         public event Action? MatchesUpdated;
+
+        // Raised whenever PatternTokens changes, so the view can redraw the colorized pattern text.
+        public event Action? PatternTokensUpdated;
 
         public RegexTesterWindowViewModel()
         {
             SampleDoc.TextChanged += (s, e) => Evaluate();
+            PatternDoc.TextChanged += (s, e) =>
+            {
+                _patternTokens = RegexPatternTokenizer.Tokenize(PatternDoc.Text ?? string.Empty);
+                PatternTokensUpdated?.Invoke();
+                Evaluate();
+            };
         }
 
-        partial void OnPatternChanged(string? value) => Evaluate();
+        partial void OnSnippetFilterChanged(string? value)
+        {
+            IEnumerable<RegexSnippet> source = RegexSnippetLibrary.All;
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                source = source.Where(s =>
+                    s.Token.Contains(value, StringComparison.OrdinalIgnoreCase) ||
+                    s.Name.Contains(value, StringComparison.OrdinalIgnoreCase) ||
+                    s.Description.Contains(value, StringComparison.OrdinalIgnoreCase));
+            }
+            FilteredSnippets = new ObservableCollection<RegexSnippet>(source);
+        }
 
         private void Evaluate()
         {

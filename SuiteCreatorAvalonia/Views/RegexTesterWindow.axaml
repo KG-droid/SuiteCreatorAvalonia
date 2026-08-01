@@ -3,11 +3,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+	xmlns:views="clr-namespace:SuiteCreatorAvalonia.Views"
 	xmlns:services="using:SuiteCreatorAvalonia.Services"
 	xmlns:AvaloniaEdit="using:AvaloniaEdit"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-	d:DesignWidth="550"
+	d:DesignWidth="800"
 	d:DesignHeight="550"
 	ShowInTaskbar="false"
 	WindowStartupLocation="CenterOwner"
@@ -17,9 +18,9 @@
 	ExtendClientAreaToDecorationsHint="true"
     x:Class="SuiteCreatorAvalonia.Views.RegexTesterWindow"
     x:DataType="vm:RegexTesterWindowViewModel"
-	Width="550"
+	Width="800"
 	Height="550"
-	MinWidth="420"
+	MinWidth="650"
 	MinHeight="420">
 
 	<Design.DataContext>
@@ -28,6 +29,11 @@
 
 	<Grid
 		Margin="10"
+		ColumnDefinitions="*,230">
+
+	<Grid
+		Grid.Column="0"
+		Margin="0,0,10,0"
 		RowDefinitions="Auto,Auto,Auto,*,Auto,Auto">
 
 		<!-- Header -->
@@ -57,14 +63,26 @@
 				Classes="FieldName"
 				Text="Pattern:"
 				Margin="0,0,0,5"/>
-			<TextBox
-				Text="{Binding Pattern}"
-				Watermark="e.g. ^\d+\.\d+\.\d+\.\d+$"
-				FontFamily="Consolas,Courier New,monospace"/>
+			<Border
+				BorderBrush="{DynamicResource SystemChromeMediumLowColor}"
+				Background="{DynamicResource SystemControlBackgroundAltMediumLowBrush}"
+				BorderThickness="1">
+				<AvaloniaEdit:TextEditor
+					x:Name="PatternEditor"
+					Document="{Binding PatternDoc}"
+					FontFamily="Consolas,Courier New,monospace"
+					ShowLineNumbers="False"
+					WordWrap="False"
+					HorizontalScrollBarVisibility="Hidden"
+					Background="Transparent"
+					Height="32"
+					Padding="4,2"/>
+			</Border>
 			<TextBlock
-				Text="Matching is case-insensitive, the same as it will be when the rule runs."
+				Text="Matching is case-insensitive, the same as it will be when the rule runs. Hover a highlighted part of the pattern for what it means."
 				Foreground="{DynamicResource ShadedText}"
 				FontSize="11"
+				TextWrapping="Wrap"
 				Margin="0,4,0,0"/>
 			<TextBlock
 				Text="{Binding ErrorMessage}"
@@ -140,6 +158,55 @@
 				Content="  Use This Pattern  "
 				Click="UsePattern"/>
 		</StackPanel>
+
+	</Grid>
+
+	<!-- Builder panel - click an entry to insert it into the pattern at the caret -->
+	<Border
+		Grid.Column="1"
+		BorderBrush="{DynamicResource SystemChromeMediumLowColor}"
+		BorderThickness="1,0,0,0"
+		Padding="10,0,0,0">
+		<Grid RowDefinitions="Auto,Auto,*">
+			<TextBlock
+				Grid.Row="0"
+				Classes="FieldName"
+				Text="Insert RegEx Syntax"
+				Margin="0,0,0,8"/>
+			<TextBox
+				Grid.Row="1"
+				Text="{Binding SnippetFilter}"
+				Watermark="Search e.g. digit, group..."
+				Margin="0,0,0,8"/>
+			<ScrollViewer Grid.Row="2">
+				<ItemsControl ItemsSource="{Binding FilteredSnippets}">
+					<ItemsControl.ItemTemplate>
+						<DataTemplate x:DataType="views:RegexSnippet">
+							<Button
+								Click="InsertToken_Click"
+								Tag="{Binding Token}"
+								ToolTip.Tip="{Binding Description}"
+								ToolTip.Placement="Left"
+								HorizontalAlignment="Stretch"
+								HorizontalContentAlignment="Left"
+								Margin="0,0,0,4">
+								<StackPanel>
+									<TextBlock
+										Text="{Binding Token}"
+										FontFamily="Consolas,Courier New,monospace"
+										FontWeight="Bold"/>
+									<TextBlock
+										Text="{Binding Name}"
+										FontSize="11"
+										Foreground="{DynamicResource ShadedText}"/>
+								</StackPanel>
+							</Button>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</ScrollViewer>
+		</Grid>
+	</Border>
 
 	</Grid>
 
