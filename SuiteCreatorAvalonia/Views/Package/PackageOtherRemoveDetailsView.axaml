@@ -232,18 +232,38 @@
 							Grid.Column="0"
 							Text="Manufacturer:"
 							Margin="0,0,10,0"/>
-						<TextBox
-							Text="{Binding RegexVendor}"
-							PlaceholderText="No Regex provided"
-							Grid.Column="1"/>
+						<Grid
+							Grid.Column="1"
+							ColumnDefinitions="*,Auto">
+							<TextBox
+								Grid.Column="0"
+								Text="{Binding RegexVendor}"
+								PlaceholderText="No Regex provided"/>
+							<Button
+								Grid.Column="1"
+								Classes="IconButton"
+								Tag="Regex"
+								Click="TestVendorRegex_Click"
+								ToolTip.Tip="Test/build this RegEx pattern"/>
+						</Grid>
 						<TextBlock
 							Grid.Column="2"
 							Text="Product Name:"
 							Margin="10,0,10,0"/>
-						<TextBox
-							Text="{Binding RegexProductName}"
-							PlaceholderText="No Regex provided"
-							Grid.Column="3"/>
+						<Grid
+							Grid.Column="3"
+							ColumnDefinitions="*,Auto">
+							<TextBox
+								Grid.Column="0"
+								Text="{Binding RegexProductName}"
+								PlaceholderText="No Regex provided"/>
+							<Button
+								Grid.Column="1"
+								Classes="IconButton"
+								Tag="Regex"
+								Click="TestProductNameRegex_Click"
+								ToolTip.Tip="Test/build this RegEx pattern"/>
+						</Grid>
 						<TextBlock
 							Grid.Column="0"
 							Grid.Row="1"

@@ -77,7 +77,7 @@ namespace SuiteExecutor
             if (!_progressPopupStarted)
                 return;
 
-            string statusText = isError ? "Installation failed" : "Installation complete";
+            string statusText = isError ? "Suite failed" : "Suite complete";
             WriteProgressStatus(100, statusText, isComplete: !isError, isError: isError);
         }
 

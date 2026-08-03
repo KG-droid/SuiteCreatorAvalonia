@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using SuiteCreatorAvalonia.Models.Package;
 using SuiteCreatorAvalonia.ViewModels;
 using System;
+using System.Threading.Tasks;
 
 namespace SuiteCreatorAvalonia.Views;
 
@@ -12,6 +13,30 @@ public partial class PackageOtherRemoveDetailsView : UserControl
     public PackageOtherRemoveDetailsView()
     {
         InitializeComponent();
+    }
+
+    private async void TestVendorRegex_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not PackageOtherRemoveDetailsViewModel vm) return;
+        string? result = await OpenRegexTester(vm.RegexVendor);
+        if (result != null) vm.RegexVendor = result;
+    }
+
+    private async void TestProductNameRegex_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not PackageOtherRemoveDetailsViewModel vm) return;
+        string? result = await OpenRegexTester(vm.RegexProductName);
+        if (result != null) vm.RegexProductName = result;
+    }
+
+    private async Task<string?> OpenRegexTester(string? currentPattern)
+    {
+        if (TopLevel.GetTopLevel(this) is not Window parent) return null;
+
+        RegexTesterWindowViewModel vm = new() { Pattern = currentPattern };
+        RegexTesterWindow regexWindow = new() { DataContext = vm };
+        bool? applied = await regexWindow.ShowDialog<bool?>(parent);
+        return applied == true ? vm.Pattern : null;
     }
 
     private void RemoveType_SelectedItemChanged(object? sender, SelectionChangedEventArgs e)

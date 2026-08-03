@@ -44,6 +44,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Logger\Logger.csproj" />
+	  <ProjectReference Include="..\SuiteCreatorControls\SuiteCreatorControls.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

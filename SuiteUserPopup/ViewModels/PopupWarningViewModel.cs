@@ -54,6 +54,14 @@ namespace SuiteUserPopup.ViewModels
         [ObservableProperty]
         private double _progressValue;
 
+        /// <summary>
+        /// Time remaining as a 0-100 percentage (100 = timer just started, 0 = expired), for ShimmerProgress's
+        /// fixed percentage scale. Inverted from elapsed time so the bar reads as a countdown — starting full
+        /// and draining away — rather than filling up as if towards a completed task.
+        /// </summary>
+        [ObservableProperty]
+        private double _timeRemainingPercent;
+
         [ObservableProperty]
         private ObservableCollection<Control> _appsToCloseControls = new();
 
@@ -130,6 +138,7 @@ namespace SuiteUserPopup.ViewModels
             var totalSeconds = Math.Max(0, Timer) * 60;
             ProgressMax = totalSeconds;
             ProgressValue = 0;
+            TimeRemainingPercent = 100;
 
             if (totalSeconds <= 0)
                 return;
@@ -146,6 +155,7 @@ namespace SuiteUserPopup.ViewModels
                     token.ThrowIfCancellationRequested();
                     await Task.Delay(TimeSpan.FromSeconds(1), token);
                     ProgressValue = elapsed + 1;
+                    TimeRemainingPercent = 100 - (elapsed + 1) * 100.0 / totalSeconds;
                 }
                 ApplicationHelper.ExitApplication(4);
             }

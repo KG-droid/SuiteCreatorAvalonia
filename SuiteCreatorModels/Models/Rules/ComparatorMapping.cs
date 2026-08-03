@@ -14,6 +14,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
                     DetectionTypes.NotExists,
                     DetectionTypes.String,
                     DetectionTypes.Number,
+                    DetectionTypes.StringVersion,
                     DetectionTypes.Binary,
                 }
             },
@@ -95,7 +96,9 @@ namespace SuiteCreatorAvalonia.Models.Rules
                 DetectionTypes.String, new List<ComparatorPlus>
                 {
                     ComparatorPlus.Equal,
-                    ComparatorPlus.NotEqual
+                    ComparatorPlus.NotEqual,
+                    ComparatorPlus.Matches,
+                    ComparatorPlus.DoesNotMatch
                 }
             },
             {
@@ -130,6 +133,17 @@ namespace SuiteCreatorAvalonia.Models.Rules
                     ComparatorPlus.LessThanOrEqual
                 }
             },
+            {
+                DetectionTypes.StringVersion, new List<ComparatorPlus>
+                {
+                    ComparatorPlus.Equal,
+                    ComparatorPlus.NotEqual,
+                    ComparatorPlus.GreaterThan,
+                    ComparatorPlus.GreaterThanOrEqual,
+                    ComparatorPlus.LessThan,
+                    ComparatorPlus.LessThanOrEqual
+                }
+            },
         };
 
         public static Dictionary<ComparatorPlus, MaterialIconKind> ComparatorToIconKind = new()
@@ -141,7 +155,9 @@ namespace SuiteCreatorAvalonia.Models.Rules
             { ComparatorPlus.LessThan, MaterialIconKind.CodeLessThan },
             { ComparatorPlus.LessThanOrEqual, MaterialIconKind.CodeLessThanOrEqual },
             { ComparatorPlus.True, MaterialIconKind.Check },
-            { ComparatorPlus.False, MaterialIconKind.Close }
+            { ComparatorPlus.False, MaterialIconKind.Close },
+            { ComparatorPlus.Matches, MaterialIconKind.Regex },
+            { ComparatorPlus.DoesNotMatch, MaterialIconKind.CodeNotEqualVariant }
         };
     }
 }

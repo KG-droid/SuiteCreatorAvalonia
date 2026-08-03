@@ -7,6 +7,7 @@
 	xmlns:AvaloniaEdit="using:AvaloniaEdit"
 	xmlns:mi="using:Material.Icons.Avalonia"
 	xmlns:labsGif="using:Avalonia.Labs.Gif"
+	xmlns:controls="using:SuiteCreatorControls.Controls"
     mc:Ignorable="d"
 	Topmost="True"
 	RequestedThemeVariant="Default"
@@ -216,9 +217,13 @@
 				</TextBlock>
 
 				<!-- Timer bar -->
-				<ProgressBar
-					Foreground="{Binding CompanyLogoBackgroundColorShade}"
-					Value="20"
+				<controls:ShimmerProgress
+					Accent="{Binding CompanyLogoBackgroundColorShade}"
+					TrackBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+					Value="80"
+					ShowPercentage="False"
+					ShowCompleteEffect="False"
+					Direction="ToStart"
 					Height="10"
 					MaxWidth="350"
 					Margin="0,5,0,15"/>
