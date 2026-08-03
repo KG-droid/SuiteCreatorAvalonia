@@ -8,6 +8,16 @@ using System.Globalization;
 
 namespace SuiteCreatorControls.Controls
 {
+    /// <summary>Which way the particles drift along the bar.</summary>
+    public enum ShimmerProgressDirection
+    {
+        /// <summary>Particles drift from the start of the bar towards the leading edge (the default).</summary>
+        ToEnd,
+
+        /// <summary>Particles drift from the leading edge back towards the start of the bar.</summary>
+        ToStart,
+    }
+
     /// <summary>
     /// A custom-drawn "always alive" progress bar: a flowing accent gradient, a pulsing glow at
     /// the leading edge, and subtle particles drifting towards the head. Progress changes (and
@@ -36,6 +46,12 @@ namespace SuiteCreatorControls.Controls
 
         public static readonly StyledProperty<bool> ShowPercentageProperty =
             AvaloniaProperty.Register<ShimmerProgress, bool>(nameof(ShowPercentage), true);
+
+        public static readonly StyledProperty<bool> ShowCompleteEffectProperty =
+            AvaloniaProperty.Register<ShimmerProgress, bool>(nameof(ShowCompleteEffect), true);
+
+        public static readonly StyledProperty<ShimmerProgressDirection> DirectionProperty =
+            AvaloniaProperty.Register<ShimmerProgress, ShimmerProgressDirection>(nameof(Direction), ShimmerProgressDirection.ToEnd);
 
         /// <summary>Progress from 0 to 100. Changes ease towards the new value over ~250ms.</summary>
         public double Value
@@ -81,6 +97,24 @@ namespace SuiteCreatorControls.Controls
             set => SetValue(ShowPercentageProperty, value);
         }
 
+        /// <summary>
+        /// Whether reaching 100% triggers the completion cross-fade/pulse. Turn off for bars that can
+        /// legitimately sit at or start from 100% without that meaning "task done" — e.g. a countdown
+        /// timer bound to time remaining, which starts full.
+        /// </summary>
+        public bool ShowCompleteEffect
+        {
+            get => GetValue(ShowCompleteEffectProperty);
+            set => SetValue(ShowCompleteEffectProperty, value);
+        }
+
+        /// <summary>Which way the particles drift — towards the leading edge (default) or back towards the start.</summary>
+        public ShimmerProgressDirection Direction
+        {
+            get => GetValue(DirectionProperty);
+            set => SetValue(DirectionProperty, value);
+        }
+
         // Tuning constants — durations in seconds, sizes in control-space pixels (or fractions of bar height).
         private const double ValueEaseSeconds = 0.25;
         private const double FlowWaveLength = 90; // px per repeating brightness wave in the flowing gradient
@@ -107,7 +141,8 @@ namespace SuiteCreatorControls.Controls
         static ShimmerProgress()
         {
             AffectsRender<ShimmerProgress>(ValueProperty, IsIndeterminateProperty, TrackBrushProperty,
-                AccentProperty, CompleteColorProperty, ShowPercentageProperty);
+                AccentProperty, CompleteColorProperty, ShowPercentageProperty, ShowCompleteEffectProperty,
+                DirectionProperty);
         }
 
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -177,7 +212,7 @@ namespace SuiteCreatorControls.Controls
             UpdateDisplayValue(time);
 
             // Completion cross-fade: 0 while running, easing to 1 shortly after hitting 100%.
-            bool complete = !IsIndeterminate && _displayValue >= 99.95;
+            bool complete = ShowCompleteEffect && !IsIndeterminate && _displayValue >= 99.95;
             if (complete && !_isComplete)
             {
                 _completeStartTime = time;
@@ -191,7 +226,18 @@ namespace SuiteCreatorControls.Controls
             accent = LerpColor(accent, CompleteColor, completeBlend);
             Color tail = AdjustLightness(accent, -0.14); // darker left end of the gradient
             Color head = AdjustLightness(accent, 0.16); // brighter towards the leading edge
-            Color glow = AdjustLightness(accent, 0.28); // brightest shade, used for glows/particles
+            Color glow = AdjustLightness(accent, 0.28); // brightest shade, used for the leading-edge glow
+
+            // Particles are plain neutral grey/white rather than accent-tinted, so contrast against the
+            // fill depends only on the accent itself, not its hue. Driven by HSV saturation (the spread
+            // between the accent's brightest and dimmest channel), not lightness/luminance: a washed-out
+            // pastel has a small channel spread (low saturation) regardless of how light or dark it reads,
+            // while a solid, vivid colour of ANY hue — including bright greens that skew high on perceptual
+            // luminance — has a large spread (high saturation). Vivid accent: whiter particles. Washed-out
+            // accent: darker particles.
+            double accentSaturation = accent.ToHsv().S;
+            Color particlePrimary = LerpColor(Color.FromRgb(0x2D, 0x2D, 0x2D), Colors.White, accentSaturation);
+            Color particleSecondary = LerpColor(Color.FromRgb(0x46, 0x46, 0x46), Color.FromRgb(0xE0, 0xE0, 0xE0), accentSaturation);
 
             context.DrawRectangle(TrackBrush ?? Brushes.Transparent, null, trackRect);
             context.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromArgb(16, 255, 255, 255)), 1), trackRect);
@@ -224,13 +270,13 @@ namespace SuiteCreatorControls.Controls
             using (context.PushClip(trackRect))
             using (context.PushClip(new RoundedRect(fillRect, cornerRadius)))
             {
-                DrawFlowingGradient(context, fillRect, time, tail, accent, head);
+                DrawFlowingGradient(context, fillRect, time, tail, accent, head, Direction);
                 DrawGloss(context, fillRect);
                 // Indeterminate's segment width is constant frame-to-frame, so it's a safe wrap length;
                 // determinate's fillWidth is mid-ease for ~250ms after every Value change, so the stable
                 // track width is used there instead (see DrawParticles).
                 double particleWrapWidth = IsIndeterminate ? fillWidth : width;
-                DrawParticles(context, fillRect, time, glow, particleWrapWidth);
+                DrawParticles(context, fillRect, time, particlePrimary, particleSecondary, particleWrapWidth, Direction);
             }
 
             // Glowing head at the leading edge, clipped to the track so it spills softly into the
@@ -277,7 +323,7 @@ namespace SuiteCreatorControls.Controls
         /// The base fill: dark tail to bright head, with a train of soft brightness waves baked into a
         /// wide gradient rect that slides right continuously — the "flowing" part of the effect.
         /// </summary>
-        private static void DrawFlowingGradient(DrawingContext context, Rect fillRect, double time, Color tail, Color mid, Color head)
+        private static void DrawFlowingGradient(DrawingContext context, Rect fillRect, double time, Color tail, Color mid, Color head, ShimmerProgressDirection direction)
         {
             var baseBrush = new LinearGradientBrush
             {
@@ -296,6 +342,10 @@ namespace SuiteCreatorControls.Controls
             int waveRepeats = (int)Math.Ceiling((fillRect.Width + FlowWaveLength) / FlowWaveLength) + 1;
             double patternWidth = waveRepeats * FlowWaveLength;
             double offset = (time * FlowSpeed) % FlowWaveLength;
+            if (direction == ShimmerProgressDirection.ToStart)
+            {
+                offset = FlowWaveLength - offset;
+            }
             double rectX = fillRect.X + offset - FlowWaveLength;
 
             int totalStops = waveRepeats * FlowStopsPerWave;
@@ -340,7 +390,7 @@ namespace SuiteCreatorControls.Controls
         /// an animating divisor in the modulo below would make particles jump backward every frame the
         /// fill width was mid-ease, reading as the drift reversing whenever Value changes rapidly.
         /// </summary>
-        private static void DrawParticles(DrawingContext context, Rect fillRect, double time, Color glow, double trackWidth)
+        private static void DrawParticles(DrawingContext context, Rect fillRect, double time, Color primary, Color secondary, double trackWidth, ShimmerProgressDirection direction)
         {
             double travel = trackWidth + 20;
             for (int i = 0; i < ParticleCount; i++)
@@ -348,11 +398,16 @@ namespace SuiteCreatorControls.Controls
                 double y = fillRect.Y + fillRect.Height * (0.2 + 0.6 * Rand(i, 1));
                 double speed = 22 + 46 * Rand(i, 2);
                 double size = 0.8 + 1.5 * Rand(i, 3);
-                double x = fillRect.X - 10 + (Rand(i, 4) * 1000 + time * speed) % travel;
+                double drift = (Rand(i, 4) * 1000 + time * speed) % travel;
+                if (direction == ShimmerProgressDirection.ToStart)
+                {
+                    drift = travel - drift;
+                }
+                double x = fillRect.X - 10 + drift;
 
                 double twinkle = 0.5 + 0.5 * Math.Sin(time * (1.5 + Rand(i, 5) * 2) + i * 2.1);
-                byte alpha = (byte)((0.12 + 0.3 * twinkle) * 255);
-                Color color = i % 3 == 0 ? Colors.White : glow;
+                byte alpha = (byte)((0.55 + 0.4 * twinkle) * 255);
+                Color color = i % 3 == 0 ? primary : secondary;
                 var brush = new SolidColorBrush(Color.FromArgb(alpha, color.R, color.G, color.B));
                 context.DrawEllipse(brush, null, new Point(x, y), size, size);
             }
