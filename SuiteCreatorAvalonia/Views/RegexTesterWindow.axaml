@@ -39,7 +39,7 @@
 		<!-- Header -->
 		<TextBlock
 			Classes="FieldName"
-			Text="RegEx Tester"
+			Text="RegEx (Regular Expression) Tester"
 			Grid.Row="0"
 			HorizontalAlignment="Center"
 			IsHitTestVisible="False"/>
@@ -79,7 +79,7 @@
 					Padding="4,2"/>
 			</Border>
 			<TextBlock
-				Text="Matching is case-insensitive, the same as it will be when the rule runs. Hover a highlighted part of the pattern for what it means."
+				Text="Matching is case-insensitive, the same as it will be when the rule runs. Hover over a highlighted part of the pattern to see what it means. Use ^...$ for an exact match. All '...' references are just a placeholder for your string to match or more regex."
 				Foreground="{DynamicResource ShadedText}"
 				FontSize="11"
 				TextWrapping="Wrap"
