@@ -40,6 +40,11 @@ namespace SuiteCreatorAvalonia.ViewModels
         private List<(int Start, int Length)> _matchRanges = new();
         public IReadOnlyList<(int Start, int Length)> MatchRanges => _matchRanges;
 
+        // Zero-width matches (e.g. a lookahead like (?=llo)) have no characters to paint a
+        // background over, so they're tracked separately and drawn as a thin marker instead.
+        private List<int> _zeroWidthMatchOffsets = new();
+        public IReadOnlyList<int> ZeroWidthMatchOffsets => _zeroWidthMatchOffsets;
+
         private List<RegexToken> _patternTokens = new();
         public IReadOnlyList<RegexToken> PatternTokens => _patternTokens;
 
@@ -82,6 +87,7 @@ namespace SuiteCreatorAvalonia.ViewModels
         private void Evaluate()
         {
             _matchRanges.Clear();
+            _zeroWidthMatchOffsets.Clear();
             ErrorMessage = null;
 
             if (string.IsNullOrEmpty(Pattern))
@@ -114,6 +120,10 @@ namespace SuiteCreatorAvalonia.ViewModels
                 if (match.Length > 0)
                 {
                     _matchRanges.Add((match.Index, match.Length));
+                }
+                else
+                {
+                    _zeroWidthMatchOffsets.Add(match.Index);
                 }
             }
             IsMatch = count > 0;

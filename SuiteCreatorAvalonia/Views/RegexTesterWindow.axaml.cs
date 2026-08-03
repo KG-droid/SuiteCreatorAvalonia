@@ -18,6 +18,7 @@ public partial class RegexTesterWindow : Window
             if (DataContext is RegexTesterWindowViewModel vm)
             {
                 SampleEditor.TextArea.TextView.LineTransformers.Add(new RegexMatchColorizer(() => vm.MatchRanges));
+                SampleEditor.TextArea.TextView.BackgroundRenderers.Add(new RegexZeroWidthMatchRenderer(() => vm.ZeroWidthMatchOffsets));
                 vm.MatchesUpdated += () => SampleEditor.TextArea.TextView.Redraw();
 
                 PatternEditor.TextArea.TextView.LineTransformers.Add(new RegexPatternColorizer(() => vm.PatternTokens));
