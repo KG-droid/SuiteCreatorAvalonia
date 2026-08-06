@@ -2,6 +2,8 @@ using SuiteCreatorAvalonia.Enums;
 using SuiteCreatorAvalonia.Models.Package;
 using SuiteCreatorAvalonia.Models.Rules;
 using SuiteOperations.Package;
+using DllImportAttribute = System.Runtime.InteropServices.DllImportAttribute;
+using CharSet = System.Runtime.InteropServices.CharSet;
 using Log = Logger.Log;
 using Microsoft.Win32;
 
@@ -9,6 +11,30 @@ namespace SuiteExecutor
 {
     internal partial class Suite
     {
+        // OOBEComplete reports whether the device has finished its very first-boot experience (OOBE), not
+        // whether Autopilot/ESP specifically was involved. It stays false for the entire time OOBE is on
+        // screen, and Autopilot's Enrollment Status Page (device + account setup) is still part of OOBE, so
+        // this is false throughout ESP until the user reaches the desktop. Devices that never run ESP finish
+        // OOBE in a couple of minutes during initial provisioning, long before any suite would ever run, so
+        // this reads "not in ESP" for them without needing to know whether Autopilot is involved at all.
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int OOBEComplete(ref int bIsOOBEComplete);
+
+        private bool IsDeviceInEsp()
+        {
+            try
+            {
+                int isOobeComplete = 0;
+                OOBEComplete(ref isOobeComplete);
+                return isOobeComplete == 0;
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"Failed to check OOBE/ESP state: {ex.Message}, assuming the device is not in ESP", "SuiteDetection", Log.Severity.Warning);
+                return false;
+            }
+        }
+
         private bool IsSelfDetected()
         {
             Guid detectedGuid = _suiteConfig.BuildSettings.UpgradeCode;

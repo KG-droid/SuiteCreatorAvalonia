@@ -246,6 +246,17 @@ namespace SuiteExecutor
                     return;
                 }
             }
+            if (IsDeviceInEsp())
+            {
+                _log.WriteLog($"Device is in ESP (Autopilot Enrollment Status Page / initial setup)", "Popup", Log.Severity.Info);
+                if (_suiteConfig.PopupSettings.ESPAction == PopupAction.Skip)
+                {
+                    _log.WriteLog($"ESPAction is Skip, skipping this suite run", "Popup", Log.Severity.Info);
+                    CleanupBeforeUserSkipExit();
+                    Environment.Exit(1602);
+                }
+                _log.WriteLog($"ESPAction is Continue, continuing with the suite execution", "Popup", Log.Severity.Info);
+            }
             if (_suiteConfig.PopupSettings.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.PopupSettings.GlobalPSCondition, "global popup condition"))
             {
                 return;
