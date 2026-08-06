@@ -548,9 +548,21 @@ namespace SuiteCreatorAvalonia.Services
             if (ruleSet == null) return;
             RuleSet match = _suiteConfig.RuleSets.Where(r => r.Id == ruleSet.Id).FirstOrDefault();
             if (match == null) throw new ArgumentException("The provided RuleSet does not exist the Core Service");
-            string before = JsonConvert.SerializeObject(match);
+            var serializerSettings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Auto,
+                Converters =
+                {
+                    new ColorToJson(),
+                    new BitmapToJson(),
+                    new TextDocumentToJson(),
+                    new SecurityIdentifierToJson(),
+                },
+                MaxDepth = null,
+            };
+            string before = JsonConvert.SerializeObject(match, serializerSettings);
             match.UpdateFrom(ruleSet);
-            if (!string.Equals(before, JsonConvert.SerializeObject(match), StringComparison.Ordinal))
+            if (!string.Equals(before, JsonConvert.SerializeObject(match, serializerSettings), StringComparison.Ordinal))
             {
                 ProjectChanged?.Invoke(this, ruleSet);
                 CheckIfMatchesSaved();
