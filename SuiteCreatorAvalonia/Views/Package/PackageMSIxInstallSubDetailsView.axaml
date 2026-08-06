@@ -42,19 +42,21 @@
 			
 			<Grid
 				ColumnDefinitions="Auto,10,Auto,5,*"
-				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
-				<!-- Force Close Family -->
+				<!-- Remove product on suite removal -->
 				<TextBlock
 					Grid.Row="4"
 					Grid.Column="0"
 					VerticalAlignment="Center"
-					Text="Force close family:"/>
+					IsVisible="{Binding !IsRollbackSection}"
+					Text="Remove Product on Suite Removal:"/>
 				<ToggleSwitch
 					Grid.Row="4"
 					Grid.Column="2"
-					IsChecked="{Binding IsForceCloseFamily}"
+					IsChecked="{Binding RemoveOnSuiteRemoval}"
 					VerticalAlignment="Center"
+					IsVisible="{Binding !IsRollbackSection}"
 					OffContent=""
 					OnContent=""/>
 				<TextBlock
@@ -63,23 +65,45 @@
 					FontSize="11"
 					FontStyle="Italic"
 					TextWrapping="Wrap"
-					Text="Whether any related products in the family will be force closed prior to installation. If the package is in use during attempted installation, and this is not enabled, the installation will be deferred until the package is no longer in use"/>
+					IsVisible="{Binding !IsRollbackSection}"
+					Text="If disabled, this product will be left installed when the suite is removed."/>
 
-				<!-- Force Version -->
+				<!-- Force Close Family -->
 				<TextBlock
 					Grid.Row="5"
 					Grid.Column="0"
 					VerticalAlignment="Center"
-					Text="Force this version:"/>
+					Text="Force close family:"/>
 				<ToggleSwitch
 					Grid.Row="5"
+					Grid.Column="2"
+					IsChecked="{Binding IsForceCloseFamily}"
+					VerticalAlignment="Center"
+					OffContent=""
+					OnContent=""/>
+				<TextBlock
+					Grid.Row="5"
+					Grid.Column="4"
+					FontSize="11"
+					FontStyle="Italic"
+					TextWrapping="Wrap"
+					Text="Whether any related products in the family will be force closed prior to installation. If the package is in use during attempted installation, and this is not enabled, the installation will be deferred until the package is no longer in use"/>
+
+				<!-- Force Version -->
+				<TextBlock
+					Grid.Row="6"
+					Grid.Column="0"
+					VerticalAlignment="Center"
+					Text="Force this version:"/>
+				<ToggleSwitch
+					Grid.Row="6"
 					Grid.Column="2"
 					IsChecked="{Binding IsForceThisVersion}"
 					VerticalAlignment="Center"
 					OffContent=""
 					OnContent=" "/>
 				<TextBlock
-					Grid.Row="5"
+					Grid.Row="6"
 					Grid.Column="4"
 					FontSize="11"
 					FontStyle="Italic"
@@ -87,19 +111,19 @@
 
 				<!-- Defer when in use -->
 				<TextBlock
-					Grid.Row="6"
+					Grid.Row="7"
 					Grid.Column="0"
 					VerticalAlignment="Center"
 					Text="Defer if in use:"/>
 				<ToggleSwitch
-					Grid.Row="6"
+					Grid.Row="7"
 					Grid.Column="2"
 					IsChecked="{Binding DeferInUse}"
 					VerticalAlignment="Center"
 					OffContent=""
 					OnContent=" "/>
 				<TextBlock
-					Grid.Row="6"
+					Grid.Row="7"
 					Grid.Column="4"
 					FontSize="11"
 					FontStyle="Italic"
@@ -108,12 +132,12 @@
 
 				<!-- Dependencies -->
 				<TextBlock
-					Grid.Row="7"
+					Grid.Row="8"
 					Grid.Column="0"
 					VerticalAlignment="Center"
 					Text="Dependencies:"/>
 				<ToggleSwitch
-					Grid.Row="7"
+					Grid.Row="8"
 					Grid.Column="2"
 					Name="Depend_ToggleSwitch"
 					IsChecked="{Binding HasDependencies}"
@@ -121,7 +145,7 @@
 					OffContent=""
 					OnContent=" "/>
 				<TextBlock
-					Grid.Row="7"
+					Grid.Row="8"
 					Grid.Column="4"
 					FontSize="11"
 					FontStyle="Italic"
@@ -129,7 +153,7 @@
 
 				<!-- Dependencies List -->
 				<Grid
-					Grid.Row="8"
+					Grid.Row="9"
 					Grid.Column="0"
 					Grid.ColumnSpan="5"
 					IsVisible="{Binding IsChecked, ElementName=Depend_ToggleSwitch}"

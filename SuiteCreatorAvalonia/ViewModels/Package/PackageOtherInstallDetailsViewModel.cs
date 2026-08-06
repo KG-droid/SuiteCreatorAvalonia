@@ -56,6 +56,9 @@ namespace SuiteCreatorAvalonia.ViewModels
         [ObservableProperty]
         private bool _addRollBack = false;
 
+        [ObservableProperty]
+        private bool _removeOnSuiteRemoval = true;
+
         private PathVarsTextBoxViewModel _rollbackCMDView;
         public PathVarsTextBoxViewModel RollbackCMDView
         {
@@ -236,6 +239,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                     ? PowerShellFiles.FirstOrDefault(f => f.FullPath == otherPkg.RemovePowerShellScriptPath)
                     : null;
                 RemovePowerShellScriptArgs = otherPkg.RemovePowerShellScriptArgs;
+                RemoveOnSuiteRemoval = otherPkg.RemoveOnSuiteRemoval;
                 RollbackCMDView.VariablePath.Clear();
                 bool hasCmdRollback = otherPkg.RollbackCommand != null && (otherPkg.RollbackCommand.Count >= 2 || otherPkg.RollbackCommand.OfType<LiteralText>().Any(cmd => !string.IsNullOrEmpty(cmd.Value)));
                 bool hasPowerShellRollback = otherPkg.RollbackInstallType == OtherInstallType.PowerShell && !string.IsNullOrWhiteSpace(otherPkg.RollbackPowerShellScriptPath);
@@ -285,6 +289,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                 ? RemovePowerShellScriptArgs
                 : null;
             otherPkg.InstallCommand = InstallCMDView.VariablePath.ToList();
+            otherPkg.RemoveOnSuiteRemoval = RemoveOnSuiteRemoval;
             if (AddRollBack)
             {
                 otherPkg.RollbackCommand = SelectedRollbackType == OtherInstallType.CMD

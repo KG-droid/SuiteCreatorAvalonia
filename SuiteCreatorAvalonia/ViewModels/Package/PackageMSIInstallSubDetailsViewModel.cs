@@ -36,6 +36,12 @@ namespace SuiteCreatorAvalonia.ViewModels
         private bool _isRemoveFamily = true;
 
         [ObservableProperty]
+        private bool _removeOnSuiteRemoval = true;
+
+        [ObservableProperty]
+        private bool _isRollbackSection = false;
+
+        [ObservableProperty]
         private bool _isCreateLog = true;
 
         [ObservableProperty]

@@ -70,6 +70,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             _suiteCoreManager = suiteCoreManager;
             MSIxDetailsSubView = (PackageMSIxInstallSubDetailsViewModel)viewFactory.GetVM(typeof(PackageMSIxInstallSubDetailsViewModel));
             MSIxRollbackView = (PackageMSIxInstallSubDetailsViewModel)viewFactory.GetVM(typeof(PackageMSIxInstallSubDetailsViewModel));
+            MSIxRollbackView.IsRollbackSection = true;
         }
 
         public override void LoadPackage(Guid packageId)
@@ -84,6 +85,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             MSIxDetailsSubView.HasDependencies = msixPackage.HasDependents;
             MSIxDetailsSubView.Dependencies.Clear();
             MSIxDetailsSubView.DeferInUse = msixPackage.IsDeferInUse;
+            MSIxDetailsSubView.RemoveOnSuiteRemoval = msixPackage.RemoveOnSuiteRemoval;
             if (msixPackage.Dependents != null && msixPackage.Dependents.Count > 0)
                 MSIxDetailsSubView.Dependencies.AddRange(msixPackage.Dependents);
             if (msixPackage.Rollback is MSIxPkg rollbackPkg && !string.IsNullOrEmpty(rollbackPkg.MSIxPath))
@@ -122,6 +124,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             msixPackage.HasDependents = MSIxDetailsSubView.HasDependencies;
             msixPackage.Dependents = MSIxDetailsSubView.Dependencies.ToList();
             msixPackage.IsDeferInUse = MSIxDetailsSubView.DeferInUse;
+            msixPackage.RemoveOnSuiteRemoval = MSIxDetailsSubView.RemoveOnSuiteRemoval;
             if (AddRollBack)
             {
                 msixPackage.Rollback = new MSIxPkg

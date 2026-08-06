@@ -57,6 +57,7 @@ namespace SuiteCreatorAvalonia.Models.Package
         public RestartBehavior RestartBehavior { get; set; } = RestartBehavior.Ignore;
         public string? LogPath { get; set; }
         public List<MSIProperty>? Properties { get; set; }
+        public bool RemoveOnSuiteRemoval { get; set; } = true;
         public MSI? Rollback { get; set; }
 
         protected MSI(MSI source) : base()
@@ -72,6 +73,7 @@ namespace SuiteCreatorAvalonia.Models.Package
             LogPath = source.LogPath;
             RestartBehavior = source.RestartBehavior;
             Properties = source.Properties != null ? source.Properties.Select(p => p.Clone()).ToList() : null;
+            RemoveOnSuiteRemoval = source.RemoveOnSuiteRemoval;
             Rollback = source.Rollback?.Clone();
         }
 
@@ -97,6 +99,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                 LogPath = msi.LogPath;
                 RestartBehavior = msi.RestartBehavior;
                 Properties = msi.Properties != null ? msi.Properties.Select(p => p.Clone()).ToList() : null;
+                RemoveOnSuiteRemoval = msi.RemoveOnSuiteRemoval;
                 Rollback = msi.Rollback?.Clone();
             }
         }

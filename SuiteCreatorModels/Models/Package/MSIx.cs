@@ -10,6 +10,7 @@ namespace SuiteCreatorAvalonia.Models.Package
         public bool IsDeferInUse { get; set; }
         public bool HasDependents { get; set; }
         public List<string>? Dependents { get; set; }
+        public bool RemoveOnSuiteRemoval { get; set; } = true;
         public MSIx? Rollback { get; set; }
 
         protected MSIx(MSIx source)
@@ -22,6 +23,7 @@ namespace SuiteCreatorAvalonia.Models.Package
             IsDeferInUse = source.IsDeferInUse;
             HasDependents = source.HasDependents;
             Dependents = source.Dependents != null ? new(source.Dependents) : null;
+            RemoveOnSuiteRemoval = source.RemoveOnSuiteRemoval;
             Rollback = source.Rollback?.Clone();
             RequirementRuleSetId = source.RequirementRuleSetId;
         }
@@ -46,6 +48,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                 IsDeferInUse = msix.IsDeferInUse;
                 HasDependents = msix.HasDependents;
                 Dependents = msix.Dependents != null ? new(msix.Dependents) : null;
+                RemoveOnSuiteRemoval = msix.RemoveOnSuiteRemoval;
                 Rollback = msix.Rollback?.Clone();
                 RequirementRuleSetId = msix.RequirementRuleSetId;
             }
