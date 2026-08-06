@@ -73,7 +73,7 @@
 
 		<!-- Timer bar -->
 		<sharedControls:ShimmerProgress
-			Accent="{DynamicResource CompanyLogoBackgroundBrush}"
+			Accent="{DynamicResource CompanyLogoBackgroundShadeBrush}"
 			TrackBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
 			Value="{Binding TimeRemainingPercent}"
 			ShowPercentage="False"

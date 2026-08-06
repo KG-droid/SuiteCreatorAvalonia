@@ -222,7 +222,7 @@
 
 				<!-- Timer bar -->
 				<controls:ShimmerProgress
-					Accent="{Binding CompanyLogoBackgroundColorShade}"
+					Accent="{Binding CompanyLogoBackgroundColorDarkerShade}"
 					TrackBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
 					Value="80"
 					ShowPercentage="False"

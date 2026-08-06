@@ -8,6 +8,7 @@ using SuiteCreatorAvalonia.Helpers;
 using SuiteCreatorAvalonia.Models.Common;
 using SuiteCreatorAvalonia.Services;
 using SuiteCreatorAvalonia.Tools;
+using SuiteCreatorControls.Helpers;
 using System;
 using Bitmap = Avalonia.Media.Imaging.Bitmap;
 using System.IO;
@@ -101,6 +102,22 @@ namespace SuiteCreatorAvalonia.ViewModels
             }
         }
 
+        public IBrush CompanyLogoBackgroundColorDarkerShade
+        {
+            get
+            {
+                if (CompanyLogoBackgroundColor is SolidColorBrush solidColorBrush)
+                {
+                    var darkerColor = ColorShadeHelper.GetVividShade(solidColorBrush.Color);
+                    return new SolidColorBrush(darkerColor);
+                }
+                else
+                {
+                    return new SolidColorBrush(Colors.Blue);
+                }
+            }
+        }
+
         public IBrush CompanyLogoForegroundColor
         {
             get
@@ -127,6 +144,7 @@ namespace SuiteCreatorAvalonia.ViewModels
         {
             OnPropertyChanged(nameof(CompanyLogoForegroundColor));
             OnPropertyChanged(nameof(CompanyLogoBackgroundColorShade));
+            OnPropertyChanged(nameof(CompanyLogoBackgroundColorDarkerShade));
         }
 
         [ObservableProperty]
