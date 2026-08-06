@@ -89,13 +89,14 @@
 			Orientation="Horizontal">
 			<Button
 				Command="{Binding $parent[views:PopupMainView].((vm:PopupMainViewModel)DataContext).ShowPickReminderCommand}"
+				CommandParameter="{Binding MaxDelayDays}"
 				IsVisible="{Binding MaxDelayDays}"
 				Width="90">
 				<TextBlock
 					ToolTip.Tip="{Binding MaxDelayDays, StringFormat='{}{0} days remaining'}"
 					ToolTip.Placement="Right"
 					FontWeight="Bold"
-					Text="{Binding MaxDelayDays, StringFormat='Later ({0})'}"
+					Text="Later"
 					HorizontalAlignment="Center"/>
 			</Button>
 			<Button

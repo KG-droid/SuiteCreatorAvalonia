@@ -84,7 +84,21 @@ namespace SuiteUserPopup.ViewModels
         }
 
         [RelayCommand]
-        private void ShowPickReminder()
+        private void ShowPickReminder(int maxDelayDays)
+        {
+            // On the final day a delay is still allowed, force an explicit acknowledgement before letting
+            // the user pick a reminder time, since the button itself no longer shows the days remaining.
+            if (maxDelayDays == 1)
+            {
+                TransitioningView = new PopupFinalSkipWarningViewModel();
+                return;
+            }
+
+            TransitioningView = new PopupPickReminderViewModel();
+        }
+
+        [RelayCommand]
+        private void ShowPickReminderConfirmed()
         {
             TransitioningView = new PopupPickReminderViewModel();
         }
