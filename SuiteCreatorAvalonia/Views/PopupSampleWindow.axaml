@@ -239,7 +239,7 @@
 						<TextBlock
 							ToolTip.Tip="{Binding MaxDelayDays, StringFormat='{}{0} days remaining'}"
 							FontWeight="Bold"
-							Text="{Binding MaxDelayDays, StringFormat='Later ({0})'}"
+							Text="Later"
 							HorizontalAlignment="Center"/>
 					</Button>
 					<Button
