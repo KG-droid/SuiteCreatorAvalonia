@@ -157,6 +157,10 @@
 				<!-- Main Warning text -->
 				<AvaloniaEdit:TextEditor
 					FontSize="13"
+					WordWrap="True"
+					HorizontalScrollBarVisibility="Disabled"
+					VerticalScrollBarVisibility="Disabled"
+					MaxWidth="300"
 					Document="{Binding MainText}"
 					Margin="5,5,5,15"/>
 
