@@ -88,7 +88,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
         public string? Validate()
         {
             string? effectiveBase = Type == RuleType.File ? ResolveFileBasePath() : Base;
-            if (string.IsNullOrWhiteSpace(effectiveBase))
+            if (Type != RuleType.PowerShell && string.IsNullOrWhiteSpace(effectiveBase))
             {
                 return "A rule must have a base string, like a product code, reg key, file path etc.";
             }
@@ -139,6 +139,10 @@ namespace SuiteCreatorAvalonia.Models.Rules
             if (DetectionType == DetectionTypes.Number && !double.TryParse(ComparatorValue, out _))
             {
                 return "A number-based rule detection must have a valid numeric value.";
+            }
+            if (DetectionType == DetectionTypes.String && string.IsNullOrEmpty(ComparatorValue))
+            {
+                return "A string-based rule detection must have a Value to compare specified.";
             }
             if (Comparator == ComparatorPlus.Matches || Comparator == ComparatorPlus.DoesNotMatch)
             {
