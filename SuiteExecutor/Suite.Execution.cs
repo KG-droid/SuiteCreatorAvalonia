@@ -168,9 +168,6 @@ namespace SuiteExecutor
                 {
                     if (seq == Sequence.DuringInstallBeforeStage)
                         return true;
-                    // Package Remove events should also run before the package installs
-                    if (seq == Sequence.DuringRemoveBeforeStage)
-                        return true;
                 }
 
                 if (_action == SuiteAction.Removal || _action == SuiteAction.Rollback)
