@@ -13,9 +13,9 @@
 		<Platforms>AnyCPU;x64</Platforms>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Version>1.0.8</Version>
-        <AssemblyVersion>1.0.8</AssemblyVersion>
-        <FileVersion>1.0.8</FileVersion>
+        <Version>1.0.10</Version>
+        <AssemblyVersion>1.0.10</AssemblyVersion>
+        <FileVersion>1.0.10</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
