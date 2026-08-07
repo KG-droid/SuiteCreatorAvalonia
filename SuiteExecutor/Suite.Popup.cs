@@ -144,6 +144,23 @@ namespace SuiteExecutor
 
         private void ExecutePopup()
         {
+            // Checked first, before any popup asset/registry work: there's no real interactive user to show
+            // the popup to during ESP, so ESPAction only decides whether the suite runs at all - the popup
+            // itself is never shown while in ESP. Doing this before the file-existence checks below also
+            // means a suite that's missing its popup assets can't crash mid-ESP instead of just skipping.
+            if (IsDeviceInEsp())
+            {
+                _log.WriteLog($"Device is in ESP (Autopilot Enrollment Status Page / initial setup)", "Popup", Log.Severity.Info);
+                if (_suiteConfig.PopupSettings.ESPAction == PopupAction.Skip)
+                {
+                    _log.WriteLog($"ESPAction is Skip, skipping this suite run", "Popup", Log.Severity.Info);
+                    CleanupBeforeUserSkipExit();
+                    Environment.Exit(1602);
+                }
+                _log.WriteLog($"ESPAction is Continue, continuing with the suite execution without showing the popup", "Popup", Log.Severity.Info);
+                return;
+            }
+
             int delayDaysConfigured = (int)_suiteConfig.PopupSettings.DelayDays;
             _delayDaysRemaining = delayDaysConfigured;
             try
@@ -245,17 +262,6 @@ namespace SuiteExecutor
                     _log.WriteLog($"Continuing with the suite execution", "Popup", Log.Severity.Info);
                     return;
                 }
-            }
-            if (IsDeviceInEsp())
-            {
-                _log.WriteLog($"Device is in ESP (Autopilot Enrollment Status Page / initial setup)", "Popup", Log.Severity.Info);
-                if (_suiteConfig.PopupSettings.ESPAction == PopupAction.Skip)
-                {
-                    _log.WriteLog($"ESPAction is Skip, skipping this suite run", "Popup", Log.Severity.Info);
-                    CleanupBeforeUserSkipExit();
-                    Environment.Exit(1602);
-                }
-                _log.WriteLog($"ESPAction is Continue, continuing with the suite execution", "Popup", Log.Severity.Info);
             }
             if (_suiteConfig.PopupSettings.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.PopupSettings.GlobalPSCondition, "global popup condition"))
             {
