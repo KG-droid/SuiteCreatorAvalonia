@@ -230,7 +230,11 @@ namespace SuiteExecutor
                 // must not be left behind — it would otherwise keep re-running a suite that's given up.
                 RemoveFailSafeTask();
 
-                Environment.Exit(1603); // Return error code to the bootstrapper
+                // A package operation can request a specific, meaningful exit code (e.g. 1618 - another
+                // install was still in progress after exhausting retries) rather than the generic failure
+                // code below.
+                int exitCode = ex is SuiteExitCodeException exitCodeEx ? exitCodeEx.ExitCode : 1603;
+                Environment.Exit(exitCode); // Return error code to the bootstrapper
             }
             finally
             {
