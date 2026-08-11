@@ -37,6 +37,9 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
         [ObservableProperty]
         private bool _isSelected = false;
 
+        [ObservableProperty]
+        private bool _isHighlighted = false;
+
         public bool IsSelectable
         {
             get => !IsRemoveMode;
@@ -111,7 +114,9 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             };
             PropertyChanged += (sender, e) =>
             {
-                if (e.PropertyName != null && !e.PropertyName.Equals("IsSelected", StringComparison.OrdinalIgnoreCase))
+                if (e.PropertyName != null &&
+                    !e.PropertyName.Equals("IsSelected", StringComparison.OrdinalIgnoreCase) &&
+                    !e.PropertyName.Equals("IsHighlighted", StringComparison.OrdinalIgnoreCase))
                 {
                     SaveEvent();
                 }
@@ -137,6 +142,28 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
 
         public abstract void SaveEvent();
 
+        /// <summary>
+        /// Re-points each schedule's EventStage/Condition at the live SuiteStages/SuiteRules instances (by Id) so
+        /// the Stage/Condition ComboBoxes bind correctly. Falls back to a safe default if the original stage or
+        /// rule no longer exists (e.g. it was a package that has since been deleted), rather than crashing.
+        /// </summary>
+        protected void NormalizeSchedules()
+        {
+            foreach (Schedule sch in Schedules)
+            {
+                if (sch.EventStage != null)
+                {
+                    sch.EventStage = SuiteStages.FirstOrDefault(s => s.Id == sch.EventStage.Id)
+                        ?? SuiteStages.FirstOrDefault(s => s.Id == Stage.EndStageId)
+                        ?? SuiteStages.FirstOrDefault();
+                }
+                if (sch.Condition != null)
+                {
+                    sch.Condition = SuiteRules.FirstOrDefault(s => s.Id == sch.Condition.Id);
+                }
+            }
+        }
+
         public async void HoldCardOpenAfterComboChange(object? sender, SelectionChangedEventArgs e)
         {
             if (sender is ComboBox comboBox)
@@ -153,6 +180,14 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                     }
                 }
             }
+        }
+
+        /// <summary>Briefly pulses a highlight ring around the card, e.g. after navigating here from elsewhere — doesn't affect selection/hover state.</summary>
+        public async void TriggerHighlightPulse()
+        {
+            IsHighlighted = true;
+            await Task.Delay(3000);
+            IsHighlighted = false;
         }
 
         [RelayCommand]

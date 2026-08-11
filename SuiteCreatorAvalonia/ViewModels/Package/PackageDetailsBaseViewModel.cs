@@ -14,6 +14,7 @@ namespace SuiteCreatorAvalonia.ViewModels
     {
         private SuiteCoreManager _suiteCoreManager;
         private bool _isLoading = false;
+        private bool _isResolvingRequirementRuleSet = false;
 
         [ObservableProperty]
         private Guid? _id;
@@ -72,18 +73,16 @@ namespace SuiteCreatorAvalonia.ViewModels
             ObservableCollection<RuleBase> reqRules = RequirementRuleBuilder.Rules;
             if (reqRules != null && reqRules.Count > 0)
             {
-                RuleSet ruleSet;
                 if (package.RequirementRuleSetId is not Guid)
                 {
-                    ruleSet = _suiteCoreManager.NewRuleSet(Name + " (Pkg Req)");
-                    package.RequirementRuleSetId = ruleSet.Id;
+                    ResolveAndLinkRequirementRuleSetAsync(package);
                 }
                 else
                 {
-                    ruleSet = _suiteCoreManager.GetRuleSet((Guid)package.RequirementRuleSetId);
+                    RuleSet ruleSet = _suiteCoreManager.GetRuleSet((Guid)package.RequirementRuleSetId);
+                    ruleSet.Rules = reqRules;
+                    _suiteCoreManager.UpdateRuleSet(ruleSet);
                 }
-                ruleSet.Rules = reqRules;
-                _suiteCoreManager.UpdateRuleSet(ruleSet);
             }
             else if (package.RequirementRuleSetId is Guid existingGuid)
             {
@@ -100,6 +99,32 @@ namespace SuiteCreatorAvalonia.ViewModels
                         throw;
                     }
                 }
+            }
+        }
+
+        private async void ResolveAndLinkRequirementRuleSetAsync(PackageBase package)
+        {
+            if (_isResolvingRequirementRuleSet) return;
+            _isResolvingRequirementRuleSet = true;
+            try
+            {
+                (RuleSet ruleSet, bool wasLinked) = await PackageRuleLinker.ResolvePackageRuleSetAsync(this, _suiteCoreManager, Name ?? string.Empty, SuiteCoreManager.PkgRequirementSuffix);
+                package.RequirementRuleSetId = ruleSet.Id;
+                if (wasLinked)
+                {
+                    // The existing rule's own conditions win - load them into the builder instead of overwriting them.
+                    RequirementRuleBuilder.LoadRuleSet(ruleSet);
+                }
+                else
+                {
+                    ruleSet.Rules = RequirementRuleBuilder.Rules;
+                    _suiteCoreManager.UpdateRuleSet(ruleSet);
+                }
+                _suiteCoreManager.UpdatePackage(package);
+            }
+            finally
+            {
+                _isResolvingRequirementRuleSet = false;
             }
         }
 

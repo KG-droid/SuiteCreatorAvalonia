@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Platform.Storage;
@@ -270,17 +270,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 Schedules.Clear();
                 Schedules.AddRange(reg.Schedules);
                 // Ensure that the EventStage and Condition in each Schedule is the same instance as in SuiteStages/SuiteConditions for the ComboBox binding to work correctly.
-                foreach (Schedule sch in Schedules)
-                {
-                    if (sch.EventStage != null)
-                    {
-                        sch.EventStage = SuiteStages.First(s => s.Id == sch.EventStage.Id);
-                    }
-                    if (sch.Condition != null)
-                    {
-                        sch.Condition = SuiteRules.First(s => s.Id == sch.Condition.Id);
-                    }
-                }
+                NormalizeSchedules();
                 LinkedEvent = reg;
                 _isLoading = false;
             }

@@ -136,6 +136,15 @@
 						</Flyout>
 					</Button.Flyout>
 				</Button>
+
+				<!-- Find Usages -->
+				<Button
+					x:Name="FindUsages_button"
+					Classes="IconButton"
+					Tag="LinkVariant"
+					IsEnabled="{Binding SelectedRuleSet, Converter={x:Static ObjectConverters.IsNotNull}}"
+					Command="{Binding ShowRuleUsagesCommand}"
+					ToolTip.Tip="Show where this rule is used"/>
 			</StackPanel>
 		</Grid>
 		
@@ -200,7 +209,67 @@
 				</StackPanel>
 			</Border>
 		</Popup>
-		
+
+		<Popup
+			IsOpen="{Binding UsagesPopupOpen, Mode=TwoWay}"
+			IsLightDismissEnabled="True"
+			Placement="RightEdgeAlignedTop"
+			PlacementTarget="{Binding ElementName=FindUsages_button}">
+			<Border
+				Background="{DynamicResource AccentVariant1}"
+				Padding="12"
+				CornerRadius="10"
+				MaxHeight="400"
+				MinWidth="260"
+				MaxWidth="320"
+				BoxShadow="0 0 6 1 Black">
+				<StackPanel Spacing="8">
+					<TextBlock
+						Classes="FieldName"
+						Text="Used by"/>
+					<TextBlock
+						IsVisible="{Binding !RuleUsages.Count}"
+						TextWrapping="Wrap"
+						Text="This rule isn't currently used by any package or event."/>
+					<ScrollViewer MaxHeight="340">
+						<ItemsControl ItemsSource="{Binding RuleUsages}">
+							<ItemsControl.ItemTemplate>
+								<DataTemplate DataType="{x:Type vm:SuiteUsageItem}">
+									<Button
+										Click="RuleUsageItem_Click"
+										HorizontalAlignment="Stretch"
+										HorizontalContentAlignment="Left"
+										Margin="0,2"
+										Padding="8,6">
+										<StackPanel
+											Orientation="Horizontal"
+											Spacing="8">
+											<mi:MaterialIcon
+												Kind="{Binding IconKind}"
+												Foreground="{Binding IconColor}"
+												Width="22"
+												Height="22"
+												VerticalAlignment="Center"/>
+											<StackPanel VerticalAlignment="Center">
+												<TextBlock
+													Text="{Binding Title}"
+													FontSize="13"/>
+												<TextBlock
+													IsVisible="{Binding SubTitle, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+													Text="{Binding SubTitle}"
+													FontSize="10"
+													Opacity="0.7"/>
+											</StackPanel>
+										</StackPanel>
+									</Button>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</ScrollViewer>
+				</StackPanel>
+			</Border>
+		</Popup>
+
 	</Grid>
 	
 </UserControl>

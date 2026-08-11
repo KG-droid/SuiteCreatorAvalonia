@@ -1,9 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using SuiteCreatorAvalonia.Enums;
 using SuiteCreatorAvalonia.Factories;
+using SuiteCreatorAvalonia.Models.Events;
 using SuiteCreatorAvalonia.Models.Package;
 using SuiteCreatorAvalonia.Services;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -19,10 +22,20 @@ namespace SuiteCreatorAvalonia.ViewModels
         private ObservableCollection<PackageBase> _packageList;
 
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(ShowPackageUsagesCommand))]
         private PackageBase? _selectedPackage;
 
         [ObservableProperty]
         private PackageDetailsBaseViewModel? _currentPackageView;
+
+        [ObservableProperty]
+        private string? _packageRemoveError;
+
+        [ObservableProperty]
+        private bool _usagesPopupOpen = false;
+
+        [ObservableProperty]
+        private ObservableCollection<SuiteUsageItem> _packageUsages = new();
 
         partial void OnSelectedPackageChanged(PackageBase? value)
         {
@@ -97,9 +110,16 @@ namespace SuiteCreatorAvalonia.ViewModels
         public void RemoveSelectedPackage()
         {
             if (SelectedPackage == null) return;
-            _coreManager.RemovePackage(SelectedPackage);
-            PackageList = _coreManager.GetPackages();
-            SelectedPackage = PackageList.FirstOrDefault();
+            try
+            {
+                _coreManager.RemovePackage(SelectedPackage);
+                PackageList = _coreManager.GetPackages();
+                SelectedPackage = PackageList.FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                PackageRemoveError = ex.Message;
+            }
         }
 
         public void SaveOrder()
@@ -110,6 +130,31 @@ namespace SuiteCreatorAvalonia.ViewModels
             if (currentSelectedId is Guid pkgId)
             {
                 SelectedPackage = PackageList.FirstOrDefault(p => p.Id == pkgId);
+            }
+        }
+
+        private bool CanShowPackageUsages() => SelectedPackage != null;
+
+        [RelayCommand(CanExecute = nameof(CanShowPackageUsages))]
+        public void ShowPackageUsages()
+        {
+            if (SelectedPackage == null) return;
+            List<EventCore> events = _coreManager.GetEventsUsingPackageAsStage(SelectedPackage.Id);
+            ObservableCollection<SuiteUsageItem> items = new();
+            foreach (EventCore evt in events)
+            {
+                items.Add(SuiteUsageItem.ForEvent(evt, s => s.EventStageId == SelectedPackage.Id));
+            }
+            PackageUsages = items;
+            UsagesPopupOpen = true;
+        }
+
+        public void GoToUsage(SuiteUsageItem item)
+        {
+            UsagesPopupOpen = false;
+            if (item.Event != null)
+            {
+                AppNavigationService.Instance.NavigateToEvent?.Invoke(item.Event);
             }
         }
     }

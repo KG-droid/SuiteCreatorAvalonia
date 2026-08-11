@@ -78,4 +78,12 @@ public partial class RulesView : UserControl
             vm.RuleRemoveError = null;
         }
     }
+
+    private void RuleUsageItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is RulesViewModel vm && sender is Button { DataContext: SuiteUsageItem item })
+        {
+            vm.GoToUsage(item);
+        }
+    }
 }

@@ -110,12 +110,29 @@ public partial class PackageView : UserControl
         if (sender is Button pkgNameBtn && this.DataContext is PackageViewModel pVM && pVM.SelectedPackage != null)
         {
             pVM.RemoveSelectedPackage();
+            if (!string.IsNullOrWhiteSpace(pVM.PackageRemoveError)) { return; } // keep the flyout open so the error popup stays anchored and visible
             Button? pkgTypeBtn = pkgNameBtn.FindLogicalAncestorOfType<Button>();
             if (pkgTypeBtn == null) { return; }
             pkgTypeBtn.Flyout?.Hide();
             Button? addPkgButton = pkgTypeBtn.FindLogicalAncestorOfType<Button>();
             if (addPkgButton == null) { return; }
             addPkgButton.Flyout?.Hide();
+        }
+    }
+
+    private void RemovalErrPopup_Closed(object? sender, EventArgs e)
+    {
+        if (this.DataContext is PackageViewModel pVM)
+        {
+            pVM.PackageRemoveError = null;
+        }
+    }
+
+    private void PackageUsageItem_Click(object? sender, RoutedEventArgs e)
+    {
+        if (this.DataContext is PackageViewModel pVM && sender is Button { DataContext: SuiteUsageItem item })
+        {
+            pVM.GoToUsage(item);
         }
     }
 

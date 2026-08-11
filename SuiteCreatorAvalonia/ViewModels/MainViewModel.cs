@@ -2,16 +2,22 @@
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Material.Icons.Avalonia;
 using SuiteCreatorAvalonia.Factories;
 using SuiteCreatorAvalonia.IDataTemplates;
 using SuiteCreatorAvalonia.Models.Common;
+using SuiteCreatorAvalonia.Models.Events;
+using SuiteCreatorAvalonia.Models.Package;
 using SuiteCreatorAvalonia.Services;
+using SuiteCreatorAvalonia.ViewModels.EventCards;
+using SuiteCreatorAvalonia.Views;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,6 +25,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace SuiteCreatorAvalonia.ViewModels
@@ -175,6 +182,8 @@ namespace SuiteCreatorAvalonia.ViewModels
             _tabFac = tabFac;
             SettingsCtrl = settingsCtrl;
             HelpService.Instance.NavigateToPage = type => SetView(type);
+            AppNavigationService.Instance.NavigateToPackage = NavigateToPackage;
+            AppNavigationService.Instance.NavigateToEvent = NavigateToEvent;
             CurrentTabView = tabFac.GetVM(typeof(PackageViewModel));
             _backNavigationStack.Push(CurrentTabView.GetType());
             ConfigureTabButtons();
@@ -352,6 +361,38 @@ namespace SuiteCreatorAvalonia.ViewModels
                 _backNavigationStack.Push(CurrentTabView.GetType());
                 CurrentTabView = _tabFac.GetVM(tagType);
             }
+        }
+
+        /// <summary>Navigates to the Packages tab and selects the given package.</summary>
+        public void NavigateToPackage(PackageBase pkg)
+        {
+            SetView(typeof(PackageViewModel));
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (CurrentTabView is PackageViewModel pkgVM)
+                {
+                    pkgVM.SelectedPackage = pkgVM.PackageList.FirstOrDefault(p => p.Id == pkg.Id);
+                }
+            });
+        }
+
+        /// <summary>Navigates to the tab that owns the given event's type and briefly highlights its card.</summary>
+        public void NavigateToEvent(EventCore evt)
+        {
+            Type? contentType = EventTabMappings.GetEventTabByModelType(evt.GetType())?.ContentType;
+            if (contentType == null) return;
+            SetView(contentType);
+            Dispatcher.UIThread.Post(() =>
+            {
+                PropertyInfo? eventCardProp = CurrentTabView.GetType().GetProperty("IoEventViewModel");
+                if (eventCardProp?.GetValue(CurrentTabView) is not IOEventViewModel ioVM) return;
+
+                EventCardViewModelBase? cardToHighlight = ioVM.ItemsControl.GetLogicalDescendants()
+                    .OfType<EventCardView>()
+                    .Where(e => ((EventCardViewModelBase)e.DataContext!).LinkedEvent.Id == evt.Id)
+                    .FirstOrDefault()?.DataContext as EventCardViewModelBase;
+                cardToHighlight?.TriggerHighlightPulse();
+            });
         }
 
         [RelayCommand]

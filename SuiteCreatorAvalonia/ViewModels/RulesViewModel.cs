@@ -1,9 +1,12 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SuiteCreatorAvalonia.Factories;
+using SuiteCreatorAvalonia.Models.Events;
+using SuiteCreatorAvalonia.Models.Package;
 using SuiteCreatorAvalonia.Services;
 using SuiteCreatorAvalonia.ViewModels.RuleBuilder;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using RuleSet = SuiteCreatorAvalonia.Models.Rules.RuleSet;
@@ -26,7 +29,14 @@ namespace SuiteCreatorAvalonia.ViewModels
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(RemoveSelectedRuleSetCommand))]
+        [NotifyCanExecuteChangedFor(nameof(ShowRuleUsagesCommand))]
         private RuleSet? _selectedRuleSet = null;
+
+        [ObservableProperty]
+        private bool _usagesPopupOpen = false;
+
+        [ObservableProperty]
+        private ObservableCollection<SuiteUsageItem> _ruleUsages = new();
 
         partial void OnSelectedRuleSetChanged(RuleSet? value)
         {
@@ -121,6 +131,39 @@ namespace SuiteCreatorAvalonia.ViewModels
             if (_loadingRuleSet || SelectedRuleSet == null) return;
             SelectedRuleSet.Rules = RuleBuilder.Rules;
             _suiteCoreManager.UpdateRuleSet(SelectedRuleSet);
+        }
+
+        private bool CanShowRuleUsages() => SelectedRuleSet != null;
+
+        [RelayCommand(CanExecute = nameof(CanShowRuleUsages))]
+        public void ShowRuleUsages()
+        {
+            if (SelectedRuleSet == null) return;
+            (List<PackageBase> packages, List<EventCore> events) = _suiteCoreManager.GetRuleSetLinks(SelectedRuleSet.Id);
+            ObservableCollection<SuiteUsageItem> items = new();
+            foreach (PackageBase pkg in packages)
+            {
+                items.Add(SuiteUsageItem.ForPackage(pkg));
+            }
+            foreach (EventCore evt in events)
+            {
+                items.Add(SuiteUsageItem.ForEvent(evt, SelectedRuleSet.Id));
+            }
+            RuleUsages = items;
+            UsagesPopupOpen = true;
+        }
+
+        public void GoToUsage(SuiteUsageItem item)
+        {
+            UsagesPopupOpen = false;
+            if (item.Package != null)
+            {
+                AppNavigationService.Instance.NavigateToPackage?.Invoke(item.Package);
+            }
+            else if (item.Event != null)
+            {
+                AppNavigationService.Instance.NavigateToEvent?.Invoke(item.Event);
+            }
         }
     }
 }
