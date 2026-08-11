@@ -157,6 +157,10 @@
 				<!-- Main Warning text -->
 				<AvaloniaEdit:TextEditor
 					FontSize="13"
+					WordWrap="True"
+					HorizontalScrollBarVisibility="Disabled"
+					VerticalScrollBarVisibility="Disabled"
+					MaxWidth="300"
 					Document="{Binding MainText}"
 					Margin="5,5,5,15"/>
 
@@ -218,7 +222,7 @@
 
 				<!-- Timer bar -->
 				<controls:ShimmerProgress
-					Accent="{Binding CompanyLogoBackgroundColorShade}"
+					Accent="{Binding CompanyLogoBackgroundColorDarkerShade}"
 					TrackBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
 					Value="80"
 					ShowPercentage="False"
@@ -239,7 +243,7 @@
 						<TextBlock
 							ToolTip.Tip="{Binding MaxDelayDays, StringFormat='{}{0} days remaining'}"
 							FontWeight="Bold"
-							Text="{Binding MaxDelayDays, StringFormat='Later ({0})'}"
+							Text="Later"
 							HorizontalAlignment="Center"/>
 					</Button>
 					<Button

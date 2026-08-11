@@ -2,13 +2,81 @@ using SuiteCreatorAvalonia.Enums;
 using SuiteCreatorAvalonia.Models.Package;
 using SuiteCreatorAvalonia.Models.Rules;
 using SuiteOperations.Package;
+using DllImportAttribute = System.Runtime.InteropServices.DllImportAttribute;
+using CharSet = System.Runtime.InteropServices.CharSet;
+using System.Text.RegularExpressions;
 using Log = Logger.Log;
 using Microsoft.Win32;
+using static SuiteTools.UserTools.UserExtensions;
 
 namespace SuiteExecutor
 {
     internal partial class Suite
     {
+        // The temporary profile Windows signs into during OOBE/ESP (device setup and account setup) is named
+        // DefaultUser, DefaultUser0, DefaultUser1, etc. Treating that logon as ESP catches pre-provisioning
+        // and other setup-time logons even where OOBEComplete() alone wouldn't (e.g. white-glove / hybrid
+        // scenarios where a technician account is signed in but the real user profile hasn't taken over yet).
+        private static readonly Regex _defaultUserPattern = new Regex(@"^DefaultUser\d*$", RegexOptions.IgnoreCase);
+
+        // OOBEComplete reports whether the device has finished its very first-boot experience (OOBE), not
+        // whether Autopilot/ESP specifically was involved. It stays false for the entire time OOBE is on
+        // screen, and Autopilot's Enrollment Status Page (device + account setup) is still part of OOBE, so
+        // this is false throughout ESP until the user reaches the desktop. Devices that never run ESP finish
+        // OOBE in a couple of minutes during initial provisioning, long before any suite would ever run, so
+        // this reads "not in ESP" for them without needing to know whether Autopilot is involved at all.
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int OOBEComplete(ref int bIsOOBEComplete);
+
+        private bool IsDeviceInEsp()
+        {
+            bool oobeIncomplete = false;
+            try
+            {
+                int isOobeComplete = 0;
+                OOBEComplete(ref isOobeComplete);
+                oobeIncomplete = isOobeComplete == 0;
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"Failed to check OOBE/ESP state: {ex.Message}, assuming OOBE is complete", "SuiteDetection", Log.Severity.Warning);
+            }
+
+            if (oobeIncomplete)
+            {
+                return true;
+            }
+
+            return IsLoggedOnUserADefaultUser();
+        }
+
+        private bool IsLoggedOnUserADefaultUser()
+        {
+            try
+            {
+                List<UserSessionInfo>? sessions = GetUserSessions();
+                if (sessions == null)
+                {
+                    return false;
+                }
+
+                foreach (UserSessionInfo session in sessions)
+                {
+                    if (!string.IsNullOrEmpty(session.UserName) && _defaultUserPattern.IsMatch(session.UserName))
+                    {
+                        _log.WriteLog($"Logged on user '{session.UserName}' (session {session.SessionID}) matches the DefaultUser pattern, treating as ESP", "SuiteDetection", Log.Severity.Info);
+                        return true;
+                    }
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"Failed to check logged on user for a DefaultUser profile: {ex.Message}, assuming it is not a DefaultUser", "SuiteDetection", Log.Severity.Warning);
+                return false;
+            }
+        }
+
         private bool IsSelfDetected()
         {
             Guid detectedGuid = _suiteConfig.BuildSettings.UpgradeCode;

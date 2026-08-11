@@ -74,6 +74,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             _suiteCoreManager = suiteCoreManager;
             MsiSubDetails = (PackageMSIInstallSubDetailsViewModel)viewFactory.GetVM(typeof(PackageMSIInstallSubDetailsViewModel));
             Rollback = (PackageMSIInstallSubDetailsViewModel)viewFactory.GetVM(typeof(PackageMSIInstallSubDetailsViewModel));
+            Rollback.IsRollbackSection = true;
         }
 
         public override void LoadPackage(Guid packageId)
@@ -93,6 +94,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             MsiSubDetails.SecureTransforms = msiPkg.SecureTransforms;
             MsiSubDetails.LegacyLongFilePath = msiPkg.LegacyLongFilePath;
             MsiSubDetails.RestartBehavior = msiPkg.RestartBehavior;
+            MsiSubDetails.RemoveOnSuiteRemoval = msiPkg.RemoveOnSuiteRemoval;
             // Update Properties in place
             MsiSubDetails.Properties.Clear();
             if (msiPkg.Properties != null)
@@ -140,6 +142,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             msiPkg.LogPath = MsiSubDetails.LogPath;
             msiPkg.RestartBehavior = MsiSubDetails.RestartBehavior;
             msiPkg.Properties = MsiSubDetails.Properties.ToList();
+            msiPkg.RemoveOnSuiteRemoval = MsiSubDetails.RemoveOnSuiteRemoval;
             if (Rollback != null && msiPkg.Rollback is MSIPkg rollbackPkg)
             {
                 rollbackPkg.MSIPath = Rollback.MsiFilePath;

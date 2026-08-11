@@ -223,6 +223,7 @@ namespace SuiteExecutor
             catch (Exception ex)
             {
                 _log.WriteLog($"Suite execution failed, error: {ex.Message} : {ex.InnerException?.Message}", "Execution", Log.Severity.Error);
+                _log.WriteLog($"Suite execution failure stack trace: {ex}", "Execution", Log.Severity.Error);
                 CompleteProgressPopup(isError: true);
 
                 // FailSafe: the suite failed outright (not a deliberate restart-retry), so the recovery task

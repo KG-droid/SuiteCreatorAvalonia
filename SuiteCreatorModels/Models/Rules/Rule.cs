@@ -6,7 +6,6 @@ using SuiteCreatorModels.Enums;
 using System.Diagnostics;
 using System.Security.Principal;
 using System.Text.RegularExpressions;
-using System.Management.Automation;
 using SuiteTools;
 
 namespace SuiteCreatorAvalonia.Models.Rules
@@ -88,7 +87,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
         public string? Validate()
         {
             string? effectiveBase = Type == RuleType.File ? ResolveFileBasePath() : Base;
-            if (string.IsNullOrWhiteSpace(effectiveBase))
+            if (Type != RuleType.PowerShell && string.IsNullOrWhiteSpace(effectiveBase))
             {
                 return "A rule must have a base string, like a product code, reg key, file path etc.";
             }
@@ -139,6 +138,10 @@ namespace SuiteCreatorAvalonia.Models.Rules
             if (DetectionType == DetectionTypes.Number && !double.TryParse(ComparatorValue, out _))
             {
                 return "A number-based rule detection must have a valid numeric value.";
+            }
+            if (DetectionType == DetectionTypes.String && string.IsNullOrEmpty(ComparatorValue))
+            {
+                return "A string-based rule detection must have a Value to compare specified.";
             }
             if (Comparator == ComparatorPlus.Matches || Comparator == ComparatorPlus.DoesNotMatch)
             {
@@ -384,6 +387,11 @@ namespace SuiteCreatorAvalonia.Models.Rules
             }
         }
 
+        // Runs the script via the powershell.exe host process rather than the in-process System.Management.Automation
+        // PowerShell class. That SDK relies on runtime code generation (JIT), which NativeAOT-published consumers
+        // of this model (e.g. SuiteExecutor) don't have, and hosting it there throws InvalidProgramException.
+        private static readonly string PowerShellExePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe");
+
         private RuleResult IsPowerShellDetected()
         {
             var ruleResult = new RuleResult();
@@ -394,10 +402,42 @@ namespace SuiteCreatorAvalonia.Models.Rules
             }
 
             string output;
-            using var ps = PowerShell.Create();
-            ps.AddScript(Script?.Text);
-            var results = ps.Invoke();
-            output = string.Join(Environment.NewLine, results.Select(r => r?.ToString()).Where(s => !string.IsNullOrWhiteSpace(s))).Trim();
+            string scriptFilePath = Path.Combine(Path.GetTempPath(), $"rule_ps_{Guid.NewGuid()}.ps1");
+            try
+            {
+                File.WriteAllText(scriptFilePath, Script!.Text);
+
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = PowerShellExePath,
+                    Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{scriptFilePath}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using Process? process = Process.Start(psi);
+                if (process == null)
+                {
+                    throw new InvalidOperationException("Failed to start PowerShell process.");
+                }
+
+                string standardOutput = process.StandardOutput.ReadToEnd();
+                process.StandardError.ReadToEnd();
+                process.WaitForExit();
+
+                output = standardOutput
+                    .Split('\n')
+                    .Select(line => line.TrimEnd('\r'))
+                    .Where(line => !string.IsNullOrWhiteSpace(line))
+                    .Aggregate(string.Empty, (acc, line) => acc.Length == 0 ? line : acc + Environment.NewLine + line)
+                    .Trim();
+            }
+            finally
+            {
+                try { File.Delete(scriptFilePath); } catch { /* best-effort cleanup */ }
+            }
 
             switch (DetectionType)
             {

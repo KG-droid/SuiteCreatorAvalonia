@@ -155,82 +155,107 @@
 							PlaceholderText="Parameters passed to the script (optional), e.g. -Silent -LogPath &quot;C:\Logs&quot;"/>
 					</StackPanel>
 
-					<!--Remove Type-->
+					<!--Remove product on suite removal-->
 					<StackPanel
 						Margin="0,5,0,0"
+						Spacing="10"
 						Orientation="Horizontal">
 						<TextBlock
 							VerticalAlignment="Center"
-							Grid.Column="0"
-							Text="Remove Type:"
-							Margin="0,0,10,0"/>
-						<ComboBox
-							Name="RemoveType_ComboBox"
-							SelectionChanged="RemoveType_SelectedItemChanged"
+							Text="Remove Product on Suite Removal:"/>
+						<ToggleSwitch
+							Name="RemoveOnSuiteRemoval_ToggleSwitch"
+							IsChecked="{Binding RemoveOnSuiteRemoval}"
 							VerticalAlignment="Center"
-							Grid.Column="0"
-							SelectedItem="{Binding SelectedRemoveType}"
-							ItemsSource="{helpers:EnumValues {x:Type package:OtherRemovalType}}"/>
-						<Button
-							x:Name="AddRemoveAnotherCMD_Button"
-							Command="{Binding AddRemoveCMDCommand}"
-							Width="35"
-							Height="35"
-							VerticalAlignment="Center"
-							Grid.Column="1"
-							Classes="IconButton"
-							Tag="Plus"
-							Foreground="{DynamicResource PlusButton}"
-							ToolTip.Tip="Add another remove command"/>
+							OffContent=""
+							OnContent=""/>
+						<TextBlock
+							FontSize="{DynamicResource InfoFontSize}"
+							FontStyle="Italic"
+							TextWrapping="Wrap"
+							Text="If disabled, this product will be left installed when the suite is removed"/>
 					</StackPanel>
 
-					<!--Remove PowerShell-->
 					<StackPanel
-						x:Name="RemovePS_Panel"
-						IsVisible="False"
-						Spacing="5">
-						<TextBlock
-							FontStyle="Italic"
-							FontSize="{DynamicResource InfoFontSize}"
-							Text=" Select a PowerShell (.ps1) script from the package files, or browse to add one."/>
-						<Grid
-							ColumnDefinitions="*,Auto">
-							<ComboBox
+						Spacing="5"
+						IsVisible="{Binding IsChecked, ElementName=RemoveOnSuiteRemoval_ToggleSwitch}">
+
+						<!--Remove Type-->
+						<StackPanel
+							Margin="0,5,0,0"
+							Orientation="Horizontal">
+							<TextBlock
+								VerticalAlignment="Center"
 								Grid.Column="0"
-								HorizontalAlignment="Stretch"
-								SelectedItem="{Binding SelectedRemovePowerShellFile}"
-								ItemsSource="{Binding PowerShellFiles}"
-								DisplayMemberBinding="{Binding Name}"
-								PlaceholderText="Select a .ps1 file from package files..."/>
+								Text="Remove Type:"
+								Margin="0,0,10,0"/>
+							<ComboBox
+								Name="RemoveType_ComboBox"
+								SelectionChanged="RemoveType_SelectedItemChanged"
+								VerticalAlignment="Center"
+								Grid.Column="0"
+								SelectedItem="{Binding SelectedRemoveType}"
+								ItemsSource="{helpers:EnumValues {x:Type package:OtherRemovalType}}"/>
 							<Button
+								x:Name="AddRemoveAnotherCMD_Button"
+								Command="{Binding AddRemoveCMDCommand}"
+								Width="35"
+								Height="35"
+								VerticalAlignment="Center"
 								Grid.Column="1"
 								Classes="IconButton"
-								Tag="FolderOpen"
-								Foreground="Orange"
-								Command="{Binding BrowsePowerShellScriptCommand}"
-								ToolTip.Tip="Browse for a PowerShell script to add and select"/>
-						</Grid>
-						<TextBox
-							Text="{Binding RemovePowerShellScriptArgs}"
-							PlaceholderText="Parameters passed to the script (optional), e.g. -Silent -LogPath &quot;C:\Logs&quot;"/>
-					</StackPanel>
+								Tag="Plus"
+								Foreground="{DynamicResource PlusButton}"
+								ToolTip.Tip="Add another remove command"/>
+						</StackPanel>
 
-					<!--Remove MSI-->
-					<Grid
-						x:Name="RemoveMSI_Grid"
-						IsVisible="False"
-						Margin="0,0,0,10"
-						ColumnDefinitions="*,Auto"
-						RowDefinitions="Auto,Auto">
-						<DataGrid
-							x:Name="MSIRemoves_DataGrid"
-							ItemsSource="{Binding RemoveMSIs}"
-							SelectionMode="Single"
-							SelectedItem="{Binding SelectedRemoveMSIs}"
-							Grid.Column="0"
-							AutoGenerateColumns="false">
-							<DataGrid.Columns>
-                                <DataGridTemplateColumn 
+						<!--Remove PowerShell-->
+						<StackPanel
+							x:Name="RemovePS_Panel"
+							IsVisible="False"
+							Spacing="5">
+							<TextBlock
+								FontStyle="Italic"
+								FontSize="{DynamicResource InfoFontSize}"
+								Text=" Select a PowerShell (.ps1) script from the package files, or browse to add one."/>
+							<Grid
+								ColumnDefinitions="*,Auto">
+								<ComboBox
+									Grid.Column="0"
+									HorizontalAlignment="Stretch"
+									SelectedItem="{Binding SelectedRemovePowerShellFile}"
+									ItemsSource="{Binding PowerShellFiles}"
+									DisplayMemberBinding="{Binding Name}"
+									PlaceholderText="Select a .ps1 file from package files..."/>
+								<Button
+									Grid.Column="1"
+									Classes="IconButton"
+									Tag="FolderOpen"
+									Foreground="Orange"
+									Command="{Binding BrowsePowerShellScriptCommand}"
+									ToolTip.Tip="Browse for a PowerShell script to add and select"/>
+							</Grid>
+							<TextBox
+								Text="{Binding RemovePowerShellScriptArgs}"
+								PlaceholderText="Parameters passed to the script (optional), e.g. -Silent -LogPath &quot;C:\Logs&quot;"/>
+						</StackPanel>
+
+						<!--Remove MSI-->
+						<Grid
+							x:Name="RemoveMSI_Grid"
+							IsVisible="False"
+							Margin="0,0,0,10"
+							ColumnDefinitions="*,Auto"
+							RowDefinitions="Auto,Auto">
+							<DataGrid
+								x:Name="MSIRemoves_DataGrid"
+								ItemsSource="{Binding RemoveMSIs}"
+								SelectionMode="Single"
+								SelectedItem="{Binding SelectedRemoveMSIs}"
+								Grid.Column="0"
+								AutoGenerateColumns="false">
+								<DataGrid.Columns>
+                                <DataGridTemplateColumn
 									Header="Type &amp; Code"
 									Width="1.2*">
                                     <DataTemplate>
@@ -259,132 +284,133 @@
                                         </Grid>
                                     </DataTemplate>
                                 </DataGridTemplateColumn>
-								<DataGridTemplateColumn
-									Header="Log Path"
-									Width="*">
-									<DataTemplate>
-										<TextBox
-											GotFocus="MSIRemoveDGCtrl_GotFocus"
-											Grid.Column="1"
-											PlaceholderText="Optional log file path"
-											Text="{Binding LogPath}" />
-									</DataTemplate>
-								</DataGridTemplateColumn>
-								<DataGridTemplateColumn
-									Header="Additional switches"
-									Width="*">
-									<DataTemplate>
-										<TextBox
-											GotFocus="MSIRemoveDGCtrl_GotFocus"
-											Grid.Column="1"
-											PlaceholderText="e.g MyProperty=Hello etc"
-											Text="{Binding AdditionalParams}" />
-									</DataTemplate>
-								</DataGridTemplateColumn>
-							</DataGrid.Columns>
-						</DataGrid>
-						<StackPanel
-							Grid.Column="1"
-							Grid.Row="0">
-							<Button
-								Classes="IconButton"
-								Tag="Plus"
-								Command="{Binding AddMSIRemovalCommand}"
-								ToolTip.Tip="Add MSI product to uninstall"
-								Foreground="{DynamicResource PlusButton}"/>
-							<Button
-								Classes="IconButton"
-								Tag="Minus"
-								Command="{Binding RemoveMSIRemovalCommand}"							
-								ToolTip.Tip="Remove selected product from the list"
-								Foreground="{DynamicResource BinButton}"/>
-						</StackPanel>
-
-						<TextBlock
-							Grid.Row="1"
-							Margin="0,5,0,0"
-							FontStyle="Italic"
-							FontSize="{DynamicResource InfoFontSize}"
-							Text=" Automatically applies the /q silent switch, and restarts are controlled via the toggle below"/>
-					</Grid>
-
-					<!--Remove Regex-->
-					<Grid
-						x:Name="RemoveRegex_Grid"
-						IsVisible="False"
-						Margin="0,0,0,10"
-						RowDefinitions="Auto,Auto,Auto,Auto,Auto"
-						ColumnDefinitions="Auto,*,Auto,*">
-						<TextBlock
-							Grid.Column="0"
-							Text="Manufacturer:"
-							Margin="0,0,10,0"/>
-						<Grid
-							Grid.Column="1"
-							ColumnDefinitions="*,Auto">
-							<TextBox
-								Grid.Column="0"
-								Text="{Binding RegexVendor}"
-								PlaceholderText="No Regex provided"/>
-							<Button
+									<DataGridTemplateColumn
+										Header="Log Path"
+										Width="*">
+										<DataTemplate>
+											<TextBox
+												GotFocus="MSIRemoveDGCtrl_GotFocus"
+												Grid.Column="1"
+												PlaceholderText="Optional log file path"
+												Text="{Binding LogPath}" />
+										</DataTemplate>
+									</DataGridTemplateColumn>
+									<DataGridTemplateColumn
+										Header="Additional switches"
+										Width="*">
+										<DataTemplate>
+											<TextBox
+												GotFocus="MSIRemoveDGCtrl_GotFocus"
+												Grid.Column="1"
+												PlaceholderText="e.g MyProperty=Hello etc"
+												Text="{Binding AdditionalParams}" />
+										</DataTemplate>
+									</DataGridTemplateColumn>
+								</DataGrid.Columns>
+							</DataGrid>
+							<StackPanel
 								Grid.Column="1"
-								Classes="IconButton"
-								Tag="Regex"
-								Click="TestVendorRegex_Click"
-								ToolTip.Tip="Test/build this RegEx pattern"/>
-						</Grid>
-						<TextBlock
-							Grid.Column="2"
-							Text="Product Name:"
-							Margin="10,0,10,0"/>
-						<Grid
-							Grid.Column="3"
-							ColumnDefinitions="*,Auto">
-							<TextBox
-								Grid.Column="0"
-								Text="{Binding RegexProductName}"
-								PlaceholderText="No Regex provided"/>
-							<Button
-								Grid.Column="1"
-								Classes="IconButton"
-								Tag="Regex"
-								Click="TestProductNameRegex_Click"
-								ToolTip.Tip="Test/build this RegEx pattern"/>
-						</Grid>
-						<TextBlock
-							Grid.Column="0"
-							Grid.Row="1"
-							Text="Parameters:"/>
-						<TextBox
-							Grid.Row="1"
-							Text="{Binding RegexRemoveParams}"
-							PlaceholderText="No optional parameters provided to run with the matching product removals"
-							Grid.Column="1"
-							Grid.ColumnSpan="3"/>
-						<TextBlock
-							Text=" Use Regex to find and remove products based on Manufacturer and Product Name"
-							FontStyle="Italic"
-							FontSize="{DynamicResource InfoFontSize}"
-							Grid.ColumnSpan="4"
-							Grid.Row="2"/>
-						<TextBlock
-							Text=" Uses the remove command on the uninstall reg key if present, otherwise the MSI GUID will be used"
-							FontStyle="Italic"
-							FontSize="{DynamicResource InfoFontSize}"
-							Grid.ColumnSpan="4"
-							Grid.Row="3"/>
-						<TextBlock
-							Text=" This feature will not work for non MSI installations, that don't list an uninstall command on the uninstall reg key"
-							FontStyle="Italic"
-							FontSize="{DynamicResource InfoFontSize}"
-							Grid.ColumnSpan="4"
-							Grid.Row="4"/>
-					</Grid>
+								Grid.Row="0">
+								<Button
+									Classes="IconButton"
+									Tag="Plus"
+									Command="{Binding AddMSIRemovalCommand}"
+									ToolTip.Tip="Add MSI product to uninstall"
+									Foreground="{DynamicResource PlusButton}"/>
+								<Button
+									Classes="IconButton"
+									Tag="Minus"
+									Command="{Binding RemoveMSIRemovalCommand}"
+									ToolTip.Tip="Remove selected product from the list"
+									Foreground="{DynamicResource BinButton}"/>
+							</StackPanel>
 
-					<!--Remove CMD-->
-					<UserControl
-						x:Name="RemoveCMD_Control"
-						Content="{Binding RemoveCMDsItemsControl}"/>
+							<TextBlock
+								Grid.Row="1"
+								Margin="0,5,0,0"
+								FontStyle="Italic"
+								FontSize="{DynamicResource InfoFontSize}"
+								Text=" Automatically applies the /q silent switch, and restarts are controlled via the toggle below"/>
+						</Grid>
+
+						<!--Remove Regex-->
+						<Grid
+							x:Name="RemoveRegex_Grid"
+							IsVisible="False"
+							Margin="0,0,0,10"
+							RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+							ColumnDefinitions="Auto,*,Auto,*">
+							<TextBlock
+								Grid.Column="0"
+								Text="Manufacturer:"
+								Margin="0,0,10,0"/>
+							<Grid
+								Grid.Column="1"
+								ColumnDefinitions="*,Auto">
+								<TextBox
+									Grid.Column="0"
+									Text="{Binding RegexVendor}"
+									PlaceholderText="No Regex provided"/>
+								<Button
+									Grid.Column="1"
+									Classes="IconButton"
+									Tag="Regex"
+									Click="TestVendorRegex_Click"
+									ToolTip.Tip="Test/build this RegEx pattern"/>
+							</Grid>
+							<TextBlock
+								Grid.Column="2"
+								Text="Product Name:"
+								Margin="10,0,10,0"/>
+							<Grid
+								Grid.Column="3"
+								ColumnDefinitions="*,Auto">
+								<TextBox
+									Grid.Column="0"
+									Text="{Binding RegexProductName}"
+									PlaceholderText="No Regex provided"/>
+								<Button
+									Grid.Column="1"
+									Classes="IconButton"
+									Tag="Regex"
+									Click="TestProductNameRegex_Click"
+									ToolTip.Tip="Test/build this RegEx pattern"/>
+							</Grid>
+							<TextBlock
+								Grid.Column="0"
+								Grid.Row="1"
+								Text="Parameters:"/>
+							<TextBox
+								Grid.Row="1"
+								Text="{Binding RegexRemoveParams}"
+								PlaceholderText="No optional parameters provided to run with the matching product removals"
+								Grid.Column="1"
+								Grid.ColumnSpan="3"/>
+							<TextBlock
+								Text=" Use Regex to find and remove products based on Manufacturer and Product Name"
+								FontStyle="Italic"
+								FontSize="{DynamicResource InfoFontSize}"
+								Grid.ColumnSpan="4"
+								Grid.Row="2"/>
+							<TextBlock
+								Text=" Uses the remove command on the uninstall reg key if present, otherwise the MSI GUID will be used"
+								FontStyle="Italic"
+								FontSize="{DynamicResource InfoFontSize}"
+								Grid.ColumnSpan="4"
+								Grid.Row="3"/>
+							<TextBlock
+								Text=" This feature will not work for non MSI installations, that don't list an uninstall command on the uninstall reg key"
+								FontStyle="Italic"
+								FontSize="{DynamicResource InfoFontSize}"
+								Grid.ColumnSpan="4"
+								Grid.Row="4"/>
+						</Grid>
+
+						<!--Remove CMD-->
+						<UserControl
+							x:Name="RemoveCMD_Control"
+							Content="{Binding RemoveCMDsItemsControl}"/>
+					</StackPanel>
 
 					<!--Settings-->
 					<Grid

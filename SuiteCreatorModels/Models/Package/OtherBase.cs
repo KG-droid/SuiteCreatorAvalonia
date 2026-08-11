@@ -6,6 +6,7 @@ namespace SuiteCreatorAvalonia.Models.Package
     {
         public List<VariableText>? InstallCommand { get; set; }
         public List<VariableText>? RollbackCommand { get; set; }
+        public bool RemoveOnSuiteRemoval { get; set; } = true;
 
         public override PackageBase Clone()
         {
@@ -34,7 +35,8 @@ namespace SuiteCreatorAvalonia.Models.Package
                 RemovePowerShellScriptArgs = RemovePowerShellScriptArgs,
                 InstallCommand = InstallCommand != null ? InstallCommand.Select(c => c.Clone()).ToList() : null,
                 RollbackCommand = RollbackCommand != null ? RollbackCommand.Select(c => c.Clone()).ToList() : null,
-                RollbackDetectionRuleSetId = RollbackDetectionRuleSetId
+                RollbackDetectionRuleSetId = RollbackDetectionRuleSetId,
+                RemoveOnSuiteRemoval = RemoveOnSuiteRemoval
             };
         }
         public override void UpdateFrom(Stage stage)
@@ -64,6 +66,7 @@ namespace SuiteCreatorAvalonia.Models.Package
             InstallCommand = otherBase.InstallCommand != null ? otherBase.InstallCommand.Select(c => c.Clone()).ToList() : null;
             RollbackCommand = otherBase.RollbackCommand != null ? otherBase.RollbackCommand.Select(c => c.Clone()).ToList() : null;
             RollbackDetectionRuleSetId = otherBase.RollbackDetectionRuleSetId;
+            RemoveOnSuiteRemoval = otherBase.RemoveOnSuiteRemoval;
         }
 
         public override string? Validate()
@@ -89,7 +92,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                     return "Command must be specified for a package event.";
                 }
             }
-            if (RemovalType == OtherRemovalType.PowerShell && string.IsNullOrWhiteSpace(RemovePowerShellScriptPath))
+            if (RemoveOnSuiteRemoval && RemovalType == OtherRemovalType.PowerShell && string.IsNullOrWhiteSpace(RemovePowerShellScriptPath))
             {
                 return "A PowerShell script must be selected from the package files for the removal command.";
             }

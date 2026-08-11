@@ -516,9 +516,10 @@ namespace SuiteCreatorAvalonia.ViewModels.RuleBuilder
                 {
                     Comparator = null;
                 }
-                // Comparator Value
+                // Comparator Value - not applicable to Boolean detection, which is fully expressed by the
+                // True/False comparator itself, with no separate value to compare against.
                 bool isRegexComparator = Comparator == ComparatorPlus.Matches || Comparator == ComparatorPlus.DoesNotMatch;
-                if (Comparator != null)
+                if (Comparator != null && DetectionType != DetectionTypes.Boolean)
                 {
                     TextBox addComparatorValueTextBox = new TextBox();
                     addComparatorValueTextBox.PlaceholderText = isRegexComparator ? "RegEx pattern to compare" : "Value to compare";
@@ -579,14 +580,11 @@ namespace SuiteCreatorAvalonia.ViewModels.RuleBuilder
             await psWindow.ShowDialog(parent);
             Context = vm.Context;
             Base = vm.FilePath;
-            if (string.IsNullOrWhiteSpace(Base))
-            {
-                Script = vm.ScriptDoc;
-            }
-            else
-            {
-                Script = new TextDocument();
-            }
+            // vm.ScriptDoc holds the actual script content either way - typed directly, or loaded from
+            // the linked file by PowerShellWindowViewModel.LoadScript(). Rule.IsPowerShellDetected() only
+            // ever executes Script.Text, so it must be kept even when a file is linked (Base is just the
+            // linked file's path for display/re-editing, not a source the executor reads from).
+            Script = vm.ScriptDoc;
         }
 
         private async void OpenRegexTesterWindow()

@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using SuiteCreatorControls.Helpers;
 
 namespace SuiteUserPopup.Services;
 
@@ -7,6 +8,7 @@ public static class PopConfigResources
 {
     public const string CompanyLogoForegroundBrushKey = "CompanyLogoForegroundBrush";
     public const string CompanyLogoBackgroundBrushKey = "CompanyLogoBackgroundBrush";
+    public const string CompanyLogoBackgroundShadeBrushKey = "CompanyLogoBackgroundShadeBrush";
 
     public static void EnsureDefaults(Application app)
     {
@@ -15,6 +17,9 @@ public static class PopConfigResources
 
         if (!app.Resources.ContainsKey(CompanyLogoBackgroundBrushKey))
             app.Resources[CompanyLogoBackgroundBrushKey] = new SolidColorBrush(Colors.Blue);
+
+        if (!app.Resources.ContainsKey(CompanyLogoBackgroundShadeBrushKey))
+            app.Resources[CompanyLogoBackgroundShadeBrushKey] = new SolidColorBrush(GetDarkerShade(Colors.Blue));
     }
 
     public static void Apply(Application app, string? background)
@@ -25,8 +30,11 @@ public static class PopConfigResources
         {
             app.Resources[CompanyLogoBackgroundBrushKey] = new SolidColorBrush(bg);
             app.Resources[CompanyLogoForegroundBrushKey] = GetReadableForeground(bg);
+            app.Resources[CompanyLogoBackgroundShadeBrushKey] = new SolidColorBrush(GetDarkerShade(bg));
         }
     }
+
+    private static Color GetDarkerShade(Color color) => ColorShadeHelper.GetVividShade(color);
 
     private static IBrush GetReadableForeground(Color background)
     {

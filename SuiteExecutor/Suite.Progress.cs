@@ -16,6 +16,14 @@ namespace SuiteExecutor
             if (!_suiteConfig.PopupSettings.ShowProgress)
                 return;
 
+            // There's no real interactive user to show progress to during ESP, so just skip it - no
+            // ESPAction to honor here, that's specific to the warning popup's whole-suite skip behavior.
+            if (IsDeviceInEsp())
+            {
+                _log.WriteLog("Device is in ESP (Autopilot Enrollment Status Page / initial setup), skipping progress popup", "Progress", Log.Severity.Info);
+                return;
+            }
+
             try
             {
                 string popupDir = Path.Combine(_suiteRootDir, "Popup");

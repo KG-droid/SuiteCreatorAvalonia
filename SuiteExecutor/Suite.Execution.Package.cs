@@ -81,6 +81,18 @@ namespace SuiteExecutor
                         _log.WriteLog($"Package {package.Name} is not detected during {_action}, skipping stage, and associated events", "Execution", Log.Severity.Info);
                         return false;
                     }
+                    bool removeOnSuiteRemoval = package switch
+                    {
+                        MSIExec msi => msi.RemoveOnSuiteRemoval,
+                        MSIxExec msix => msix.RemoveOnSuiteRemoval,
+                        OtherExec other => other.RemoveOnSuiteRemoval,
+                        _ => true
+                    };
+                    if (_action == SuiteAction.Removal && !removeOnSuiteRemoval)
+                    {
+                        _log.WriteLog($"Package {package.Name} has Remove Product on Suite Removal disabled, skipping stage, and associated events", "Execution", Log.Severity.Info);
+                        return false;
+                    }
                 }
             }
 

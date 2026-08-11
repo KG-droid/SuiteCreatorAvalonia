@@ -84,7 +84,7 @@
 
 			<Grid
 				ColumnDefinitions="Auto,Auto,Auto"
-				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
 				<!-- Context -->
 				<TextBlock
@@ -103,18 +103,20 @@
 					OnContent="User"
 					ToolTip.Tip="Adds /q switch"/>
 
-				<!-- Family removal -->
+				<!-- Remove product on suite removal -->
 				<TextBlock
 					Grid.Column="0"
 					Grid.Row="1"
 					VerticalAlignment="Center"
-					Text="Remove Family:"/>
+					IsVisible="{Binding !IsRollbackSection}"
+					Text="Remove Product on Suite Removal:"/>
 				<ToggleSwitch
-					IsChecked="{Binding IsRemoveFamily}"
+					IsChecked="{Binding RemoveOnSuiteRemoval}"
 					VerticalAlignment="Center"
 					Grid.Column="1"
 					Grid.ColumnSpan="2"
 					Grid.Row="1"
+					IsVisible="{Binding !IsRollbackSection}"
 					Margin="0,0,-10,0"
 					OffContent=""
 					OnContent=""/>
@@ -124,21 +126,22 @@
 					MaxWidth="570"
 					TextWrapping="Wrap"
 					Margin="0,5,0,5"
-					Text="When run as removal/rollback, whether it should remove the specific product or all products in its family, based on its UpgradeCode. This also changes the detection, to product based, or to whether or not there is a version installed in the family greater or equal to this version."/>
+					IsVisible="{Binding !IsRollbackSection}"
+					Text="If disabled, this product will be left installed when the suite is removed."/>
 
-				<!-- Adjacent files -->
+				<!-- Family removal -->
 				<TextBlock
 					Grid.Column="0"
 					Grid.Row="2"
 					VerticalAlignment="Center"
-					Margin="0,0,10,0"
-					Text="Include adjacent files:"/>
+					Text="Remove Family:"/>
 				<ToggleSwitch
-					Grid.Column="1"
-					Grid.Row="2"
-					IsChecked="{Binding IncludeAdjacentFilesFolders}"
+					IsChecked="{Binding IsRemoveFamily}"
 					VerticalAlignment="Center"
-					Margin="0,0,-5,0"
+					Grid.Column="1"
+					Grid.ColumnSpan="2"
+					Grid.Row="2"
+					Margin="0,0,-10,0"
 					OffContent=""
 					OnContent=""/>
 				<TextBlock
@@ -146,17 +149,40 @@
 					Grid.Row="2"
 					MaxWidth="570"
 					TextWrapping="Wrap"
+					Margin="0,5,0,5"
+					Text="When run as removal/rollback, whether it should remove the specific product or all products in its family, based on its UpgradeCode. This also changes the detection, to product based, or to whether or not there is a version installed in the family greater or equal to this version."/>
+
+				<!-- Adjacent files -->
+				<TextBlock
+					Grid.Column="0"
+					Grid.Row="3"
+					VerticalAlignment="Center"
+					Margin="0,0,10,0"
+					Text="Include adjacent files:"/>
+				<ToggleSwitch
+					Grid.Column="1"
+					Grid.Row="3"
+					IsChecked="{Binding IncludeAdjacentFilesFolders}"
+					VerticalAlignment="Center"
+					Margin="0,0,-5,0"
+					OffContent=""
+					OnContent=""/>
+				<TextBlock
+					Grid.Column="2"
+					Grid.Row="3"
+					MaxWidth="570"
+					TextWrapping="Wrap"
 					Text="Whether or not to include all the files/folders adjacent to the MSI as well as the MSI itself in this package. Since some MSIs dont have all the files embedded within."/>
 
 				<!-- Secure Transforms -->
 				<TextBlock
 					Grid.Column="0"
-					Grid.Row="3"
+					Grid.Row="4"
 					VerticalAlignment="Center"
 					Text="Secure Transforms:"/>
 				<ToggleSwitch
 					Grid.Column="1"
-					Grid.Row="3"
+					Grid.Row="4"
 					IsChecked="{Binding SecureTransforms}"
 					Margin="0,0,-5,0"
 					VerticalAlignment="Center"
@@ -166,12 +192,12 @@
 				<!-- Legacy Long file path support -->
 				<TextBlock
 					Grid.Column="0"
-					Grid.Row="4"
+					Grid.Row="5"
 					VerticalAlignment="Center"
 					Text="Legacy File Path:"/>
 				<ToggleSwitch
 					Grid.Column="1"
-					Grid.Row="4"
+					Grid.Row="5"
 					IsChecked="{Binding LegacyLongFilePath}"
 					VerticalAlignment="Center"
 					Margin="0,0,-5,0"
@@ -179,7 +205,7 @@
 					OnContent=" "/>
 				<TextBlock
 					Grid.Column="2"
-					Grid.Row="4"
+					Grid.Row="5"
 					MaxWidth="570"
 					TextWrapping="Wrap"
 					Text="Add support for legacy installers that dont support long file paths, creates a virtual drive and runs the installer from there."/>
@@ -187,12 +213,12 @@
 				<!-- Restart Behavior -->
 				<TextBlock
 					Grid.Column="0"
-					Grid.Row="5"
+					Grid.Row="6"
 					VerticalAlignment="Center"
 					Text="Restart Behavior:"/>
 				<ComboBox
 					Grid.Column="1"
-					Grid.Row="5"
+					Grid.Row="6"
 					Grid.ColumnSpan="2"
 					VerticalAlignment="Center"
 					SelectedItem="{Binding RestartBehavior}"

@@ -100,13 +100,22 @@ namespace SuiteCreatorAvalonia.ViewModels
 
         public void LoadScript()
         {
-            if (!string.IsNullOrWhiteSpace(FilePath))
+            if (string.IsNullOrWhiteSpace(FilePath))
+                return;
+            try
+            {
                 using (FileStream fileStream = new FileStream(FilePath, FileMode.Open, FileAccess.Read))
                 using (StreamReader reader = new StreamReader(fileStream))
                 {
                     string txt = reader.ReadToEnd();
                     ScriptDoc = new TextDocument(txt);
                 }
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                AppLog.Warning($"Failed to load linked PowerShell script from: {FilePath}, error: {ex.Message}", "PowerShell");
+                ScriptOutput = $"Could not load the linked script file: {ex.Message}";
+            }
         }
 
         [RelayCommand]
