@@ -30,25 +30,25 @@ namespace SuiteProgressPopup
             SolidColorBrush progressColourBrush = ResolveProgColourBrush(args);
 
             AppLogService.Initialize(logFilePath);
-            AppLogService.Info("Application startup initiated.", nameof(Program));
+            AppLogService.Info("Application startup initiated.", "SuiteProgressPopup");
 
             if (suiteLogoPath is null)
             {
-                AppLogService.Error("Suite logo argument missing and fallback logo could not be found.", nameof(Program));
+                AppLogService.Error("Suite logo argument missing and fallback logo could not be found.", "SuiteProgressPopup");
                 Console.WriteLine("SuiteLogo argument missing, and unable to find a SuiteLogo png in the exe directory");
                 Environment.Exit(2);
                 return;
             }
             if (progressFilePath is null)
             {
-                AppLogService.Error("ProgressFile argument missing.", nameof(Program));
+                AppLogService.Error("ProgressFile argument missing.", "SuiteProgressPopup");
                 Console.WriteLine("ProgressFile argument missing, a path to a progress.json file is required so this popup knows what to display");
                 Environment.Exit(2);
                 return;
             }
 
             StartupOptions.Set(suiteLogoPath, progressFilePath, progressColourBrush);
-            AppLogService.Info("Startup options resolved successfully.", nameof(Program));
+            AppLogService.Info("Startup options resolved successfully.", "SuiteProgressPopup");
 
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
@@ -133,7 +133,7 @@ namespace SuiteProgressPopup
             Console.WriteLine("  --LogFile <path> or -l <path>          : Path to log file for this popup");
             Console.WriteLine();
             Console.WriteLine("If no parameters are provided, the app will look for 'SuiteLogo.png' and 'progress.json' in the executable directory.");
-            AppLogService.Info("Application help text displayed.", nameof(Program));
+            AppLogService.Info("Application help text displayed.", "SuiteProgressPopup");
             Environment.Exit(0);
         }
 
