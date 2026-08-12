@@ -171,6 +171,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 Browser = browseEx.Browser;
                 Source = browseEx.Source;
                 ExtensionPath = browseEx.ExtPath;
+                IsPermanent = browseEx.IsPermanent;
                 Schedules.Clear();
                 Schedules.AddRange(browseEx.Schedules);
                 // Ensure that the EventStage and Condition in each Schedule is the same instance as in SuiteStages/SuiteConditions for the ComboBox binding to work correctly.
@@ -190,6 +191,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 browserExt.Browser = Browser;
                 browserExt.Source = Source;
                 browserExt.ExtPath = ExtensionPath;
+                browserExt.IsPermanent = IsPermanent;
                 browserExt.Schedules = Schedules.ToList();
                 if (!Design.IsDesignMode)
                     _coreManager.UpdateExtensionEvent(browserExt);
