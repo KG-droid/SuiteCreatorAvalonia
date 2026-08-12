@@ -8,6 +8,14 @@ namespace SuiteOperations.Events
 {
     public partial class BrowserExExecEvent : BrowserExt
     {
+        // Local CRX files only live in the suite's temp install cache (SuiteInstallerCache), which gets
+        // deleted once the suite finishes running. Chrome/Edge re-reads the force_installed update_url
+        // for extension updates for as long as the policy exists, so the file needs to persist here
+        // instead. Kept out of the SuiteExecutor folder and named plainly so it's discoverable by anyone
+        // poking around Program Files without prior knowledge of the suite tooling.
+        private static readonly string PermanentExtensionStoreRoot = Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles), "BrowserExtensions");
+
         private Log _log;
 
         public BrowserExExecEvent(Log log)
@@ -71,7 +79,8 @@ namespace SuiteOperations.Events
                     string updateUrl;
                     if (Source == SuiteCreatorAvalonia.Enums.BrowserExtensionSource.Local && !string.IsNullOrWhiteSpace(ExtPath))
                     {
-                        updateUrl = "file://" + ExtPath.Replace("\\", "/");
+                        string permanentExtDir = CopyExtensionToPermanentStore();
+                        updateUrl = "file://" + permanentExtDir.Replace("\\", "/");
                     }
                     else if (Source == SuiteCreatorAvalonia.Enums.BrowserExtensionSource.ChromeWebStore)
                     {
@@ -97,6 +106,18 @@ namespace SuiteOperations.Events
                 _log.WriteLog($"Failed to install browser extension: {ex.Message}", "Application", Log.Severity.Error);
                 throw;
             }
+        }
+
+        private string CopyExtensionToPermanentStore()
+        {
+            string destDir = Path.Combine(PermanentExtensionStoreRoot, Id.ToString());
+            Directory.CreateDirectory(destDir);
+            foreach (string file in Directory.GetFiles(ExtPath))
+            {
+                File.Copy(file, Path.Combine(destDir, Path.GetFileName(file)), true);
+            }
+            _log.WriteLog($"Copied local browser extension to permanent store: {destDir}");
+            return destDir;
         }
 
         public void UninstallBrowserExtension()
@@ -127,12 +148,23 @@ namespace SuiteOperations.Events
                     baseKey.DeleteValue(extensionId, false);
                     _log.WriteLog($"Extension {extensionId} policy removed from {browserKey}.");
                 }
+                RemoveFromPermanentStore();
                 _log.WriteLog("Browser extension uninstalled.");
             }
             catch (Exception ex)
             {
                 _log.WriteLog($"Failed to uninstall browser extension: {ex.Message}", "Application", Log.Severity.Error);
                 throw;
+            }
+        }
+
+        private void RemoveFromPermanentStore()
+        {
+            string destDir = Path.Combine(PermanentExtensionStoreRoot, Id.ToString());
+            if (Directory.Exists(destDir))
+            {
+                Directory.Delete(destDir, true);
+                _log.WriteLog($"Removed permanent browser extension store: {destDir}");
             }
         }
 
