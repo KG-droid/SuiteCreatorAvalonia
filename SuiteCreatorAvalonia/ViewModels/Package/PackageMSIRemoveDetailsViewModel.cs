@@ -56,6 +56,12 @@ namespace SuiteCreatorAvalonia.ViewModels
         private RestartBehaviorEnum _restartBehavior = RestartBehaviorEnum.Ignore;
 
         [ObservableProperty]
+        private bool _repairOldProductOnFailure = false;
+
+        [ObservableProperty]
+        private string? _repairMsiPath;
+
+        [ObservableProperty]
         private string? _cmdPreview;
 
         [ObservableProperty]
@@ -142,6 +148,8 @@ namespace SuiteCreatorAvalonia.ViewModels
             IsCreateLog = msiRemovePackage.IsCreateLog;
             LogPath = msiRemovePackage.LogPath;
             RestartBehavior = msiRemovePackage.RestartBehavior;
+            RepairOldProductOnFailure = msiRemovePackage.RepairOldProductOnFailure;
+            RepairMsiPath = msiRemovePackage.RepairMsiPath;
             Properties.Clear();
             if (msiRemovePackage.Properties != null)
             {
@@ -168,6 +176,8 @@ namespace SuiteCreatorAvalonia.ViewModels
             packageMSIRemove.IsCreateLog = IsCreateLog;
             packageMSIRemove.LogPath = LogPath;
             packageMSIRemove.RestartBehavior = RestartBehavior;
+            packageMSIRemove.RepairOldProductOnFailure = RepairOldProductOnFailure;
+            packageMSIRemove.RepairMsiPath = RepairMsiPath;
             packageMSIRemove.Properties = Properties.Count > 0 ? Properties.Select(p => p.Clone()).ToList() : null;
             _suiteCoreManager.UpdatePackage(packageMSIRemove);
         }
@@ -233,6 +243,14 @@ namespace SuiteCreatorAvalonia.ViewModels
             }
         }
 
+
+        [RelayCommand]
+        private async Task BrowseRepairMsi()
+        {
+            IEnumerable<string>? filePath = await this.OpenFileDialogAsync(new FilePickerOpenOptions() { AllowMultiple = false, Title = "Browse for the old product's MSI", FileTypeFilter = SysIOPickerTypes.MSI });
+            if (filePath != null && filePath.Count() > 0)
+                RepairMsiPath = filePath.First();
+        }
 
         [RelayCommand(CanExecute = nameof(CanGenerateLogPath))]
         private async Task GenerateLogPath()

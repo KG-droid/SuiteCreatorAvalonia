@@ -18,6 +18,8 @@ namespace SuiteCreatorAvalonia.Models.Package
         public Contexts? Context { get; set; }
         public RestartBehavior RestartBehavior { get; set; } = RestartBehavior.Ignore;
         public List<MSIProperty>? Properties { get; set; }
+        public bool RepairOldProductOnFailure { get; set; }
+        public string? RepairMsiPath { get; set; }
 
         public override MSIRemoval Clone()
         {
@@ -33,7 +35,9 @@ namespace SuiteCreatorAvalonia.Models.Package
                 Context = Context,
                 Architecture = Architecture,
                 RestartBehavior = RestartBehavior,
-                Properties = Properties != null ? Properties.Select(p => p.Clone()).ToList() : null
+                Properties = Properties != null ? Properties.Select(p => p.Clone()).ToList() : null,
+                RepairOldProductOnFailure = RepairOldProductOnFailure,
+                RepairMsiPath = RepairMsiPath
             };
         }
 
@@ -53,6 +57,8 @@ namespace SuiteCreatorAvalonia.Models.Package
                 Architecture = msirem.Architecture;
                 RestartBehavior = msirem.RestartBehavior;
                 Properties = msirem.Properties != null ? msirem.Properties.Select(p => p.Clone()).ToList() : null;
+                RepairOldProductOnFailure = msirem.RepairOldProductOnFailure;
+                RepairMsiPath = msirem.RepairMsiPath;
             }
         }
 
@@ -77,6 +83,10 @@ namespace SuiteCreatorAvalonia.Models.Package
                     if (string.IsNullOrWhiteSpace(property.Name))
                         return "Property Name cannot be empty.";
                 }
+            }
+            if (RepairOldProductOnFailure && IsProductRemoval && string.IsNullOrWhiteSpace(RepairMsiPath))
+            {
+                return "The old product's MSI must be selected to repair it on failure.";
             }
             return null;
         }

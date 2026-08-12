@@ -8,6 +8,7 @@ namespace SuiteExecutor
 
         private void LogStartupInfo()
         {
+            CheckForInterruptedPreviousRun();
             _log.WriteLog("*****Starting Suite*****", "Startup", Log.Severity.Info);
             _log.WriteLog($"Computer Name: {Environment.MachineName}", "Startup", Log.Severity.Info);
             _log.WriteLog($"Suite Action: {_action}", "Startup", Log.Severity.Info);
@@ -60,6 +61,39 @@ namespace SuiteExecutor
                 try { _log.WriteLog(errorMsg, "Logging", Log.Severity.Warning); } catch { }
                 try { Console.Error.WriteLine(errorMsg); } catch { }
                 try { System.Diagnostics.Debug.WriteLine(errorMsg); } catch { }
+            }
+
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            {
+                try { _log.WriteLog("*****Suite End*****", "Execution", Log.Severity.Info); }
+                catch { }
+            };
+        }
+
+        private void CheckForInterruptedPreviousRun()
+        {
+            try
+            {
+                if (!File.Exists(_logPath))
+                    return;
+
+                string content = File.ReadAllText(_logPath);
+                int lastStart = content.LastIndexOf("*****Starting Suite*****", StringComparison.Ordinal);
+                if (lastStart < 0)
+                    return;
+
+                int lastEnd = content.IndexOf("*****Suite End*****", lastStart, StringComparison.Ordinal);
+                if (lastEnd < 0)
+                {
+                    _log.WriteLog(
+                        "The previous run of this suite did not reach a clean exit — the device may have shut down or restarted, or the process was terminated, before it could finish. Resuming now.",
+                        "Startup",
+                        Log.Severity.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                try { _log.WriteLog($"Failed to check previous run status: {ex.Message}", "Startup", Log.Severity.Warning); } catch { }
             }
         }
     }

@@ -67,6 +67,7 @@ namespace SuiteExecutor
             {
                 // Startup
                 _action = action;
+                RegisterShutdownDetection();
                 if (IsNewerSuiteInFamilyAlreadyRunning())
                 {
                     _log.WriteLog("A newer version or revision of this suite family is already running, exiting this instance.", "Startup", Log.Severity.Info);
@@ -256,7 +257,6 @@ namespace SuiteExecutor
 
                 // Reverse process and service blocks
                 Unblocks();
-                _log.WriteLog($"*****Suite End*****", "Execution", Log.Severity.Info);
             }
         }
 

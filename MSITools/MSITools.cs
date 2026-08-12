@@ -207,6 +207,60 @@ namespace SuiteTools
             return result;
         }
 
+        public static MSIResult RepairMSI(string msiPath, string? logPath = null, List<MSIProp>? properties = null, string repairOptions = "aumsv", Action<string>? onRetryWaiting = null)
+        {
+            var result = new MSIResult();
+            if (string.IsNullOrWhiteSpace(msiPath))
+            {
+                result.Success = false;
+                result.ErrorMessage = "MSI file path is not specified.";
+                return result;
+            }
+            try
+            {
+                var args = $"/f{repairOptions} \"{msiPath}\" /q";
+                if (properties != null && properties.Count > 0)
+                {
+                    foreach (var prop in properties)
+                    {
+                        if (!string.IsNullOrWhiteSpace(prop.Name) && !string.IsNullOrWhiteSpace(prop.Value))
+                        {
+                            args += $" {prop.Name}={prop.Value}";
+                        }
+                    }
+                }
+                if (!string.IsNullOrWhiteSpace(logPath))
+                {
+                    args += $" /l*v \"{logPath}\"";
+                }
+
+                int exitCode = RunProcessWithRetry(() => new System.Diagnostics.Process
+                {
+                    StartInfo = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = GetMSIExecPath(),
+                        Arguments = args,
+                        WorkingDirectory = Path.GetDirectoryName(msiPath),
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                }, onRetryWaiting);
+                result.CommandRun = $"msiexec.exe {args}";
+                result.ExitCode = exitCode;
+                result.Success = exitCode == 0;
+                result.ErrorMessage = exitCode == 0 ? null :
+                    $"MSI repair failed with exit code {exitCode}. Error: {MSITools.GetMSIErrorDescription(exitCode)}";
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.ErrorMessage = $"Error repairing MSI package: {ex.Message}";
+            }
+            return result;
+        }
+
         public static MSIResult UninstallMSI(string removalCode, string? logPath, List<MSIProp>? properties = null, string? additionalParams = null, Action<string>? onRetryWaiting = null)
         {
             var result = new MSIResult();
