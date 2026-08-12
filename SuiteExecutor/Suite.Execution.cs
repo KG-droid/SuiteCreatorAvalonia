@@ -38,17 +38,24 @@ namespace SuiteExecutor
                 UpdateProgress(stagePercentage, !string.IsNullOrWhiteSpace(stage.Name) ? $"{_action}: {stage.Name}" : $"Suite {_action}: {_suiteConfig.BuildSettings.Name}");
 
                 PackageBase? package = ResolvePackage(stage);
+                bool executePackage = package != null && ShouldPackageExecute(package);
 
-                if (package != null && !ShouldPackageExecute(package))
+                // During Deployment, a skipped package (e.g. already detected) means this stage never
+                // really happens, so its before/after events are skipped too. During Removal, the events
+                // must still run even when the package itself won't be touched (not detected, a removal-only
+                // package with no reverse action, or RemoveOnSuiteRemoval disabled) - each event's own
+                // IsPermanent flag is what decides whether it gets reversed, not the fate of whatever
+                // package happens to share its stage.
+                if (package != null && !executePackage && _action != SuiteAction.Removal)
                 {
                     continue;
                 }
 
                 RunEventsForStage(allEvents, stage.Id, before: true);
 
-                if (package != null) // Not every stage is a package (SuiteStart/End for example), but if it is, execute it
+                if (executePackage)
                 {
-                    ExecutePackage(package);
+                    ExecutePackage(package!);
                 }
 
                 RunEventsForStage(allEvents, stage.Id, before: false);
