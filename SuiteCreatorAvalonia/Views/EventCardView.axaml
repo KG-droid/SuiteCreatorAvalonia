@@ -8,6 +8,7 @@
 	xmlns:eventCommon="using:SuiteCreatorAvalonia.Models.Common"
 	xmlns:rules="using:SuiteCreatorAvalonia.Models.Rules"
 	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:converters="using:SuiteCreatorAvalonia.Converters"
     mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="200"
     x:Class="SuiteCreatorAvalonia.Views.EventCardView"
     x:DataType="vm:EventCardViewModelBase"
@@ -24,6 +25,10 @@
 		<vm:EnvCardViewModel/>
 	</Design.DataContext>
 	
+	<UserControl.Resources>
+		<converters:CountGreaterThanOneConverter x:Key="CountGreaterThanOneConverter"/>
+	</UserControl.Resources>
+
 	<UserControl.Styles>
 		<Style Selector="FlyoutPresenter">
 			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}" />
@@ -136,6 +141,24 @@
 											</DataTemplate>
 										</ComboBox.ItemTemplate>
 									</ComboBox>
+								</DataTemplate>
+							</DataGridTemplateColumn.CellTemplate>
+						</DataGridTemplateColumn>
+						<DataGridTemplateColumn
+							Header="Remove"
+							Width="Auto">
+							<DataGridTemplateColumn.CellTemplate>
+								<DataTemplate>
+									<Button
+										Classes="IconButton"
+										Tag="Bin"
+										Command="{Binding $parent[UserControl].((vm:EventCardViewModelBase)DataContext).RemoveScheduleCommand}"
+										CommandParameter="{Binding}"
+										IsVisible="{Binding $parent[UserControl].((vm:EventCardViewModelBase)DataContext).Schedules.Count, Converter={StaticResource CountGreaterThanOneConverter}}"
+										Foreground="{DynamicResource BinButton}"
+										ToolTip.Tip="Remove this schedule"
+										services:Help.Title="Remove schedule"
+										services:Help.Text="Removes this Stage/Sequence/Condition row from the event's schedule."/>
 								</DataTemplate>
 							</DataGridTemplateColumn.CellTemplate>
 						</DataGridTemplateColumn>

@@ -108,5 +108,11 @@ namespace SuiteCreatorAvalonia.ViewModels
         {
             await this.ShowDialogAsync(new AdminExportViewModel());
         }
+
+        [RelayCommand]
+        private async Task ShowPopupConditionExamples()
+        {
+            await this.ShowDialogAsync(new PopupConditionExamplesViewModel());
+        }
     }
 }

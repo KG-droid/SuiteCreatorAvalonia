@@ -138,6 +138,13 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             Schedules.Add(schedule);
         }
 
+        [RelayCommand]
+        public void RemoveSchedule(Schedule schedule)
+        {
+            if (schedule == null || Schedules.Count <= 1) return;
+            Schedules.Remove(schedule);
+        }
+
         public abstract void LoadEvent(EventCore eventCore);
 
         public abstract void SaveEvent();

@@ -120,7 +120,7 @@
 					<!-- Popup Controls -->	
 					<Grid
 						RowDefinitions="Auto,Auto,Auto"
-						ColumnDefinitions="Auto,Auto,10,*">
+						ColumnDefinitions="Auto,Auto,10,*,Auto">
 					
 						<!-- Popup Preview controls -->
 						<TextBlock
@@ -200,6 +200,12 @@
 							TextWrapping="Wrap"
 							VerticalAlignment="Center"
 							Text="Enables you to specify a PowerShell script, where if it comes back as True then the popup will be enabled, else it will be disabled. If the script fails, it will default to enabled. The Script must Write-Output $True and $False only, not a null or any other value."/>
+						<Button
+							Grid.Row="2"
+							Grid.Column="4"
+							Content="See Examples..."
+							Command="{Binding ShowPopupConditionExamplesCommand}"
+							VerticalAlignment="Center"/>
 					</Grid>
 
 					<!-- PS Condition AvalonText -->

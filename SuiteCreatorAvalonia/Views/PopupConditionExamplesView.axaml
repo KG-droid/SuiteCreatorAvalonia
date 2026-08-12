@@ -1,0 +1,125 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	xmlns:AvaloniaEdit="using:AvaloniaEdit"
+	services:DialogManager.Register="{Binding}"
+    mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="760"
+    x:Class="SuiteCreatorAvalonia.Views.PopupConditionExamplesView"
+	x:DataType="vm:PopupConditionExamplesViewModel">
+
+	<Design.DataContext>
+		<vm:PopupConditionExamplesViewModel/>
+	</Design.DataContext>
+
+	<UserControl.Styles>
+		<Style Selector="TextBlock.ExampleHeading">
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="FontSize" Value="15"/>
+		</Style>
+		<Style Selector="TextBlock.ScriptLabel">
+			<Setter Property="FontWeight" Value="DemiBold"/>
+			<Setter Property="Margin" Value="0,6,0,2"/>
+		</Style>
+		<Style Selector="Border.ScriptBox">
+			<Setter Property="BorderBrush" Value="Gray"/>
+			<Setter Property="BorderThickness" Value="1"/>
+			<Setter Property="CornerRadius" Value="7"/>
+		</Style>
+		<Style Selector="AvaloniaEdit|TextEditor">
+			<Setter Property="IsReadOnly" Value="True"/>
+			<Setter Property="Margin" Value="10,10,36,10"/>
+			<Setter Property="MinHeight" Value="70"/>
+			<Setter Property="ShowLineNumbers" Value="True"/>
+		</Style>
+		<Style Selector="Button.CopyScriptBtn">
+			<Setter Property="Tag" Value="ContentCopy"/>
+			<Setter Property="ToolTip.Tip" Value="Copy script to clipboard"/>
+			<Setter Property="HorizontalAlignment" Value="Right"/>
+			<Setter Property="VerticalAlignment" Value="Top"/>
+			<Setter Property="Margin" Value="0,4,4,0"/>
+		</Style>
+	</UserControl.Styles>
+
+	<Grid RowDefinitions="Auto,*" Width="820">
+		<Grid Grid.Row="0" Margin="20,16,12,0" ColumnDefinitions="*,Auto">
+			<TextBlock Grid.Column="0" FontWeight="Bold" FontSize="16" Text="Popup Condition Scripts - Examples" VerticalAlignment="Center"/>
+			<Button
+				Grid.Column="1"
+				Classes="IconButton"
+				Tag="Close"
+				Command="{Binding CloseCommand}"
+				ToolTip.Tip="Close"
+				VerticalAlignment="Top"/>
+		</Grid>
+
+		<ScrollViewer Grid.Row="1" MaxHeight="780">
+		<StackPanel Margin="20,4,20,20" Spacing="6" Width="780">
+			<TextBlock
+				TextWrapping="Wrap"
+				Text="There are two condition scripts that control whether a popup shows: the Global Popup Condition (set by your administrator in Settings, applies to every suite) and the popup's own Condition script (set per-suite on this page). Both are optional, and if both are set both must return $True for the popup to show."/>
+
+			<!-- Example 1: Global only -->
+			<TextBlock Classes="ExampleHeading" Text="Example 1 - Global condition only" Margin="0,16,0,0"/>
+			<TextBlock TextWrapping="Wrap" Text="An admin never wants popups appearing on unattended kiosk/robot devices, no matter which suite is running. This is set once, in Settings, and no individual suite needs its own condition."/>
+			<TextBlock Classes="ScriptLabel" Text="Global Popup Condition (Settings, admin-controlled):"/>
+			<Grid>
+				<Border Classes="ScriptBox">
+					<AvaloniaEdit:TextEditor x:Name="GlobalOnly_Global_Editor" Document="{Binding GlobalOnly_Global}"/>
+				</Border>
+				<Button Classes="IconButton CopyScriptBtn" Command="{Binding CopyScriptCommand}" CommandParameter="{Binding GlobalOnly_Global.Text}"/>
+			</Grid>
+			<TextBlock Classes="ScriptLabel" Text="Popup Condition (this suite's Popups page):"/>
+			<Grid>
+				<Border Classes="ScriptBox">
+					<AvaloniaEdit:TextEditor x:Name="GlobalOnly_Popup_Editor" Document="{Binding GlobalOnly_Popup}"/>
+				</Border>
+				<Button Classes="IconButton CopyScriptBtn" Command="{Binding CopyScriptCommand}" CommandParameter="{Binding GlobalOnly_Popup.Text}"/>
+			</Grid>
+			<TextBlock TextWrapping="Wrap" FontStyle="Italic" Text="Result: the popup shows on every device, except ones named ROBOT*."/>
+
+			<!-- Example 2: Popup only -->
+			<TextBlock Classes="ExampleHeading" Text="Example 2 - Popup condition only" Margin="0,20,0,0"/>
+			<TextBlock TextWrapping="Wrap" Text="A packager building one particular suite wants its upgrade popup to only appear while a VPN is connected. This is specific to this suite, so it's set as the Condition script on the Popups page and left unset globally."/>
+			<TextBlock Classes="ScriptLabel" Text="Global Popup Condition (Settings, admin-controlled):"/>
+			<Grid>
+				<Border Classes="ScriptBox">
+					<AvaloniaEdit:TextEditor x:Name="PopupOnly_Global_Editor" Document="{Binding PopupOnly_Global}"/>
+				</Border>
+				<Button Classes="IconButton CopyScriptBtn" Command="{Binding CopyScriptCommand}" CommandParameter="{Binding PopupOnly_Global.Text}"/>
+			</Grid>
+			<TextBlock Classes="ScriptLabel" Text="Popup Condition (this suite's Popups page):"/>
+			<Grid>
+				<Border Classes="ScriptBox">
+					<AvaloniaEdit:TextEditor x:Name="PopupOnly_Popup_Editor" Document="{Binding PopupOnly_Popup}"/>
+				</Border>
+				<Button Classes="IconButton CopyScriptBtn" Command="{Binding CopyScriptCommand}" CommandParameter="{Binding PopupOnly_Popup.Text}"/>
+			</Grid>
+			<TextBlock TextWrapping="Wrap" FontStyle="Italic" Text="Result: the popup only shows on this suite when a VPN connection is active."/>
+
+			<!-- Example 3: Both -->
+			<TextBlock Classes="ExampleHeading" Text="Example 3 - Both together" Margin="0,20,0,0"/>
+			<TextBlock TextWrapping="Wrap" Text="Both scripts can be in effect at once: the admin's global rule still applies to every suite, and this suite adds its own extra rule on top. Since both must return $True, the popup only shows when neither rule blocks it."/>
+			<TextBlock Classes="ScriptLabel" Text="Global Popup Condition (Settings, admin-controlled):"/>
+			<Grid>
+				<Border Classes="ScriptBox">
+					<AvaloniaEdit:TextEditor x:Name="Both_Global_Editor" Document="{Binding Both_Global}"/>
+				</Border>
+				<Button Classes="IconButton CopyScriptBtn" Command="{Binding CopyScriptCommand}" CommandParameter="{Binding Both_Global.Text}"/>
+			</Grid>
+			<TextBlock Classes="ScriptLabel" Text="Popup Condition (this suite's Popups page):"/>
+			<Grid>
+				<Border Classes="ScriptBox">
+					<AvaloniaEdit:TextEditor x:Name="Both_Popup_Editor" Document="{Binding Both_Popup}"/>
+				</Border>
+				<Button Classes="IconButton CopyScriptBtn" Command="{Binding CopyScriptCommand}" CommandParameter="{Binding Both_Popup.Text}"/>
+			</Grid>
+			<TextBlock TextWrapping="Wrap" FontStyle="Italic" Text="Result: the popup only shows when the device is not a ROBOT* machine AND a VPN connection is active. If either script returns $False, the popup is skipped."/>
+		</StackPanel>
+		</ScrollViewer>
+	</Grid>
+
+</UserControl>
