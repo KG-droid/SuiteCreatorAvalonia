@@ -16,6 +16,7 @@ namespace SuiteCreatorAvalonia.ViewModels
     internal partial class PackageMSIxRemoveDetailsViewModel : PackageDetailsBaseViewModel
     {
         private bool _isLoading = false;
+        private bool _isResolvingRequirementRuleSet = false;
         private SuiteCoreManager _suiteCoreManager;
 
         [ObservableProperty]
@@ -73,18 +74,16 @@ namespace SuiteCreatorAvalonia.ViewModels
             IEnumerable<RuleBase>? reqRules = RequirementRuleBuilder.Rules;
             if (reqRules != null && reqRules.Count() > 0)
             {
-                RuleSet ruleSet;
                 if (msixPackage.RequirementRuleSetId is not Guid)
                 {
-                    ruleSet = _suiteCoreManager.NewRuleSet(Name + " (Pkg Req)");
-                    msixPackage.RequirementRuleSetId = ruleSet.Id;
+                    ResolveAndLinkRequirementRuleSetAsync(msixPackage);
                 }
                 else
                 {
-                    ruleSet = _suiteCoreManager.GetRuleSet((Guid)msixPackage.RequirementRuleSetId);
+                    RuleSet ruleSet = _suiteCoreManager.GetRuleSet((Guid)msixPackage.RequirementRuleSetId);
+                    ruleSet.Rules = RequirementRuleBuilder.Rules;
+                    _suiteCoreManager.UpdateRuleSet(ruleSet);
                 }
-                ruleSet.Rules = RequirementRuleBuilder.Rules;
-                _suiteCoreManager.UpdateRuleSet(ruleSet);
             }
             else if (msixPackage.RequirementRuleSetId is Guid existingGuid)
             {
@@ -109,6 +108,33 @@ namespace SuiteCreatorAvalonia.ViewModels
 
             msixPackage.Name = Name;
             _suiteCoreManager.UpdatePackage(msixPackage);
+        }
+
+        private async void ResolveAndLinkRequirementRuleSetAsync(MSIxRemoval msixPackage)
+        {
+            if (_isResolvingRequirementRuleSet) return;
+            _isResolvingRequirementRuleSet = true;
+            try
+            {
+                (RuleSet ruleSet, bool wasLinked) = await PackageRuleLinker.ResolvePackageRuleSetAsync(this, _suiteCoreManager, Name ?? string.Empty, SuiteCoreManager.PkgRequirementSuffix);
+                msixPackage.RequirementRuleSetId = ruleSet.Id;
+                if (wasLinked)
+                {
+                    // The existing rule's own conditions win - load them into the builder instead of overwriting them.
+                    RequirementRuleBuilder.LoadRuleSet(ruleSet);
+                }
+                else
+                {
+                    ruleSet.Rules = RequirementRuleBuilder.Rules;
+                    _suiteCoreManager.UpdateRuleSet(ruleSet);
+                }
+                msixPackage.Name = Name;
+                _suiteCoreManager.UpdatePackage(msixPackage);
+            }
+            finally
+            {
+                _isResolvingRequirementRuleSet = false;
+            }
         }
 
         [RelayCommand]

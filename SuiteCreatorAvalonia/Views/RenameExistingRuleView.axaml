@@ -1,0 +1,23 @@
+<UserControl
+xmlns="https://github.com/avaloniaui"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+mc:Ignorable="d" d:DesignWidth="420" d:DesignHeight="180"
+x:Class="SuiteCreatorAvalonia.Views.RenameExistingRuleView"
+x:DataType="vm:RenameExistingRuleViewModel">
+<Design.DataContext>
+<vm:RenameExistingRuleViewModel/>
+</Design.DataContext>
+<StackPanel Margin="20" Spacing="14" Width="380">
+<TextBlock FontWeight="Bold" FontSize="16" Text="Rename Existing Rule"/>
+<TextBlock TextWrapping="Wrap" Text="{Binding Message}"/>
+<TextBox Text="{Binding NewName}" Watermark="New rule name..."/>
+<TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+<Button Content="Cancel" Command="{Binding CancelCommand}"/>
+<Button Content="Rename" FontWeight="Bold" Command="{Binding ConfirmCommand}"/>
+</StackPanel>
+</StackPanel>
+</UserControl>

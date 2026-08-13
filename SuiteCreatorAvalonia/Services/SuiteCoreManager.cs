@@ -395,10 +395,43 @@ namespace SuiteCreatorAvalonia.Services
             var matching = _suiteConfig.Packages.Where(p => p.Id.Equals(package.Id)).FirstOrDefault();
             if (matching != null)
             {
-                _suiteConfig.RuleSets.Where(r => r.Id == matching.RequirementRuleSetId)
-                    .ToList()
-                    .ForEach(r => _suiteConfig.RuleSets.Remove(r));
+                // A package can also be used as a schedule's stage point (run before/after this specific
+                // package) - block removal rather than silently detaching those schedules from underneath the user.
+                List<EventCore> eventsUsingAsStage = GetEventsUsingPackageAsStage(matching.Id);
+                if (eventsUsingAsStage.Count > 0)
+                {
+                    List<string> eventTypeNames = eventsUsingAsStage
+                        .Select(e => EventTabMappings.GetEventTabByModelType(e.GetType())?.Header ?? e.GetType().Name)
+                        .Distinct()
+                        .ToList();
+                    throw new InvalidOperationException($"Cannot remove package \"{matching.Name}\" as it is used as a run point by one or more {string.Join(", ", eventTypeNames)} events.");
+                }
+
+                List<(Guid Id, string Suffix)> candidateRuleSets = new();
+                if (matching.RequirementRuleSetId is Guid reqRuleSetId) candidateRuleSets.Add((reqRuleSetId, PkgRequirementSuffix));
+                if (matching is OtherBase otherPkg && otherPkg.DetectionRuleSetId is Guid detRuleSetId) candidateRuleSets.Add((detRuleSetId, PkgDetectionSuffix));
+
                 _suiteConfig.Packages.Remove(matching);
+
+                foreach ((Guid ruleSetId, string suffix) in candidateRuleSets)
+                {
+                    RuleSet? ruleSet = _suiteConfig.RuleSets.FirstOrDefault(r => r.Id == ruleSetId);
+                    if (ruleSet == null) continue;
+
+                    (List<PackageBase> linkedPackages, List<EventCore> linkedEvents) = GetRuleSetLinks(ruleSetId);
+                    if (linkedPackages.Count == 0 && linkedEvents.Count == 0)
+                    {
+                        // Not used by anything else - safe to remove entirely.
+                        _suiteConfig.RuleSets.Remove(ruleSet);
+                    }
+                    else if (linkedPackages.Count == 0 && ruleSet.Name != null && ruleSet.Name.EndsWith(suffix, StringComparison.Ordinal))
+                    {
+                        // Still used by an event but no longer owned by any package - drop the package-linkage
+                        // suffix so a future package with the same name doesn't silently take over this rule.
+                        ruleSet.Name = ruleSet.Name.Substring(0, ruleSet.Name.Length - suffix.Length);
+                    }
+                }
+
                 ProjectChanged?.Invoke(this, EventArgs.Empty);
             }
         }
@@ -516,15 +549,9 @@ namespace SuiteCreatorAvalonia.Services
             }
         }
 
-        private void ValidateRuleRemoval(RuleSet ruleSet)
+        /// <summary>Every event, of any type, currently in the suite.</summary>
+        private IEnumerable<EventCore> GetAllEvents()
         {
-            // Check if this RuleSet is used by any package
-            var usedInPackages = _suiteConfig.Packages.Where(p => p.RequirementRuleSetId == ruleSet.Id || (p is OtherBase other && other.DetectionRuleSetId == ruleSet.Id));
-            if (usedInPackages != null && usedInPackages.Count() > 0)
-            {
-                throw new InvalidOperationException($"Cannot remove RuleSet as it is being used by the following packages: {string.Join(',', usedInPackages.Select(p => p.Name))}");
-            }
-            // Check if any events are using this RuleSet
             foreach (SuiteProperty prop in Enum.GetValues<SuiteProperty>().Where(e => e.ToString().EndsWith("Events")))
             {
                 PropertyInfo? propertyInfo = _suiteConfig.GetType().GetProperty(prop.ToString());
@@ -534,12 +561,27 @@ namespace SuiteCreatorAvalonia.Services
                     propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(ObservableCollection<>) &&
                     typeof(EventCore).IsAssignableFrom(propertyInfo.PropertyType.GetGenericArguments()[0]))
                 {
-                    var usedInEvents = eCoreCollection.Cast<EventCore>().Where(c => c.Schedules.Any(s => s.Condition != null && s.Condition?.Id == ruleSet.Id));
-                    if (usedInEvents != null && usedInEvents.Count() > 0)
+                    foreach (EventCore evt in eCoreCollection.Cast<EventCore>())
                     {
-                        throw new InvalidOperationException($"Cannot remove RuleSet as it is being used by one or more {prop.ToString()}");
+                        yield return evt;
                     }
                 }
+            }
+        }
+
+        private void ValidateRuleRemoval(RuleSet ruleSet)
+        {
+            // Check if this RuleSet is used by any package
+            var usedInPackages = _suiteConfig.Packages.Where(p => p.RequirementRuleSetId == ruleSet.Id || (p is OtherBase other && other.DetectionRuleSetId == ruleSet.Id));
+            if (usedInPackages != null && usedInPackages.Count() > 0)
+            {
+                throw new InvalidOperationException($"Cannot remove RuleSet as it is being used by the following packages: {string.Join(',', usedInPackages.Select(p => p.Name))}");
+            }
+            // Check if any events are using this RuleSet
+            var usedInEvents = GetAllEvents().Where(c => c.Schedules.Any(s => s.Condition != null && s.Condition?.Id == ruleSet.Id));
+            if (usedInEvents != null && usedInEvents.Count() > 0)
+            {
+                throw new InvalidOperationException($"Cannot remove RuleSet as it is being used by one or more events");
             }
         }
 
@@ -569,29 +611,48 @@ namespace SuiteCreatorAvalonia.Services
             }
         }
 
+        /// <summary>Finds a RuleSet with this exact name that isn't currently owned by any package (e.g. kept alive only by an event after its owning package was deleted).</summary>
+        internal RuleSet? FindUnlinkedRuleSetByName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return null;
+            return _suiteConfig.RuleSets.FirstOrDefault(r =>
+                r.Name != null &&
+                r.Name.Equals(name, StringComparison.OrdinalIgnoreCase) &&
+                !_suiteConfig.Packages.Any(p => p.RequirementRuleSetId == r.Id || (p is OtherBase other && other.DetectionRuleSetId == r.Id)));
+        }
+
+        internal void RenameRuleSet(Guid ruleSetId, string newName)
+        {
+            RuleSet? match = _suiteConfig.RuleSets.FirstOrDefault(r => r.Id == ruleSetId);
+            if (match == null) return;
+            match.Name = newName;
+            ProjectChanged?.Invoke(this, EventArgs.Empty);
+            CheckIfMatchesSaved();
+        }
+
         internal (List<PackageBase> Packages, List<EventCore> Events) GetRuleSetLinks(Guid ruleSetId)
         {
             List<PackageBase> linkedPackages = _suiteConfig.Packages
                 .Where(p => p.RequirementRuleSetId == ruleSetId || (p is OtherBase other && other.DetectionRuleSetId == ruleSetId))
                 .ToList();
 
-            List<EventCore> linkedEvents = new List<EventCore>();
-            foreach (SuiteProperty prop in Enum.GetValues<SuiteProperty>().Where(e => e.ToString().EndsWith("Events")))
-            {
-                PropertyInfo? propertyInfo = _suiteConfig.GetType().GetProperty(prop.ToString());
-                if (propertyInfo == null) continue;
-                if (propertyInfo.GetValue(_suiteConfig) is System.Collections.IEnumerable eCoreCollection &&
-                    propertyInfo.PropertyType.IsGenericType &&
-                    propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(ObservableCollection<>) &&
-                    typeof(EventCore).IsAssignableFrom(propertyInfo.PropertyType.GetGenericArguments()[0]))
-                {
-                    linkedEvents.AddRange(eCoreCollection.Cast<EventCore>()
-                        .Where(c => c.Schedules.Any(s => s.Condition != null && s.Condition.Id == ruleSetId)));
-                }
-            }
+            List<EventCore> linkedEvents = GetAllEvents()
+                .Where(c => c.Schedules.Any(s => s.Condition != null && s.Condition.Id == ruleSetId))
+                .ToList();
 
             return (linkedPackages, linkedEvents);
         }
+
+        /// <summary>Every event with a schedule that runs relative to the given package's stage point (rather than Start/End).</summary>
+        internal List<EventCore> GetEventsUsingPackageAsStage(Guid packageId)
+        {
+            return GetAllEvents()
+                .Where(c => c.Schedules.Any(s => s.EventStageId == packageId))
+                .ToList();
+        }
+
+        internal const string PkgRequirementSuffix = " (Pkg Req)";
+        internal const string PkgDetectionSuffix = " (Pkg Dect)";
 
         private void UpdatePackageBasedRuleSetNames()
         {
@@ -604,17 +665,17 @@ namespace SuiteCreatorAvalonia.Services
                 if (requirementRuleSetId is Guid reqGuid)
                 {
                     var matchingRuleSet = _suiteConfig.RuleSets.Where(r => r.Id == reqGuid).First();
-                    if (matchingRuleSet.Name == null || !matchingRuleSet.Name.Equals($"{pkg.Name} (Pkg Req)"))
+                    if (matchingRuleSet.Name == null || !matchingRuleSet.Name.Equals($"{pkg.Name}{PkgRequirementSuffix}"))
                     {
-                        matchingRuleSet.Name = $"{pkg.Name} (Pkg Req)";
+                        matchingRuleSet.Name = $"{pkg.Name}{PkgRequirementSuffix}";
                     }
                 }
                 else if (detectionRuleSetId is Guid dectGuid)
                 {
                     var matchingRuleSet = _suiteConfig.RuleSets.Where(r => r.Id == dectGuid).First();
-                    if (matchingRuleSet.Name == null || !matchingRuleSet.Name.Equals($"{pkg.Name} (Pkg Dect)"))
+                    if (matchingRuleSet.Name == null || !matchingRuleSet.Name.Equals($"{pkg.Name}{PkgDetectionSuffix}"))
                     {
-                        matchingRuleSet.Name = $"{pkg.Name} (Pkg Req)";
+                        matchingRuleSet.Name = $"{pkg.Name}{PkgDetectionSuffix}";
                     }
                 }
             }

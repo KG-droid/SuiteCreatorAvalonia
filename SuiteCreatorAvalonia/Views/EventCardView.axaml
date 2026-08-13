@@ -8,6 +8,7 @@
 	xmlns:eventCommon="using:SuiteCreatorAvalonia.Models.Common"
 	xmlns:rules="using:SuiteCreatorAvalonia.Models.Rules"
 	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:converters="using:SuiteCreatorAvalonia.Converters"
     mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="200"
     x:Class="SuiteCreatorAvalonia.Views.EventCardView"
     x:DataType="vm:EventCardViewModelBase"
@@ -24,6 +25,10 @@
 		<vm:EnvCardViewModel/>
 	</Design.DataContext>
 	
+	<UserControl.Resources>
+		<converters:CountGreaterThanOneConverter x:Key="CountGreaterThanOneConverter"/>
+	</UserControl.Resources>
+
 	<UserControl.Styles>
 		<Style Selector="FlyoutPresenter">
 			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}" />
@@ -139,6 +144,24 @@
 								</DataTemplate>
 							</DataGridTemplateColumn.CellTemplate>
 						</DataGridTemplateColumn>
+						<DataGridTemplateColumn
+							Header="Remove"
+							Width="Auto">
+							<DataGridTemplateColumn.CellTemplate>
+								<DataTemplate>
+									<Button
+										Classes="IconButton"
+										Tag="Bin"
+										Command="{Binding $parent[UserControl].((vm:EventCardViewModelBase)DataContext).RemoveScheduleCommand}"
+										CommandParameter="{Binding}"
+										IsVisible="{Binding $parent[UserControl].((vm:EventCardViewModelBase)DataContext).Schedules.Count, Converter={StaticResource CountGreaterThanOneConverter}}"
+										Foreground="{DynamicResource BinButton}"
+										ToolTip.Tip="Remove this schedule"
+										services:Help.Title="Remove schedule"
+										services:Help.Text="Removes this Stage/Sequence/Condition row from the event's schedule."/>
+								</DataTemplate>
+							</DataGridTemplateColumn.CellTemplate>
+						</DataGridTemplateColumn>
 					</DataGrid.Columns>
 				</DataGrid>
 			
@@ -183,6 +206,35 @@
 						Content="{Binding CardInnerView}"
 						Grid.Column="1"/>
 				</Grid>
+			</Border>
+
+			<!-- Highlight pulse, shown briefly after navigating here from elsewhere -->
+			<Border
+				IsHitTestVisible="False"
+				IsVisible="{Binding IsHighlighted}"
+				CornerRadius="5"
+				BorderThickness="3"
+				BorderBrush="{DynamicResource SystemBaseHighColor}">
+				<Border.Styles>
+					<Style Selector="Border">
+						<Style.Animations>
+							<Animation
+								Duration="0:0:0.75"
+								IterationCount="Infinite"
+								Easing="SineEaseInOut">
+								<KeyFrame Cue="0%">
+									<Setter Property="Opacity" Value="0.15"/>
+								</KeyFrame>
+								<KeyFrame Cue="50%">
+									<Setter Property="Opacity" Value="1"/>
+								</KeyFrame>
+								<KeyFrame Cue="100%">
+									<Setter Property="Opacity" Value="0.15"/>
+								</KeyFrame>
+							</Animation>
+						</Style.Animations>
+					</Style>
+				</Border.Styles>
 			</Border>
 
 			<!-- Delete Selector -->

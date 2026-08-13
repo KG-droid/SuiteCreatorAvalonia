@@ -242,6 +242,12 @@ namespace SuiteCreatorAvalonia.ViewModels
             SuiteLogoBase64 = ImageLoader.GetBase64(SuiteLogo);
         }
 
+        [RelayCommand]
+        private async Task ShowPopupConditionExamples()
+        {
+            await this.ShowDialogAsync(new PopupConditionExamplesViewModel());
+        }
+
         private void LoadPopupSettings()
         {
             _isLoading = true;

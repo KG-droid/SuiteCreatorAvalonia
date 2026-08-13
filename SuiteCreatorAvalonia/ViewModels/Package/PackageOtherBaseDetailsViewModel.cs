@@ -30,6 +30,7 @@ namespace SuiteCreatorAvalonia.ViewModels
         protected SuiteCoreManager _suiteCoreManager;
         protected AppSettingsControl _settingsCtrl;
         protected bool _isLoading = false;
+        private bool _isResolvingDetectionRuleSet = false;
 
         [ObservableProperty]
         private FileTreeViewModel _fileTreeVM;
@@ -394,18 +395,16 @@ namespace SuiteCreatorAvalonia.ViewModels
             IEnumerable<RuleBase>? dectRules = DetectionBuilder.Rules;
             if (dectRules != null && dectRules.Count() > 0)
             {
-                RuleSet ruleSet;
                 if (otherCore.DetectionRuleSetId is not Guid)
                 {
-                    ruleSet = _suiteCoreManager.NewRuleSet(Name + " (Pkg Dect)");
-                    otherCore.DetectionRuleSetId = ruleSet.Id;
+                    ResolveAndLinkDetectionRuleSetAsync(otherCore);
                 }
                 else
                 {
-                    ruleSet = _suiteCoreManager.GetRuleSet((Guid)otherCore.DetectionRuleSetId);
+                    RuleSet ruleSet = _suiteCoreManager.GetRuleSet((Guid)otherCore.DetectionRuleSetId);
+                    ruleSet.Rules = DetectionBuilder.Rules;
+                    _suiteCoreManager.UpdateRuleSet(ruleSet);
                 }
-                ruleSet.Rules = DetectionBuilder.Rules;
-                _suiteCoreManager.UpdateRuleSet(ruleSet);
             }
             else if (otherCore.DetectionRuleSetId is Guid existingGuid)
             {
@@ -424,6 +423,32 @@ namespace SuiteCreatorAvalonia.ViewModels
                 }
             }
             _suiteCoreManager.UpdatePackage(otherCore);
+        }
+
+        private async void ResolveAndLinkDetectionRuleSetAsync(OtherCore otherCore)
+        {
+            if (_isResolvingDetectionRuleSet) return;
+            _isResolvingDetectionRuleSet = true;
+            try
+            {
+                (RuleSet ruleSet, bool wasLinked) = await PackageRuleLinker.ResolvePackageRuleSetAsync(this, _suiteCoreManager, Name ?? string.Empty, SuiteCoreManager.PkgDetectionSuffix);
+                otherCore.DetectionRuleSetId = ruleSet.Id;
+                if (wasLinked)
+                {
+                    // The existing rule's own conditions win - load them into the builder instead of overwriting them.
+                    DetectionBuilder.LoadRuleSet(ruleSet);
+                }
+                else
+                {
+                    ruleSet.Rules = DetectionBuilder.Rules;
+                    _suiteCoreManager.UpdateRuleSet(ruleSet);
+                }
+                _suiteCoreManager.UpdatePackage(otherCore);
+            }
+            finally
+            {
+                _isResolvingDetectionRuleSet = false;
+            }
         }
 
         private void AttachMSIRemoveHandler(MSIRemoveItemViewModel vm)

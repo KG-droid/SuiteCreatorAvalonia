@@ -6,6 +6,7 @@ using SuiteTools;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 using static SuiteTools.UserTools.ProcessExtensions;
 using RestartBehaviorEnum = SuiteCreatorAvalonia.Enums.RestartBehavior;
 
@@ -118,13 +119,15 @@ namespace SuiteOperations.Package
             {
                 _log.WriteLog($"Uninstalling MSI {(item.IsProductRemoval ? "Product" : "Family")}: {item.Code}", "OtherPkg", Log.Severity.Info);
                 var result = item.IsProductRemoval
-                    ? MSITools.UninstallMSI(item.Code, item.LogPath, null, item.AdditionalParams)
-                    : MSITools.UninstallMSIFamily(item.Code, item.LogPath, null, item.AdditionalParams);
+                    ? MSITools.UninstallMSI(item.Code, item.LogPath, null, item.AdditionalParams, msg => _log.WriteLog(msg, "OtherPkg", Log.Severity.Warning))
+                    : MSITools.UninstallMSIFamily(item.Code, item.LogPath, null, item.AdditionalParams, msg => _log.WriteLog(msg, "OtherPkg", Log.Severity.Warning));
 
                 _log.WriteLog($"Uninstall command: {result.CommandRun}", "OtherPkg", Log.Severity.Info);
                 if (!result.Success)
                 {
                     _log.WriteLog($"Uninstall error: {result.ErrorMessage}", "OtherPkg", Log.Severity.Error);
+                    if (result.ExitCode == MSITools.AnotherInstallInProgressExitCode)
+                        throw new SuiteExitCodeException(result.ExitCode, $"MSI Uninstall failed: {result.ErrorMessage}");
                     throw new Exception("MSI Uninstall failed.");
                 }
             }
@@ -145,11 +148,13 @@ namespace SuiteOperations.Package
             {
                 _log.WriteLog($"Uninstalling product: {prod.DisplayName} ({prod.ProductCode})", "OtherPkg", Log.Severity.Info);
                 string? logPath = BuildRegexRemovalLogPath(regex, prod);
-                var result = MSITools.UninstallMSI(prod.ProductCode, logPath, null, regex.RemovalParams);
+                var result = MSITools.UninstallMSI(prod.ProductCode, logPath, null, regex.RemovalParams, msg => _log.WriteLog(msg, "OtherPkg", Log.Severity.Warning));
                 _log.WriteLog($"Uninstall command: {result.CommandRun}", "OtherPkg", Log.Severity.Info);
                 if (!result.Success)
                 {
                     _log.WriteLog($"Uninstall error: {result.ErrorMessage}", "OtherPkg", Log.Severity.Error);
+                    if (result.ExitCode == MSITools.AnotherInstallInProgressExitCode)
+                        throw new SuiteExitCodeException(result.ExitCode, $"Regex Uninstall failed: {result.ErrorMessage}");
                     throw new Exception("Regex Uninstall failed.");
                 }
             }
@@ -278,6 +283,31 @@ namespace SuiteOperations.Package
             string loggedArgs = SecureParams ? "***" : args;
             _log.WriteLog($"Command to run: {exec} {loggedArgs}", "OtherPkg", Log.Severity.Info);
 
+            int exitCode = RunSingleProcess(exec, workingDir, args);
+            exitCode = WaitOutAnotherInstallInProgress(exitCode, () => RunSingleProcess(exec, workingDir, args));
+
+            ActionType? customAction = ExitCodes?.FirstOrDefault(c => c.Code == exitCode)?.Action;
+            if (customAction != null)
+            {
+                _log.WriteLog($"The command returned a custom exit code of: {exitCode}", "OtherPkg", Log.Severity.Info);
+                return ApplyRestartBehavior(customAction.Value);
+            }
+            else if (exitCode == MSITools.AnotherInstallInProgressExitCode)
+            {
+                // No custom exit code mapping claimed 1618, and retries were exhausted - many "Other" installers
+                // are just wrappers around an embedded MSI, so this is treated the same as a direct MSI package:
+                // the whole suite must abort rather than silently continuing.
+                throw new SuiteExitCodeException(exitCode, $"Command failed: another installation was still in progress (exit code {exitCode}) after {MSITools.MaxAnotherInstallInProgressRetries} retries.");
+            }
+            else
+            {
+                _log.WriteLog($"The command returned a exit code of: {exitCode}", "OtherPkg", Log.Severity.Info);
+                return ApplyRestartBehavior(GetDefaultActionType(exitCode));
+            }
+        }
+
+        private static int RunSingleProcess(string exec, string? workingDir, string args)
+        {
             using Process process = new()
             {
                 StartInfo = new()
@@ -295,19 +325,29 @@ namespace SuiteOperations.Package
 
             process.Start();
             process.WaitForExit();
+            return process.ExitCode;
+        }
 
+        // 1618 (ERROR_INSTALL_ALREADY_RUNNING) is an MSI exit code, but many "Other" package commands are just
+        // exe wrappers around an embedded MSI and propagate its exit code, so this waits it out the same way
+        // MSITools does for direct MSI packages. Skipped entirely if the package has its own explicit exit code
+        // mapping for 1618 - that's a deliberate override and must not be second-guessed with a retry.
+        private int WaitOutAnotherInstallInProgress(int exitCode, Func<int> rerun)
+        {
+            if (ExitCodes?.Any(c => c.Code == MSITools.AnotherInstallInProgressExitCode) == true)
+            {
+                return exitCode;
+            }
 
-            ActionType? customAction = ExitCodes?.FirstOrDefault(c => c.Code == process.ExitCode)?.Action;
-            if (customAction != null)
+            int attempt = 0;
+            while (exitCode == MSITools.AnotherInstallInProgressExitCode && attempt < MSITools.MaxAnotherInstallInProgressRetries)
             {
-                _log.WriteLog($"The command returned a custom exit code of: {process.ExitCode}", "OtherPkg", Log.Severity.Info);
-                return ApplyRestartBehavior(customAction.Value);
+                attempt++;
+                _log.WriteLog($"Another installation is already in progress (exit code {MSITools.AnotherInstallInProgressExitCode}); waiting {MSITools.AnotherInstallInProgressRetryDelay.TotalMinutes:0} minute(s) before retry {attempt}/{MSITools.MaxAnotherInstallInProgressRetries}", "OtherPkg", Log.Severity.Warning);
+                Thread.Sleep(MSITools.AnotherInstallInProgressRetryDelay);
+                exitCode = rerun();
             }
-            else 
-            {
-                _log.WriteLog($"The command returned a exit code of: {process.ExitCode}", "OtherPkg", Log.Severity.Info);
-                return ApplyRestartBehavior(GetDefaultActionType(process.ExitCode));
-            }
+            return exitCode;
         }
 
         private static char? FindFreeDriveLetter()
@@ -338,29 +378,10 @@ namespace SuiteOperations.Package
             string loggedArgs = SecureParams ? "***" : args;
             _log.WriteLog($"Per-user command to run: {exec} {loggedArgs}", "OtherPkg", Log.Severity.Info);
             List<ActionType> returnActions = new();
-            List<ImpersonatedProcessResult>? execResults = null;
-            if (!LegacyLongFilePath)
-            {
-                execResults = StartProcessAsAllUsers(exec, args, Path.GetDirectoryName(exec), isWindowVisibleToUser, true);
-            }
-            else
-            {
-                // subst drives are per-session, so the virtual drive must be created in the current (SYSTEM) session
-                // before impersonating users, and the remapped path passed through so each user process uses it.
-                char substDrive = FindFreeDriveLetter() ?? throw new Exception("No free drive letter available to create a virtual drive for legacy long file path support.");
-                string execDir = Path.GetDirectoryName(exec) ?? throw new Exception("Cannot determine the directory of the executable.");
-                SubstDrive(substDrive, execDir);
-                string remappedExec = $"{substDrive}:\\{Path.GetFileName(exec)}";
 
-                try
-                {
-                    execResults = StartProcessAsAllUsers(remappedExec, args, $"{substDrive}:\\", isWindowVisibleToUser, true);
-                }
-                finally
-                {
-                    UnsubstDrive(substDrive);
-                }
-            }
+            List<ImpersonatedProcessResult> execResults = RunPerUserProcessOnce(exec, args, isWindowVisibleToUser);
+            execResults = WaitOutAnotherInstallInProgressPerUser(execResults, () => RunPerUserProcessOnce(exec, args, isWindowVisibleToUser));
+
             foreach (var result in execResults)
             {
                 ActionType? customAction = ExitCodes?.FirstOrDefault(c => c.Code == result.ExitCode)?.Action;
@@ -369,13 +390,62 @@ namespace SuiteOperations.Package
                     _log.WriteLog($"The command returned a custom exit code of: {result.ExitCode}, for user: {result.UserName}", "OtherPkg", Log.Severity.Info);
                     returnActions.Add(ApplyRestartBehavior(customAction.Value));
                 }
-                else 
+                else if (result.ExitCode == MSITools.AnotherInstallInProgressExitCode)
+                {
+                    throw new SuiteExitCodeException(result.ExitCode, $"Command failed for user {result.UserName}: another installation was still in progress (exit code {result.ExitCode}) after {MSITools.MaxAnotherInstallInProgressRetries} retries.");
+                }
+                else
                 {
                     _log.WriteLog($"The command returned an exit code of: {result.ExitCode}, for user: {result.UserName}", "OtherPkg", Log.Severity.Info);
                     returnActions.Add(ApplyRestartBehavior(GetDefaultActionType(result.ExitCode)));
                 }
             }
             return returnActions;
+        }
+
+        private List<ImpersonatedProcessResult> RunPerUserProcessOnce(string exec, string args, bool isWindowVisibleToUser)
+        {
+            if (!LegacyLongFilePath)
+            {
+                return StartProcessAsAllUsers(exec, args, Path.GetDirectoryName(exec), isWindowVisibleToUser, true);
+            }
+
+            // subst drives are per-session, so the virtual drive must be created in the current (SYSTEM) session
+            // before impersonating users, and the remapped path passed through so each user process uses it.
+            char substDrive = FindFreeDriveLetter() ?? throw new Exception("No free drive letter available to create a virtual drive for legacy long file path support.");
+            string execDir = Path.GetDirectoryName(exec) ?? throw new Exception("Cannot determine the directory of the executable.");
+            SubstDrive(substDrive, execDir);
+            string remappedExec = $"{substDrive}:\\{Path.GetFileName(exec)}";
+
+            try
+            {
+                return StartProcessAsAllUsers(remappedExec, args, $"{substDrive}:\\", isWindowVisibleToUser, true);
+            }
+            finally
+            {
+                UnsubstDrive(substDrive);
+            }
+        }
+
+        // Mirrors WaitOutAnotherInstallInProgress, but for the per-user launch: msiexec contention is
+        // machine-wide, not per-session, so if any session's run hit 1618 the whole per-user launch is
+        // retried together rather than just the affected session.
+        private List<ImpersonatedProcessResult> WaitOutAnotherInstallInProgressPerUser(List<ImpersonatedProcessResult> execResults, Func<List<ImpersonatedProcessResult>> rerun)
+        {
+            if (ExitCodes?.Any(c => c.Code == MSITools.AnotherInstallInProgressExitCode) == true)
+            {
+                return execResults;
+            }
+
+            int attempt = 0;
+            while (execResults.Any(r => r.ExitCode == MSITools.AnotherInstallInProgressExitCode) && attempt < MSITools.MaxAnotherInstallInProgressRetries)
+            {
+                attempt++;
+                _log.WriteLog($"Another installation is already in progress (exit code {MSITools.AnotherInstallInProgressExitCode}); waiting {MSITools.AnotherInstallInProgressRetryDelay.TotalMinutes:0} minute(s) before retry {attempt}/{MSITools.MaxAnotherInstallInProgressRetries}", "OtherPkg", Log.Severity.Warning);
+                Thread.Sleep(MSITools.AnotherInstallInProgressRetryDelay);
+                execResults = rerun();
+            }
+            return execResults;
         }
 
         private static ActionType GetDefaultActionType(int exitCode)

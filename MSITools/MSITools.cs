@@ -3,6 +3,7 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Microsoft.Deployment.WindowsInstaller;
 
 
@@ -10,6 +11,35 @@ namespace SuiteTools
 {
     public class MSITools
     {
+        // 1618 (ERROR_INSTALL_ALREADY_RUNNING) means another install is running elsewhere on the
+        // machine right now, not that this install itself is broken - so it's worth waiting out
+        // rather than failing immediately. Wait a minute and retry, up to this many times, before
+        // giving up and surfacing the exit code to the caller.
+        public const int AnotherInstallInProgressExitCode = 1618;
+        public const int MaxAnotherInstallInProgressRetries = 30;
+        public static readonly TimeSpan AnotherInstallInProgressRetryDelay = TimeSpan.FromMinutes(1);
+
+        private static int RunProcessWithRetry(Func<System.Diagnostics.Process> processFactory, Action<string>? onRetryWaiting)
+        {
+            int attempt = 0;
+            while (true)
+            {
+                using System.Diagnostics.Process process = processFactory();
+                process.Start();
+                process.WaitForExit();
+                int exitCode = process.ExitCode;
+
+                if (exitCode != AnotherInstallInProgressExitCode || attempt >= MaxAnotherInstallInProgressRetries)
+                {
+                    return exitCode;
+                }
+
+                attempt++;
+                onRetryWaiting?.Invoke($"Another installation is already in progress (exit code {AnotherInstallInProgressExitCode}); waiting {AnotherInstallInProgressRetryDelay.TotalMinutes:0} minute(s) before retry {attempt}/{MaxAnotherInstallInProgressRetries}");
+                Thread.Sleep(AnotherInstallInProgressRetryDelay);
+            }
+        }
+
         [DllImport("msi.dll", CharSet = CharSet.Auto)]
         private static extern int MsiEnumRelatedProducts(string lpUpgradeCode, int dwReserved, int iProductIndex, StringBuilder lpProductCode);
 
@@ -135,7 +165,8 @@ namespace SuiteTools
             bool? secureTransforms = false,
             string? patchPath = null,
             List<MSIProp>? properties = null,
-            string? logPath = null
+            string? logPath = null,
+            Action<string>? onRetryWaiting = null
         )
         {
             var result = new MSIResult();
@@ -149,7 +180,7 @@ namespace SuiteTools
             {
                 var args = BuildInstallArguments(msiPath, transformsPath, secureTransforms, patchPath, properties, logPath);
 
-                var process = new System.Diagnostics.Process
+                int exitCode = RunProcessWithRetry(() => new System.Diagnostics.Process
                 {
                     StartInfo = new System.Diagnostics.ProcessStartInfo
                     {
@@ -159,14 +190,12 @@ namespace SuiteTools
                         UseShellExecute = false,
                         CreateNoWindow = true
                     }
-                };
-                process.Start();
-                process.WaitForExit();
+                }, onRetryWaiting);
                 result.CommandRun = $"msiexec.exe {args}";
-                result.ExitCode = process.ExitCode;
-                result.Success = process.ExitCode == 0;
-                result.ErrorMessage = process.ExitCode == 0 ? null :
-                    $"MSI installation failed with exit code {process.ExitCode}. Error: {MSITools.GetMSIErrorDescription(process.ExitCode)}";
+                result.ExitCode = exitCode;
+                result.Success = exitCode == 0;
+                result.ErrorMessage = exitCode == 0 ? null :
+                    $"MSI installation failed with exit code {exitCode}. Error: {MSITools.GetMSIErrorDescription(exitCode)}";
 
                 return result;
             }
@@ -178,7 +207,61 @@ namespace SuiteTools
             return result;
         }
 
-        public static MSIResult UninstallMSI(string removalCode, string? logPath, List<MSIProp>? properties = null, string? additionalParams = null)
+        public static MSIResult RepairMSI(string msiPath, string? logPath = null, List<MSIProp>? properties = null, string repairOptions = "aumsv", Action<string>? onRetryWaiting = null)
+        {
+            var result = new MSIResult();
+            if (string.IsNullOrWhiteSpace(msiPath))
+            {
+                result.Success = false;
+                result.ErrorMessage = "MSI file path is not specified.";
+                return result;
+            }
+            try
+            {
+                var args = $"/f{repairOptions} \"{msiPath}\" /q";
+                if (properties != null && properties.Count > 0)
+                {
+                    foreach (var prop in properties)
+                    {
+                        if (!string.IsNullOrWhiteSpace(prop.Name) && !string.IsNullOrWhiteSpace(prop.Value))
+                        {
+                            args += $" {prop.Name}={prop.Value}";
+                        }
+                    }
+                }
+                if (!string.IsNullOrWhiteSpace(logPath))
+                {
+                    args += $" /l*v \"{logPath}\"";
+                }
+
+                int exitCode = RunProcessWithRetry(() => new System.Diagnostics.Process
+                {
+                    StartInfo = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = GetMSIExecPath(),
+                        Arguments = args,
+                        WorkingDirectory = Path.GetDirectoryName(msiPath),
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                }, onRetryWaiting);
+                result.CommandRun = $"msiexec.exe {args}";
+                result.ExitCode = exitCode;
+                result.Success = exitCode == 0;
+                result.ErrorMessage = exitCode == 0 ? null :
+                    $"MSI repair failed with exit code {exitCode}. Error: {MSITools.GetMSIErrorDescription(exitCode)}";
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.ErrorMessage = $"Error repairing MSI package: {ex.Message}";
+            }
+            return result;
+        }
+
+        public static MSIResult UninstallMSI(string removalCode, string? logPath, List<MSIProp>? properties = null, string? additionalParams = null, Action<string>? onRetryWaiting = null)
         {
             var result = new MSIResult();
             if (string.IsNullOrWhiteSpace(removalCode))
@@ -210,7 +293,7 @@ namespace SuiteTools
                     args += $" /l*v \"{logPath}\"";
                 }
                 result.CommandRun = $"msiexec.exe {args}";
-                var process = new System.Diagnostics.Process
+                int exitCode = RunProcessWithRetry(() => new System.Diagnostics.Process
                 {
                     StartInfo = new System.Diagnostics.ProcessStartInfo
                     {
@@ -219,18 +302,16 @@ namespace SuiteTools
                         UseShellExecute = false,
                         CreateNoWindow = true
                     }
-                };
-                process.Start();
-                process.WaitForExit();
-                result.ExitCode = process.ExitCode;
-                if (process.ExitCode == 0 || process.ExitCode == 1605)
+                }, onRetryWaiting);
+                result.ExitCode = exitCode;
+                if (exitCode == 0 || exitCode == 1605)
                 {
                     result.Success = true;
                 }
                 else
                 {
                     result.Success = false;
-                    result.ErrorMessage = $"MSI uninstallation failed with exit code {process.ExitCode}. Error: {MSITools.GetMSIErrorDescription(process.ExitCode)}";
+                    result.ErrorMessage = $"MSI uninstallation failed with exit code {exitCode}. Error: {MSITools.GetMSIErrorDescription(exitCode)}";
                 }
             }
             catch (Exception ex)
@@ -241,7 +322,7 @@ namespace SuiteTools
             return result;
         }
 
-        public static MSIResult UninstallMSIFamily(string upgradeCode, string? logPath, List<MSIProp>? properties = null, string? additionalParams = null)
+        public static MSIResult UninstallMSIFamily(string upgradeCode, string? logPath, List<MSIProp>? properties = null, string? additionalParams = null, Action<string>? onRetryWaiting = null)
         {
             var result = new MSIResult();
             if (string.IsNullOrWhiteSpace(upgradeCode))
@@ -284,7 +365,7 @@ namespace SuiteTools
                             args += $" /l*v \"{logPath}\"";
                         }
                         result.CommandRun += $"msiexec.exe {args}\n";
-                        var process = new System.Diagnostics.Process
+                        int exitCode = RunProcessWithRetry(() => new System.Diagnostics.Process
                         {
                             StartInfo = new System.Diagnostics.ProcessStartInfo
                             {
@@ -293,18 +374,16 @@ namespace SuiteTools
                                 UseShellExecute = false,
                                 CreateNoWindow = true
                             }
-                        };
-                        process.Start();
-                        process.WaitForExit();
-                        result.ExitCode = process.ExitCode;
-                        if (process.ExitCode == 0 || process.ExitCode == 1605)
+                        }, onRetryWaiting);
+                        result.ExitCode = exitCode;
+                        if (exitCode == 0 || exitCode == 1605)
                         {
                             result.Success = true;
                         }
                         else
                         {
                             result.Success = false;
-                            result.ErrorMessage = $"MSI uninstallation failed for product {product.ProductCode} with exit code {process.ExitCode}. Error: {MSITools.GetMSIErrorDescription(process.ExitCode)}";
+                            result.ErrorMessage = $"MSI uninstallation failed for product {product.ProductCode} with exit code {exitCode}. Error: {MSITools.GetMSIErrorDescription(exitCode)}";
                             break;
                         }
                     }

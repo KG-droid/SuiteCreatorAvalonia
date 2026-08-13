@@ -38,6 +38,10 @@ The **Build** page turns your configuration into a real deployable: fill in the 
 |---|---|
 | ![Popups](docs/images/popups.png) | ![Build](docs/images/build.png) |
 
+## How suites stay up to date
+
+Every built suite carries its own copy of the runtime (`SuiteExecutor` and the popups), but on a target device that runtime is actually **shared machine-wide**: the first suite that ever runs installs it into `%ProgramFiles%\SuiteExecutor`, and every suite that runs after that — including older ones built and deployed earlier — checks the version already installed there. If the suite it's running carries a newer runtime, it updates the shared copy before continuing; if not, it just uses what's already installed. So deploying your latest build effectively **upgrades the runtime for every other suite on that machine too**, without needing to redeploy them.
+
 ## Admin-managed settings
 
 A few app-wide settings — the popup company logo/background colour, the suite log location, and a global PowerShell condition evaluated before every popup — can be centrally locked down by an admin via an `AppSettings.json` dropped into the install directory, instead of being left to each user. See **[docs/admin-guide.md](docs/admin-guide.md)** for how to build and deploy that file.

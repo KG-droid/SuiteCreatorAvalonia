@@ -95,6 +95,7 @@
 					</Button.Flyout>
 				</Button>
 				<Button
+					x:Name="RemovePackage_Button"
 					Classes="IconButton"
 					Tag="Minus"
 					services:Help.Title="Remove a package"
@@ -103,7 +104,7 @@
 					Foreground="{DynamicResource BinButton}"
 					ToolTip.Tip="Remove the selected package">
 					<Button.Flyout>
-						<Flyout 
+						<Flyout
 							Placement="Right">
 							<StackPanel
 								Margin="10,0,10,0"
@@ -128,6 +129,15 @@
 						</Style>
 					</Button.Styles>
 				</Button>
+
+				<!-- Find Usages -->
+				<Button
+					x:Name="FindPackageUsages_Button"
+					Classes="IconButton"
+					Tag="LinkVariant"
+					IsEnabled="{Binding SelectedPackage, Converter={x:Static ObjectConverters.IsNotNull}}"
+					Command="{Binding ShowPackageUsagesCommand}"
+					ToolTip.Tip="Show which events use this package as a run point"/>
 			</StackPanel>
 
 			<!-- Package List -->
@@ -192,6 +202,92 @@
 		<UserControl
 			Content="{Binding CurrentPackageView}"
 			Grid.Column="1"/>
+
+		<Popup
+			IsOpen="{Binding PackageRemoveError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+			Closed="RemovalErrPopup_Closed"
+			IsLightDismissEnabled="True"
+			Placement="RightEdgeAlignedTop"
+			PlacementTarget="{Binding ElementName=RemovePackage_Button}">
+			<Border
+				Background="Red"
+				Padding="12,10,15,10"
+				CornerRadius="23">
+				<StackPanel
+					Orientation="Horizontal"
+					Spacing="5">
+					<mi:MaterialIcon
+						Kind="AlertCircle"
+						Foreground="White"
+						Width="24"
+						Height="24"/>
+					<TextBlock
+						Foreground="White"
+						Text="{Binding PackageRemoveError}"/>
+				</StackPanel>
+			</Border>
+		</Popup>
+
+		<Popup
+			IsOpen="{Binding UsagesPopupOpen, Mode=TwoWay}"
+			IsLightDismissEnabled="True"
+			Placement="RightEdgeAlignedTop"
+			PlacementTarget="{Binding ElementName=FindPackageUsages_Button}">
+			<Border
+				Background="{DynamicResource AccentVariant1}"
+				Padding="12"
+				CornerRadius="10"
+				MaxHeight="400"
+				MinWidth="260"
+				MaxWidth="320"
+				BoxShadow="0 0 6 1 Black">
+				<StackPanel Spacing="8">
+					<TextBlock
+						Classes="FieldName"
+						Text="Events using this package as a run point"/>
+					<TextBlock
+						IsVisible="{Binding !PackageUsages.Count}"
+						TextWrapping="Wrap"
+						Text="No events currently run relative to this package's stage point."/>
+					<ScrollViewer MaxHeight="340">
+						<ItemsControl ItemsSource="{Binding PackageUsages}">
+							<ItemsControl.ItemTemplate>
+								<DataTemplate DataType="{x:Type vm:SuiteUsageItem}">
+									<Button
+										Click="PackageUsageItem_Click"
+										HorizontalAlignment="Stretch"
+										HorizontalContentAlignment="Left"
+										Margin="0,2"
+										Padding="8,6">
+										<StackPanel
+											Orientation="Horizontal"
+											Spacing="8">
+											<mi:MaterialIcon
+												Kind="{Binding IconKind}"
+												Foreground="{Binding IconColor}"
+												Width="22"
+												Height="22"
+												VerticalAlignment="Center"/>
+											<StackPanel VerticalAlignment="Center">
+												<TextBlock
+													Text="{Binding Title}"
+													FontSize="13"/>
+												<TextBlock
+													IsVisible="{Binding SubTitle, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+													Text="{Binding SubTitle}"
+													FontSize="10"
+													Opacity="0.7"/>
+											</StackPanel>
+										</StackPanel>
+									</Button>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</ScrollViewer>
+				</StackPanel>
+			</Border>
+		</Popup>
+
 	</Grid>
-	
+
 </UserControl>

@@ -55,6 +55,22 @@ namespace SuiteOperations.Package
             return action;
         }
 
+        private MSIResult RepairThenRetryUninstall(MSIResult failedResult)
+        {
+            _log.WriteLog($"Uninstall failed with exit code 1603; attempting full repair of old product via: {RepairMsiPath}");
+            MSIResult repairResult = MSITools.RepairMSI(RepairMsiPath!, LogPath, Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)));
+            _log.WriteLog($"Repair command: {repairResult.CommandRun}");
+            if (!repairResult.Success)
+            {
+                _log.WriteLog($"Repair error: {repairResult.ErrorMessage}", "Application", Log.Severity.Error);
+                return failedResult;
+            }
+            _log.WriteLog("Repair completed successfully; retrying removal");
+            MSIResult retryResult = MSITools.UninstallMSI(RemovalCode, LogPath,
+                Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)));
+            return retryResult;
+        }
+
         private ActionType ExecuteSystem()
         {
             if (IsProductRemoval)
@@ -63,6 +79,11 @@ namespace SuiteOperations.Package
                 MSIResult result = MSITools.UninstallMSI(RemovalCode, LogPath,
                     Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)));
                 _log.WriteLog($"Uninstall command: {result.CommandRun}");
+                if (!result.Success && result.ExitCode == 1603 && RepairOldProductOnFailure && !string.IsNullOrWhiteSpace(RepairMsiPath))
+                {
+                    result = RepairThenRetryUninstall(result);
+                    _log.WriteLog($"Uninstall retry command was: {result.CommandRun}");
+                }
                 if (!result.Success)
                 {
                     _log.WriteLog($"Uninstall error: {result.ErrorMessage}", "Application", Log.Severity.Error);
@@ -95,8 +116,13 @@ namespace SuiteOperations.Package
                     MSITools.UninstallMSI(RemovalCode, LogPath,
                         Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)))
                 );
-                foreach (MSIResult result in results)
+                foreach (MSIResult initialResult in results)
                 {
+                    MSIResult result = initialResult;
+                    if (!result.Success && result.ExitCode == 1603 && RepairOldProductOnFailure && !string.IsNullOrWhiteSpace(RepairMsiPath))
+                    {
+                        result = RepairThenRetryUninstall(result);
+                    }
                     _log.WriteLog($"Uninstall command: {result.CommandRun}");
                     if (!result.Success)
                     {
@@ -112,8 +138,7 @@ namespace SuiteOperations.Package
             {
                 _log.WriteLog($"Running per-user MSI Family removal via UpgradeCode: {RemovalCode}");
                 List<MSIResult> results = UserTools.ProcessExtensions.RunAsAllUsersImpersonated<MSIResult>(() =>
-                    MSITools.UninstallMSIFamily(RemovalCode, LogPath,
-                        Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)))
+                    MSITools.UninstallMSIFamily(RemovalCode, LogPath, Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)))
                 );
                 foreach (MSIResult result in results)
                 {
@@ -144,6 +169,10 @@ namespace SuiteOperations.Package
             if (IsCreateLog && !string.IsNullOrWhiteSpace(LogPath) && !Path.IsPathFullyQualified(LogPath))
             {
                 throw new ArgumentNullException("Log Path must be a fully qualified path.");
+            }
+            if (RepairOldProductOnFailure && IsProductRemoval && string.IsNullOrWhiteSpace(RepairMsiPath))
+            {
+                throw new ArgumentNullException("The old product's MSI must be selected to repair it on failure.");
             }
         }
 

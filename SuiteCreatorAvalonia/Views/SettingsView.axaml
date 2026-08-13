@@ -94,6 +94,7 @@
 						VerticalAlignment="Center"
 						Text="Dark Theme Accent:  "/>
 					<ColorPicker
+						Theme="{StaticResource HorizontalAccentColorPickerTheme}"
 						IsColorModelVisible="false"
 						IsColorComponentsVisible="false"
 						IsColorPaletteVisible="False"
@@ -101,8 +102,11 @@
 						IsHexInputVisible="false"
 						IsAccentColorsVisible="false"
 						IsAlphaVisible="False"
-						IsColorSpectrumSliderVisible="False"
-						MinSaturation="100"
+						IsColorSpectrumSliderVisible="True"
+						MinSaturation="60"
+						MaxSaturation="100"
+						MinValue="25"
+						MaxValue="55"
 						Color="{Binding DarkAccentColour}"
 						Width="100"
 						HorizontalAlignment="Left">
@@ -112,16 +116,19 @@
 						VerticalAlignment="Center"
 						Text="Light Theme Accent:  "/>
 					<ColorPicker
+						Theme="{StaticResource HorizontalAccentColorPickerTheme}"
 						IsColorModelVisible="false"
 						IsColorComponentsVisible="false"
 						IsColorPaletteVisible="False"
 						IsComponentSliderVisible="false"
 						IsHexInputVisible="false"
-						IsColorSpectrumSliderVisible="false"
+						IsColorSpectrumSliderVisible="True"
 						IsAccentColorsVisible="false"
 						IsAlphaVisible="False"
 						MinSaturation="5"
-						MaxSaturation="15"
+						MaxSaturation="25"
+						MinValue="70"
+						MaxValue="100"
 						Color="{Binding LightAccentColour}"
 						Width="100"
 						HorizontalAlignment="Left"/>
@@ -182,6 +189,10 @@
 						VerticalAlignment="Center"
 						FontStyle="Italic"
 						Text="(This setting is controlled by your administrator.)"/>
+					<Button
+						Content="See Examples..."
+						Command="{Binding ShowPopupConditionExamplesCommand}"
+						VerticalAlignment="Center"/>
 				</StackPanel>
 				<TextBlock
 					TextWrapping="Wrap"

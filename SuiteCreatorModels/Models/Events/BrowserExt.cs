@@ -20,6 +20,7 @@ namespace SuiteCreatorAvalonia.Models.Events
                 Source = Source,
                 ExtPath = ExtPath,
                 Schedules = Schedules.ConvertAll(s => s.Clone()),
+                IsPermanent = IsPermanent,
             };
         }
         public override void UpdateFrom(EventCore ecore)
@@ -32,6 +33,7 @@ namespace SuiteCreatorAvalonia.Models.Events
             Source = browserExt.Source;
             ExtPath = browserExt.ExtPath;
             Schedules = browserExt.Schedules.ConvertAll(s => s.Clone());
+            IsPermanent = browserExt.IsPermanent;
         }
         public override string? Validate()
         {

@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Platform.Storage;
@@ -60,9 +60,19 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
         {
             Grid mainGrid = new Grid();
             CardInnerView = mainGrid;
-            mainGrid.ColumnDefinitions = new ColumnDefinitions("Auto, *, Auto, Auto, Auto");
 
-            // Action     
+            bool showSourceFields = Action == ExtAction.Install;
+            bool showLocalFields = showSourceFields && Source == BrowserExtensionSource.Local;
+
+            // Columns: 0 action, 1 extID(*), 2 browser, [3 source, 4 permanent], [5 path(*), 6 browse]
+            string columns = "Auto, *, Auto";
+            if (showSourceFields)
+                columns += ", Auto, Auto";
+            if (showLocalFields)
+                columns += ", *, Auto";
+            mainGrid.ColumnDefinitions = new ColumnDefinitions(columns);
+
+            // Action
             ComboBox actionComboBox = new ComboBox();
             actionComboBox.ItemsSource = Enum.GetValues(typeof(ExtAction));
             actionComboBox.Bind(ComboBox.SelectedValueProperty, new Binding("Action"));
@@ -91,7 +101,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             Grid.SetColumn(browserComboBox, 2);
             mainGrid.Children.Add(browserComboBox);
 
-            if (Action == ExtAction.Install)
+            if (showSourceFields)
             {
                 // Source
                 ComboBox sourceComboBox = new ComboBox();
@@ -112,44 +122,38 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 Help.Annotate(permanentFileToggle, "Permanent", "If enabled, this browser extension won't be removed on Suite removal.");
                 Grid.SetColumn(permanentFileToggle, 4);
                 mainGrid.Children.Add(permanentFileToggle);
+
+                if (showLocalFields)
+                {
+                    // Ext Path
+                    TextBox extPathTextBox = new TextBox();
+                    extPathTextBox.Bind(TextBox.TextProperty, new Binding("ExtensionPath"));
+                    extPathTextBox.PlaceholderText = "Extension CRX Path";
+                    Help.Annotate(extPathTextBox, "CRX path", "Path to the local .crx extension package file to install.");
+                    extPathTextBox.Name = "ExtPath_TextBox";
+                    extPathTextBox.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+                    Grid.SetColumn(extPathTextBox, 5);
+                    mainGrid.Children.Add(extPathTextBox);
+
+                    Button extPathBrowseButton = new Button();
+                    string browseDiagTitle = "Select CRX extension file";
+                    extPathBrowseButton.Classes.Add("IconButton");
+                    extPathBrowseButton.Tag = "FolderOpen";
+                    extPathBrowseButton.Name = "ExtPathBrowse_Button";
+                    extPathBrowseButton.Margin = new Avalonia.Thickness(5, 0, 5, 0);
+                    extPathBrowseButton.Command = new RelayCommand(ExtensionBrowse);
+                    ToolTip.SetTip(extPathBrowseButton, browseDiagTitle);
+                    Help.Annotate(extPathBrowseButton, "Browse", browseDiagTitle + ".");
+                    Grid.SetColumn(extPathBrowseButton, 6);
+                    mainGrid.Children.Add(extPathBrowseButton);
+                }
             }
         }
 
         partial void OnSourceChanged(BrowserExtensionSource? value)
         {
-            if (value == BrowserExtensionSource.Local)
-            {
-                // Ext Path
-                TextBox extPathTextBox = new TextBox();
-                extPathTextBox.Bind(TextBox.TextProperty, new Binding("ExtensionPath"));
-                extPathTextBox.PlaceholderText = "Extension CRX Path";
-                Help.Annotate(extPathTextBox, "CRX path", "Path to the local .crx extension package file to install.");
-                extPathTextBox.Name = "ExtPath_TextBox";
-                extPathTextBox.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
-                Grid.SetColumn(extPathTextBox, 4);
-                CardInnerView.Children.Add(extPathTextBox);
-
-                Button extPathBrowseButton = new Button();
-                string browseDiagTitle = "Select CRX extension file";
-                extPathBrowseButton.Classes.Add("IconButton");
-                extPathBrowseButton.Tag = "FolderOpen";
-                extPathBrowseButton.Name = "ExtPathBrowse_Button";
-                extPathBrowseButton.Margin = new Avalonia.Thickness(5, 0, 5, 0);
-                extPathBrowseButton.Command = new RelayCommand(ExtensionBrowse);
-                ToolTip.SetTip(extPathBrowseButton, browseDiagTitle);
-                Help.Annotate(extPathBrowseButton, "Browse", browseDiagTitle + ".");
-                Grid.SetColumn(extPathBrowseButton, 5);
-                CardInnerView.Children.Add(extPathBrowseButton);
-                CardInnerView.ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto,*,Auto");
-            }
-            else
-            {
-                CardInnerView.Children
-                    .Where(x => x.Name == "ExtPath_TextBox" || x.Name == "ExtPathBrowse_Button")
-                    .ToList()
-                    .ForEach(x => CardInnerView.Children.Remove(x));
-                CardInnerView.ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto");
-            }
+            if (_isLoading) return;
+            CreateExtCardView();
         }
 
         private async void ExtensionBrowse()
@@ -171,20 +175,11 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 Browser = browseEx.Browser;
                 Source = browseEx.Source;
                 ExtensionPath = browseEx.ExtPath;
+                IsPermanent = browseEx.IsPermanent;
                 Schedules.Clear();
                 Schedules.AddRange(browseEx.Schedules);
                 // Ensure that the EventStage and Condition in each Schedule is the same instance as in SuiteStages/SuiteConditions for the ComboBox binding to work correctly.
-                foreach (Schedule sch in Schedules)
-                {
-                    if (sch.EventStage != null)
-                    {
-                        sch.EventStage = SuiteStages.First(s => s.Id == sch.EventStage.Id);
-                    }
-                    if (sch.Condition != null)
-                    {
-                        sch.Condition = SuiteRules.First(s => s.Id == sch.Condition.Id);
-                    }
-                }
+                NormalizeSchedules();
                 LinkedEvent = browseEx;
                 _isLoading = false;
             }
@@ -200,6 +195,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 browserExt.Browser = Browser;
                 browserExt.Source = Source;
                 browserExt.ExtPath = ExtensionPath;
+                browserExt.IsPermanent = IsPermanent;
                 browserExt.Schedules = Schedules.ToList();
                 if (!Design.IsDesignMode)
                     _coreManager.UpdateExtensionEvent(browserExt);

@@ -36,7 +36,7 @@ namespace SuiteUserPopup
 
             string logFilePath = ResolveLogFilePath(configPath);
             AppLogService.Initialize(logFilePath);
-            AppLogService.Info("Application startup initiated.", nameof(Program));
+            AppLogService.Info("Application startup initiated.", "SuiteUserPopup");
 
             // IFEO's Debugger hijack intercepts every launch attempt regardless of who's asking — including
             // the suite's own elevated install steps (an MSI custom action, a post-install launch, etc.)
@@ -46,7 +46,7 @@ namespace SuiteUserPopup
             // — so let it through instead of showing the notice.
             if (isBlockedNotice && IsElevatedOrSystem())
             {
-                AppLogService.Info($"Blocked launch of {blockedProcessName} came from an elevated/SYSTEM caller; bypassing the notice and letting it run.", nameof(Program));
+                AppLogService.Info($"Blocked launch of {blockedProcessName} came from an elevated/SYSTEM caller; bypassing the notice and letting it run.", "SuiteUserPopup");
                 RelaunchRealExeBypassingBlock(args, blockedProcessName);
                 return;
             }
@@ -58,21 +58,21 @@ namespace SuiteUserPopup
             {
                 if (configPath is null)
                 {
-                    AppLogService.Error("Config argument missing and popconfig.json could not be found.", nameof(Program));
+                    AppLogService.Error("Config argument missing and popconfig.json could not be found.", "SuiteUserPopup");
                     Console.WriteLine("Config argument missing, a popconfig.json is required as it gives instructions to the popup on what to say etc");
                     Environment.Exit(2);
                     return;
                 }
                 if (companyLogoPath is null)
                 {
-                    AppLogService.Error("Company logo argument missing and fallback logo could not be found.", nameof(Program));
+                    AppLogService.Error("Company logo argument missing and fallback logo could not be found.", "SuiteUserPopup");
                     Console.WriteLine("CompanyLogo argument missing, and unable to find a CompanyLogo png or gif in the exe directory");
                     Environment.Exit(2);
                     return;
                 }
                 if (suiteLogoPath is null)
                 {
-                    AppLogService.Error("Suite logo argument missing and fallback logo could not be found.", nameof(Program));
+                    AppLogService.Error("Suite logo argument missing and fallback logo could not be found.", "SuiteUserPopup");
                     Console.WriteLine("SuiteLogo argument missing, and unable to find a SuiteLogo png in the exe directory");
                     Environment.Exit(2);
                     return;
@@ -80,7 +80,7 @@ namespace SuiteUserPopup
             }
 
             StartupOptions.Set(configPath, companyLogoPath ?? string.Empty, suiteLogoPath ?? string.Empty, isBlockedNotice, blockedProcessName, blockedExePath, blockedSuiteId);
-            AppLogService.Info("Startup options resolved successfully.", nameof(Program));
+            AppLogService.Info("Startup options resolved successfully.", "SuiteUserPopup");
 
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
@@ -181,7 +181,7 @@ namespace SuiteUserPopup
             }
             catch (Exception ex)
             {
-                AppLogService.Error($"Failed to relaunch {realExePath} past the block: {ex.Message}", nameof(Program));
+                AppLogService.Error($"Failed to relaunch {realExePath} past the block: {ex.Message}", "SuiteUserPopup");
             }
             finally
             {
@@ -194,7 +194,7 @@ namespace SuiteUserPopup
                     }
                     catch (Exception ex)
                     {
-                        AppLogService.Error($"Failed to restore the block on {processExe} after an elevated bypass: {ex.Message}", nameof(Program));
+                        AppLogService.Error($"Failed to restore the block on {processExe} after an elevated bypass: {ex.Message}", "SuiteUserPopup");
                     }
                 }
             }
@@ -251,7 +251,7 @@ namespace SuiteUserPopup
             Console.WriteLine("  --SuiteId <id>                           : Suite's stable ID, tagged onto the window title so a later unblock can find and close it");
             Console.WriteLine();
             Console.WriteLine("If no parameters are provided, the app will look for 'popconfig.json', 'CompanyLogo.png', and 'SuiteLogo.png' in the executable directory.");
-            AppLogService.Info("Application help text displayed.", nameof(Program));
+            AppLogService.Info("Application help text displayed.", "SuiteUserPopup");
             Environment.Exit(0);
         }
 

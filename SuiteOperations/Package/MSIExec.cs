@@ -4,6 +4,7 @@ using SuiteCreatorAvalonia.Models.Package;
 using SuiteTools;
 using System.Collections;
 using System.Runtime.InteropServices;
+using System.Threading;
 using static SuiteTools.MSITools;
 using Contexts = SuiteCreatorAvalonia.Enums.Contexts;
 using RestartBehaviorEnum = SuiteCreatorAvalonia.Enums.RestartBehavior;
@@ -91,11 +92,14 @@ namespace SuiteOperations.Package
                 Properties?.ConvertAll(
                     p => new MSITools.MSIProp(p.Name!, p.Value!)
                 ),
-                GetEffectiveLogPath(LogPath)
+                GetEffectiveLogPath(LogPath),
+                msg => _log.WriteLog(msg)
             );
             _log.WriteLog($"Install command was: {result.CommandRun}");
             if (!result.Success)
             {
+                if (result.ExitCode == MSITools.AnotherInstallInProgressExitCode)
+                    throw new SuiteExitCodeException(result.ExitCode, $"Install error: {result.ErrorMessage}");
                 throw new Exception($"Install error: {result.ErrorMessage}");
             }
             return ApplyRestartBehavior(result.ExitCode);
@@ -123,13 +127,27 @@ namespace SuiteOperations.Package
 
             string msiexecPath = MSITools.GetMSIExecPath();
             string commandRun = $"{ msiexecPath} {args}";
-            List<UserTools.ProcessExtensions.ImpersonatedProcessResult> procResults = UserTools.ProcessExtensions.StartProcessAsAllUsers(
-                msiexecPath,
-                args,
-                Path.GetDirectoryName(msiPath)!,
-                true,
-                true
-            );
+
+            List<UserTools.ProcessExtensions.ImpersonatedProcessResult> procResults;
+            int retryAttempt = 0;
+            while (true)
+            {
+                procResults = UserTools.ProcessExtensions.StartProcessAsAllUsers(
+                    msiexecPath,
+                    args,
+                    Path.GetDirectoryName(msiPath)!,
+                    true,
+                    true
+                );
+
+                bool anotherInstallInProgress = procResults.Any(r => r.ExitCode == MSITools.AnotherInstallInProgressExitCode);
+                if (!anotherInstallInProgress || retryAttempt >= MSITools.MaxAnotherInstallInProgressRetries)
+                    break;
+
+                retryAttempt++;
+                _log.WriteLog($"Another installation is already in progress (exit code {MSITools.AnotherInstallInProgressExitCode}); waiting {MSITools.AnotherInstallInProgressRetryDelay.TotalMinutes:0} minute(s) before retry {retryAttempt}/{MSITools.MaxAnotherInstallInProgressRetries}");
+                Thread.Sleep(MSITools.AnotherInstallInProgressRetryDelay);
+            }
 
             ActionType worstAction = ActionType.Continue;
             foreach (UserTools.ProcessExtensions.ImpersonatedProcessResult procResult in procResults)
@@ -137,6 +155,8 @@ namespace SuiteOperations.Package
                 _log.WriteLog($"Install command was: {commandRun}, as user: {procResult.UserName}");
                 if (procResult.ErrorMessage != null)
                     throw new Exception($"Install error: {procResult.ErrorMessage}");
+                if (procResult.ExitCode == MSITools.AnotherInstallInProgressExitCode)
+                    throw new SuiteExitCodeException(procResult.ExitCode, $"Install error: MSI installation failed with exit code {procResult.ExitCode} for user {procResult.UserName}. Error: {MSITools.GetMSIErrorDescription(procResult.ExitCode)}");
                 if (procResult.ExitCode != 0 && procResult.ExitCode != 3010)
                     throw new Exception($"Install error: MSI installation failed with exit code {procResult.ExitCode} for user {procResult.UserName}. Error: {MSITools.GetMSIErrorDescription(procResult.ExitCode)}");
                 ActionType action = ApplyRestartBehavior(procResult.ExitCode);
@@ -184,11 +204,13 @@ namespace SuiteOperations.Package
                 if (string.IsNullOrEmpty(UpgradeCode))
                     throw new Exception("Could not determine UpgradeCode from the MSI");
                 _log.WriteLog($"Running MSI Family uninstall via UpgradeCode: {UpgradeCode}");
-                MSIResult result = MSITools.UninstallMSIFamily(UpgradeCode, uninstallLogPath);
+                MSIResult result = MSITools.UninstallMSIFamily(UpgradeCode, uninstallLogPath, onRetryWaiting: msg => _log.WriteLog(msg));
                 _log.WriteLog($"Uninstall command: {result.CommandRun}");
                 if (!result.Success)
                 {
                     _log.WriteLog($"Uninstall error: {result.ErrorMessage}", "Application", Log.Severity.Error);
+                    if (result.ExitCode == MSITools.AnotherInstallInProgressExitCode)
+                        throw new SuiteExitCodeException(result.ExitCode, $"Uninstall error: {result.ErrorMessage}");
                     throw new Exception($"Uninstall error: {result.ErrorMessage}");
                 }
                 return ApplyRestartBehavior(result.ExitCode);
@@ -198,11 +220,13 @@ namespace SuiteOperations.Package
                 if (string.IsNullOrEmpty(ProductCode))
                     throw new Exception("Could not determine ProductCode from the MSI");
                 _log.WriteLog($"Running MSI Product uninstall via ProductCode: {ProductCode}");
-                MSIResult result = MSITools.UninstallMSI(ProductCode, uninstallLogPath);
+                MSIResult result = MSITools.UninstallMSI(ProductCode, uninstallLogPath, onRetryWaiting: msg => _log.WriteLog(msg));
                 _log.WriteLog($"Uninstall command: {result.CommandRun}");
                 if (!result.Success)
                 {
                     _log.WriteLog($"Uninstall error: {result.ErrorMessage}", "Application", Log.Severity.Error);
+                    if (result.ExitCode == MSITools.AnotherInstallInProgressExitCode)
+                        throw new SuiteExitCodeException(result.ExitCode, $"Uninstall error: {result.ErrorMessage}");
                     throw new Exception($"Uninstall error: {result.ErrorMessage}");
                 }
                 return ApplyRestartBehavior(result.ExitCode);
@@ -219,7 +243,7 @@ namespace SuiteOperations.Package
                     throw new Exception("Could not determine UpgradeCode from the MSI");
                 _log.WriteLog($"Running per-user MSI Family uninstall via UpgradeCode: {UpgradeCode}");
                 List<MSIResult> results = UserTools.ProcessExtensions.RunAsAllUsersImpersonated<MSIResult>(() =>
-                    MSITools.UninstallMSIFamily(UpgradeCode, uninstallLogPath)
+                    MSITools.UninstallMSIFamily(UpgradeCode, uninstallLogPath, onRetryWaiting: msg => _log.WriteLog(msg))
                 );
                 foreach (MSIResult result in results)
                 {
@@ -227,6 +251,8 @@ namespace SuiteOperations.Package
                     if (!result.Success)
                     {
                         _log.WriteLog($"Uninstall error: {result.ErrorMessage}", "Application", Log.Severity.Error);
+                        if (result.ExitCode == MSITools.AnotherInstallInProgressExitCode)
+                            throw new SuiteExitCodeException(result.ExitCode, $"Uninstall error: {result.ErrorMessage}");
                         throw new Exception($"Uninstall error: {result.ErrorMessage}");
                     }
                     ActionType action = ApplyRestartBehavior(result.ExitCode);
@@ -240,7 +266,7 @@ namespace SuiteOperations.Package
                     throw new Exception("Could not determine ProductCode from the MSI");
                 _log.WriteLog($"Running per-user MSI Product uninstall via ProductCode: {ProductCode}");
                 List<MSIResult> results = UserTools.ProcessExtensions.RunAsAllUsersImpersonated<MSIResult>(() =>
-                    MSITools.UninstallMSI(ProductCode, uninstallLogPath)
+                    MSITools.UninstallMSI(ProductCode, uninstallLogPath, onRetryWaiting: msg => _log.WriteLog(msg))
                 );
                 foreach (MSIResult result in results)
                 {
@@ -248,6 +274,8 @@ namespace SuiteOperations.Package
                     if (!result.Success)
                     {
                         _log.WriteLog($"Uninstall error: {result.ErrorMessage}", "Application", Log.Severity.Error);
+                        if (result.ExitCode == MSITools.AnotherInstallInProgressExitCode)
+                            throw new SuiteExitCodeException(result.ExitCode, $"Uninstall error: {result.ErrorMessage}");
                         throw new Exception($"Uninstall error: {result.ErrorMessage}");
                     }
                     ActionType action = ApplyRestartBehavior(result.ExitCode);

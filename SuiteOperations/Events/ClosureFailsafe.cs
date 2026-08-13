@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Logger;
 using SuiteTools;
 using WinRegistry = Microsoft.Win32.Registry;
@@ -20,6 +22,13 @@ namespace SuiteOperations.Events
         private const string ProcessEntryPrefix = "PROC|";
         private const string ServiceEntryPrefix = "SVC|";
 
+        // schtasks.exe / the Task Scheduler service can hang (observed in the wild when the service is in a
+        // bad state) — these bound how long any single attempt is allowed to block, and how hard we retry
+        // before giving up, so a hung schtasks.exe can't stall the whole suite run indefinitely.
+        private const int SchtasksAttemptTimeoutMs = 10_000;
+        private const int SchtasksRetryDelayMs = 10_000;
+        private const int SchtasksMaxAttempts = 6;
+
         // One shared task/list per suite process — every process and service touched during this run adds
         // itself to the same list rather than each getting its own task and watcher.
         public static string SharedFailsafeTaskName() => $"UnblockSuite_{Environment.ProcessId}";
@@ -33,28 +42,70 @@ namespace SuiteOperations.Events
             return Path.Combine(dir, $"{taskName}.list");
         }
 
-        public static bool FailsafeTaskExists(string taskName)
+        public static bool FailsafeTaskExists(Log log, string taskName)
         {
-            ProcessStartInfo psi = new ProcessStartInfo("schtasks.exe", $"/Query /TN \"{taskName}\"")
+            try
+            {
+                (int exitCode, _, _) = RunSchtasksWithRetry(log, $"/Query /TN \"{taskName}\"", "Failsafe task query");
+                return exitCode == 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // Runs schtasks.exe once, reading stdout/stderr asynchronously (avoids the classic same-thread
+        // ReadToEnd-then-WaitForExit pipe deadlock, where the child blocks writing to whichever stream
+        // hasn't been read yet) and enforcing timeoutMs so a hung schtasks.exe / unresponsive Task
+        // Scheduler service can't block forever. Throws TimeoutException (after killing the process) if
+        // it doesn't exit in time.
+        private static (int ExitCode, string StdOut, string StdErr) RunSchtasksOnce(string arguments, int timeoutMs)
+        {
+            ProcessStartInfo psi = new ProcessStartInfo("schtasks.exe", arguments)
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
             };
-            try
+
+            using Process proc = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start schtasks.exe.");
+            Task<string> stdOutTask = proc.StandardOutput.ReadToEndAsync();
+            Task<string> stdErrTask = proc.StandardError.ReadToEndAsync();
+
+            if (!proc.WaitForExit(timeoutMs))
             {
-                using Process? proc = Process.Start(psi);
-                if (proc == null) return false;
-                proc.StandardOutput.ReadToEnd();
-                proc.StandardError.ReadToEnd();
-                proc.WaitForExit(5000);
-                return proc.ExitCode == 0;
+                try { proc.Kill(); } catch { /* best-effort */ }
+                throw new System.TimeoutException($"schtasks.exe timed out after {timeoutMs}ms (args: {arguments}).");
             }
-            catch
+
+            // Process has already exited, so the pipes are closed and these complete immediately.
+            stdOutTask.Wait(timeoutMs);
+            stdErrTask.Wait(timeoutMs);
+            return (proc.ExitCode, stdOutTask.Result, stdErrTask.Result);
+        }
+
+        // Retries RunSchtasksOnce up to SchtasksMaxAttempts times, SchtasksRetryDelayMs apart, but only on a
+        // hang (TimeoutException) — a hang is a transient Task Scheduler service issue that can clear up,
+        // whereas a real failure (bad args, missing exe) won't fix itself by waiting.
+        private static (int ExitCode, string StdOut, string StdErr) RunSchtasksWithRetry(Log log, string arguments, string description)
+        {
+            for (int attempt = 1; attempt <= SchtasksMaxAttempts; attempt++)
             {
-                return false;
+                try
+                {
+                    return RunSchtasksOnce(arguments, SchtasksAttemptTimeoutMs);
+                }
+                catch (System.TimeoutException ex)
+                {
+                    log.WriteLog($"{description} timed out (attempt {attempt}/{SchtasksMaxAttempts}): {ex.Message}", "Application", Log.Severity.Warning);
+                    if (attempt == SchtasksMaxAttempts)
+                        throw;
+                    Thread.Sleep(SchtasksRetryDelayMs);
+                }
             }
+            throw new System.TimeoutException($"{description} timed out after {SchtasksMaxAttempts} attempts.");
         }
 
         // Creates the shared ONSTART scheduled task (reboot failsafe) and the background PID-watcher for this
@@ -63,7 +114,7 @@ namespace SuiteOperations.Events
         // proceed, or a killed suite could leave it permanently bricked with no way back.
         public static void EnsureFailsafeTaskAndWatcher(Log log, string taskName, string blockListPath)
         {
-            if (FailsafeTaskExists(taskName))
+            if (FailsafeTaskExists(log, taskName))
                 return;
 
             int suitePid = Environment.ProcessId;
@@ -74,28 +125,12 @@ namespace SuiteOperations.Events
             string? failsafeExePath = File.Exists(installedExePath) ? installedExePath : suiteExePath;
             string schtasksArgs = $"/Create /TN \"{taskName}\" /TR \"\\\"{failsafeExePath}\\\" --failsafe-unblock-all \\\"{blockListPath}\\\" \\\"{taskName}\\\"\" /SC ONSTART /F /RL HIGHEST /RU SYSTEM";
             log.WriteLog($"Failsafe command: {schtasksArgs}");
-            ProcessStartInfo psi = new ProcessStartInfo("schtasks.exe", schtasksArgs)
+            (int exitCode, _, string stdErr) = RunSchtasksWithRetry(log, schtasksArgs, "Failsafe task creation");
+            if (exitCode != 0)
             {
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            using (Process? schtasksProc = Process.Start(psi))
-            {
-                if (schtasksProc == null)
-                {
-                    throw new Exception("Failed to start schtasks.exe for failsafe unblock task.");
-                }
-                string stdErr = schtasksProc.StandardError.ReadToEnd();
-                schtasksProc.StandardOutput.ReadToEnd();
-                schtasksProc.WaitForExit();
-                if (schtasksProc.ExitCode != 0)
-                {
-                    throw new Exception($"schtasks failsafe creation failed (exit {schtasksProc.ExitCode}): {stdErr}");
-                }
-                log.WriteLog($"Created shared scheduled failsafe unblock task: {taskName}.");
+                throw new Exception($"schtasks failsafe creation failed (exit {exitCode}): {stdErr}");
             }
+            log.WriteLog($"Created shared scheduled failsafe unblock task: {taskName}.");
 
             // Start the single background watcher process for the whole suite run. It outlives the main suite
             // process by design (it polls until suitePid exits), so it must not inherit the main process's
