@@ -230,11 +230,13 @@ namespace SuiteExecutor
             {
                 case MSIExec msi:
                     _log.WriteLog($"Installing MSI package: {msi.Name}", "Execution", Log.Severity.Info);
-                    msi.ExecuteInstall();
+                    ActionType msiResult = msi.ExecuteInstall();
+                    HandleActionType(msiResult, msi.Name!);
                     break;
                 case MSIRemovalExec msiRem:
                     _log.WriteLog($"Executing MSI removal: {msiRem.Name}", "Execution", Log.Severity.Info);
-                    msiRem.Execute();
+                    ActionType msiRemResult = msiRem.Execute();
+                    HandleActionType(msiRemResult, msiRem.Name!);
                     break;
                 case MSIxExec msix:
                     _log.WriteLog($"Installing MSIx package: {msix.Name}", "Execution", Log.Severity.Info);
@@ -266,7 +268,8 @@ namespace SuiteExecutor
             {
                 case MSIExec msi:
                     _log.WriteLog($"Uninstalling MSI package: {msi.Name}", "Execution", Log.Severity.Info);
-                    msi.ExecuteUninstall();
+                    ActionType msiResult = msi.ExecuteUninstall();
+                    HandleActionType(msiResult, msi.Name!);
                     break;
                 case MSIxExec msix:
                     _log.WriteLog($"Uninstalling MSIx package: {msix.Name}", "Execution", Log.Severity.Info);
@@ -294,7 +297,8 @@ namespace SuiteExecutor
             {
                 case MSIExec msi:
                     _log.WriteLog($"Rolling back MSI package: {msi.Name}", "Execution", Log.Severity.Info);
-                    msi.ExecuteRollback();
+                    ActionType msiResult = msi.ExecuteRollback();
+                    HandleActionType(msiResult, msi.Name!);
                     break;
                 case OtherExec other:
                     _log.WriteLog($"Rolling back Other package: {other.Name}", "Execution", Log.Severity.Info);
@@ -323,6 +327,10 @@ namespace SuiteExecutor
                     throw new Exception($"Package {packageName} returned Abort");
                 case ActionType.RestartImmediate:
                     _log.WriteLog($"Package {packageName} requested an immediate restart, rebooting in {restartCountdown} seconds", "Execution", Log.Severity.Warning);
+                    // Register a recovery task first, regardless of the general FailSafe build setting, so the
+                    // suite resumes after this deliberate restart and continues with any remaining packages -
+                    // mirrors RestartOnFailure's own use of CreateRestartRetryTask in Suite.cs.
+                    CreateRestartRetryTask();
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
                         SystemPaths.Shutdown,
                         $"/r /t {restartCountdown} /c \"This computer will restart in {restartCountdown} seconds to complete a software installation.\""

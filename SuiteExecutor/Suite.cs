@@ -165,7 +165,7 @@ namespace SuiteExecutor
                                 CreateRestartRetryTask();
                                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
                                     SystemPaths.Shutdown,
-                                    "/r /t 60 /c \"This computer will restart in 60 seconds to complete a software installation.\""
+                                    "/r /t 60 /c \"This computer will restart in 60 seconds to complete a deployment action.\""
                                 ) { UseShellExecute = false, CreateNoWindow = true });
                                 // The recovery task will re-run the suite after restart; exit with the standard
                                 // reboot-initiated code (this process triggered the restart itself, unlike 3010
