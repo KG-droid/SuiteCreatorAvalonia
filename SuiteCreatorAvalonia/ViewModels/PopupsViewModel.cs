@@ -42,6 +42,9 @@ namespace SuiteCreatorAvalonia.ViewModels
         private bool _linkToProcClosures = true;
 
         [ObservableProperty]
+        private bool _pauseDuringMeeting = true;
+
+        [ObservableProperty]
         private TextDocument _pSCondition = new();
 
         [ObservableProperty]
@@ -255,6 +258,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             ShowProgress = popSettings.ShowProgress;
             ShowPopupWarning = popSettings.ShowPopupWarning;
             LinkToProcClosures = popSettings.LinkToProcClosures;
+            PauseDuringMeeting = popSettings.PauseDuringMeeting;
             // Decode PSCondition from Base64 if possible, else fallback to plain text
             string? psConditionRaw = popSettings.PSCondition;
             if (!string.IsNullOrEmpty(psConditionRaw))
@@ -313,6 +317,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                 ShowProgress = ShowProgress,
                 ShowPopupWarning = ShowPopupWarning,
                 LinkToProcClosures = LinkToProcClosures,
+                PauseDuringMeeting = PauseDuringMeeting,
                 PSCondition = psConditionBase64,
                 InstallTxt = InstallTxt.Text,
                 UninstallTxt = UninstallTxt.Text,

@@ -119,9 +119,9 @@
 
 					<!-- Popup Controls -->	
 					<Grid
-						RowDefinitions="Auto,Auto,Auto"
+						RowDefinitions="Auto,Auto,Auto,Auto"
 						ColumnDefinitions="Auto,Auto,10,*,Auto">
-					
+
 						<!-- Popup Preview controls -->
 						<TextBlock
 							Grid.Row="0"
@@ -205,6 +205,28 @@
 							Grid.Column="4"
 							Content="See Examples..."
 							Command="{Binding ShowPopupConditionExamplesCommand}"
+							VerticalAlignment="Center"/>
+
+						<!-- Pause During Meeting -->
+						<TextBlock
+							Grid.Row="3"
+							Grid.Column="0"
+							Text="Pause during meeting:"
+							Classes="FieldName"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<CheckBox
+							Grid.Row="3"
+							Grid.Column="1"
+							IsChecked="{Binding PauseDuringMeeting}"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Center"/>
+						<TextBlock
+							Grid.Row="3"
+							Grid.Column="3"
+							Text="Delays showing the popup while the user's microphone is in use (e.g. an active call/meeting), retrying later instead of interrupting them (Exits 1602 before it waits, so deployment tool isnt blocked)"
+							TextWrapping="Wrap"
+							HorizontalAlignment="Left"
 							VerticalAlignment="Center"/>
 					</Grid>
 

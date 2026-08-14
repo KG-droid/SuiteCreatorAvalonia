@@ -25,6 +25,15 @@ namespace SuiteUserPopup
                 ShowHelp();
             }
 
+            // A lightweight headless mode used by SuiteExecutor to probe "is the user in a call" before
+            // showing the real popup - never shows any UI, just reports via exit code and returns immediately.
+            if (args.Any(a => a.Equals("--CheckMeetingStatus", StringComparison.OrdinalIgnoreCase)))
+            {
+                AppLogService.Initialize(ResolveLogFilePath(null));
+                RunMeetingStatusCheck();
+                return;
+            }
+
             bool isBlockedNotice = args.Any(a => a.Equals("--Blocked", StringComparison.OrdinalIgnoreCase));
             string? blockedProcessName = TryGetArgValue(args, "--ProcessName") ?? TryGetArgValue(args, "-p");
             string? blockedExePath = ResolveBlockedExePath(args);
@@ -84,6 +93,23 @@ namespace SuiteUserPopup
 
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
+        }
+
+        // Exit codes: 0 = microphone not in use, 1 = microphone in use, 2 = check failed/inconclusive.
+        // The caller (SuiteExecutor) treats anything other than 1 as "not in use" and proceeds normally.
+        private static void RunMeetingStatusCheck()
+        {
+            try
+            {
+                bool inUse = MicrophoneActivityDetector.IsMicrophoneInUse();
+                AppLogService.Info($"Microphone activity check completed, in use: {inUse}.", "SuiteUserPopup");
+                Environment.Exit(inUse ? 1 : 0);
+            }
+            catch (Exception ex)
+            {
+                AppLogService.Error($"Microphone activity check failed: {ex.Message}", "SuiteUserPopup");
+                Environment.Exit(2);
+            }
         }
 
         private static string? ResolveConfigPath(string[] args)
@@ -249,6 +275,7 @@ namespace SuiteUserPopup
             Console.WriteLine("  --Blocked                                : Show a lightweight notice that a process was blocked, instead of the full popup");
             Console.WriteLine("  --ProcessName <name> or -p <name>       : Name of the blocked process, used with --Blocked");
             Console.WriteLine("  --SuiteId <id>                           : Suite's stable ID, tagged onto the window title so a later unblock can find and close it");
+            Console.WriteLine("  --CheckMeetingStatus                     : Headless check of whether the microphone is currently in use, no popup shown. Exit code 0 = not in use, 1 = in use, 2 = check failed");
             Console.WriteLine();
             Console.WriteLine("If no parameters are provided, the app will look for 'popconfig.json', 'CompanyLogo.png', and 'SuiteLogo.png' in the executable directory.");
             AppLogService.Info("Application help text displayed.", "SuiteUserPopup");

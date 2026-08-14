@@ -36,11 +36,11 @@ namespace SuiteExecutor
                 _suiteConfig.PopupSettings.LoggedOffAction = PopupAction.Continue;
                 _suiteConfig.PopupSettings.TimerExpireAction = PopupAction.Continue;
                 _delayDaysRemaining = 0;
-                _log.WriteLog($"Suite skip has been disabled by setting all popup actions to continue", "Popup", Log.Severity.Info);
+                _log.WriteLog($"Suite skip has been disabled by setting all popup actions to continue", "ExecPopup", Log.Severity.Info);
             }
             catch (Exception ex)
             {
-                _log.WriteLog($"Failed to disable suite skip: {ex.Message}", "Popup", Log.Severity.Error);
+                _log.WriteLog($"Failed to disable suite skip: {ex.Message}", "ExecPopup", Log.Severity.Error);
             }
         }
 
@@ -51,9 +51,9 @@ namespace SuiteExecutor
         private void CleanupBeforeUserSkipExit()
         {
             try { RemoveFailSafeTask(); }
-            catch (Exception ex) { _log.WriteLog($"Skip-exit cleanup: failed to remove FailSafe task: {ex.Message}", "Popup", Log.Severity.Warning); }
+            catch (Exception ex) { _log.WriteLog($"Skip-exit cleanup: failed to remove FailSafe task: {ex.Message}", "ExecPopup", Log.Severity.Warning); }
             try { RemoveSuiteRunningRegistry(); }
-            catch (Exception ex) { _log.WriteLog($"Skip-exit cleanup: failed to remove running registry: {ex.Message}", "Popup", Log.Severity.Warning); }
+            catch (Exception ex) { _log.WriteLog($"Skip-exit cleanup: failed to remove running registry: {ex.Message}", "ExecPopup", Log.Severity.Warning); }
         }
 
         // Returns true only when the script ran successfully and explicitly output $False - that's the sole
@@ -68,7 +68,7 @@ namespace SuiteExecutor
                 return false;
             }
 
-            _log.WriteLog($"Checking {logLabel}", "Popup", Log.Severity.Info);
+            _log.WriteLog($"Checking {logLabel}", "ExecPopup", Log.Severity.Info);
             string tempScriptPath = Path.Combine(Path.GetTempPath(), $"popup_condition_{Guid.NewGuid()}.ps1");
             try
             {
@@ -76,7 +76,7 @@ namespace SuiteExecutor
                 string psScript = Encoding.UTF8.GetString(psBytes);
                 if (string.IsNullOrWhiteSpace(psScript))
                 {
-                    _log.WriteLog($"{logLabel} is configured but the script is empty, skipping the check", "Popup", Log.Severity.Info);
+                    _log.WriteLog($"{logLabel} is configured but the script is empty, skipping the check", "ExecPopup", Log.Severity.Info);
                     return false;
                 }
 
@@ -95,8 +95,8 @@ namespace SuiteExecutor
                 using Process? process = Process.Start(psi);
                 if (process == null)
                 {
-                    _log.WriteLog($"{logLabel} failed with error: Failed to start PowerShell process.", "Popup", Log.Severity.Error);
-                    _log.WriteLog($"The condition could not be evaluated, showing the popup so the user has a chance to save their work.", "Popup", Log.Severity.Warning);
+                    _log.WriteLog($"{logLabel} failed with error: Failed to start PowerShell process.", "ExecPopup", Log.Severity.Error);
+                    _log.WriteLog($"The condition could not be evaluated, showing the popup so the user has a chance to save their work.", "ExecPopup", Log.Severity.Warning);
                     return false;
                 }
 
@@ -106,22 +106,22 @@ namespace SuiteExecutor
 
                 if (string.IsNullOrWhiteSpace(output))
                 {
-                    _log.WriteLog($"{logLabel} failed with error: Script produced no output, expected $True or $False.", "Popup", Log.Severity.Error);
-                    _log.WriteLog($"The condition could not be evaluated, showing the popup so the user has a chance to save their work.", "Popup", Log.Severity.Warning);
+                    _log.WriteLog($"{logLabel} failed with error: Script produced no output, expected $True or $False.", "ExecPopup", Log.Severity.Error);
+                    _log.WriteLog($"The condition could not be evaluated, showing the popup so the user has a chance to save their work.", "ExecPopup", Log.Severity.Warning);
                     return false;
                 }
 
                 if (!bool.TryParse(output.Trim(), out bool conditionMet))
                 {
-                    _log.WriteLog($"{logLabel} failed with error: Script did not return a bool value, output was: {output.Trim()}", "Popup", Log.Severity.Error);
-                    _log.WriteLog($"The condition could not be evaluated, showing the popup so the user has a chance to save their work.", "Popup", Log.Severity.Warning);
+                    _log.WriteLog($"{logLabel} failed with error: Script did not return a bool value, output was: {output.Trim()}", "ExecPopup", Log.Severity.Error);
+                    _log.WriteLog($"The condition could not be evaluated, showing the popup so the user has a chance to save their work.", "ExecPopup", Log.Severity.Warning);
                     return false;
                 }
 
                 if (!conditionMet)
                 {
-                    _log.WriteLog($"Popup is configured but the {logLabel} was not met.", "Popup", Log.Severity.Info);
-                    _log.WriteLog($"Continuing with the suite execution, as the {logLabel} wasn't met", "Popup", Log.Severity.Info);
+                    _log.WriteLog($"Popup is configured but the {logLabel} was not met.", "ExecPopup", Log.Severity.Info);
+                    _log.WriteLog($"Continuing with the suite execution, as the {logLabel} wasn't met", "ExecPopup", Log.Severity.Info);
                     return true;
                 }
 
@@ -129,8 +129,8 @@ namespace SuiteExecutor
             }
             catch (Exception ex)
             {
-                _log.WriteLog($"{logLabel} failed with error: Failed to evaluate PowerShell condition: {ex.Message}", "Popup", Log.Severity.Error);
-                _log.WriteLog($"The condition could not be evaluated, showing the popup so the user has a chance to save their work.", "Popup", Log.Severity.Warning);
+                _log.WriteLog($"{logLabel} failed with error: Failed to evaluate PowerShell condition: {ex.Message}", "ExecPopup", Log.Severity.Error);
+                _log.WriteLog($"The condition could not be evaluated, showing the popup so the user has a chance to save their work.", "ExecPopup", Log.Severity.Warning);
                 return false;
             }
             finally
@@ -150,15 +150,22 @@ namespace SuiteExecutor
             // means a suite that's missing its popup assets can't crash mid-ESP instead of just skipping.
             if (IsDeviceInEsp())
             {
-                _log.WriteLog($"Device is in ESP (Autopilot Enrollment Status Page / initial setup)", "Popup", Log.Severity.Info);
+                _log.WriteLog($"Device is in ESP (Autopilot Enrollment Status Page / initial setup)", "ExecPopup", Log.Severity.Info);
                 if (_suiteConfig.PopupSettings.ESPAction == PopupAction.Skip)
                 {
-                    _log.WriteLog($"ESPAction is Skip, skipping this suite run", "Popup", Log.Severity.Info);
+                    _log.WriteLog($"ESPAction is Skip, skipping this suite run", "ExecPopup", Log.Severity.Info);
                     CleanupBeforeUserSkipExit();
                     Environment.Exit(1602);
                 }
-                _log.WriteLog($"ESPAction is Continue, continuing with the suite execution without showing the popup", "Popup", Log.Severity.Info);
+                _log.WriteLog($"ESPAction is Continue, continuing with the suite execution without showing the popup", "ExecPopup", Log.Severity.Info);
                 return;
+            }
+
+            if (_suiteConfig.PopupSettings.PauseDuringMeeting && IsMicrophoneInUse())
+            {
+                _log.WriteLog($"Microphone is currently in use, pausing the suite until the meeting/call has ended", "ExecPopup", Log.Severity.Info);
+                CleanupBeforeUserSkipExit();
+                Environment.Exit(1602);
             }
 
             int delayDaysConfigured = (int)_suiteConfig.PopupSettings.DelayDays;
@@ -171,14 +178,14 @@ namespace SuiteExecutor
                     _delayDaysRemaining = Math.Max(0, delayDaysConfigured - (int)(DateTime.Now - initialPopupDate.Value).TotalDays);
                     if (_delayDaysRemaining <= 0)
                     {
-                        _log.WriteLog($"The maximum delay days of: {delayDaysConfigured}, for the popup has been reached. The skip option will be disabled", "Popup", Log.Severity.Info);
+                        _log.WriteLog($"The maximum delay days of: {delayDaysConfigured}, for the popup has been reached. The skip option will be disabled", "ExecPopup", Log.Severity.Info);
                         DisableSuiteSkip();
                     }
                 }
             }
             catch (Exception ex)
             {
-                _log.WriteLog($"Failed to check popup initial date in registry, error: {ex.Message}", "Popup", Log.Severity.Error);
+                _log.WriteLog($"Failed to check popup initial date in registry, error: {ex.Message}", "ExecPopup", Log.Severity.Error);
                 DisableSuiteSkip(); // Fail safe and disable skip if there is any issue with the registry, rather than risk the user being stuck in an infinite loop of being able to always skip the popup.
             }
             
@@ -258,8 +265,8 @@ namespace SuiteExecutor
                 }
                 if (!anyProcClosureRunning)
                 {
-                    _log.WriteLog($"Popup is configured, but it is linked to Process Closures, and none of those processes are running", "Popup", Log.Severity.Info);
-                    _log.WriteLog($"Continuing with the suite execution", "Popup", Log.Severity.Info);
+                    _log.WriteLog($"Popup is configured, but it is linked to Process Closures, and none of those processes are running", "ExecPopup", Log.Severity.Info);
+                    _log.WriteLog($"Continuing with the suite execution", "ExecPopup", Log.Severity.Info);
                     return;
                 }
             }
@@ -278,11 +285,11 @@ namespace SuiteExecutor
                 JsonNode? popConfigNode = JsonNode.Parse(popConfigJson);
                 if (popConfigNode == null)
                 {
-                    _log.WriteLog($"Popup config at {popConfigPath} could not be parsed. For safety purposes in case this is an important package, proceeding with the suite.", "Popup", Log.Severity.Error);
+                    _log.WriteLog($"Popup config at {popConfigPath} could not be parsed. For safety purposes in case this is an important package, proceeding with the suite.", "ExecPopup", Log.Severity.Error);
                     return;
                 }
                 popConfigNode["Action"] = _action.ToString();
-                _log.WriteLog($"Setting popup {_action} text", "Popup", Log.Severity.Info);
+                _log.WriteLog($"Setting popup {_action} text", "ExecPopup", Log.Severity.Info);
                 if (_action == SuiteAction.Deployment)
                 {
 
@@ -297,38 +304,38 @@ namespace SuiteExecutor
                 File.WriteAllText(popConfigPath, popConfigNode?.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) ?? popConfigJson);
 
                 // Run the popup and wait for the response
-                _log.WriteLog($"launching Popup", "Popup", Log.Severity.Info);
+                _log.WriteLog($"launching Popup", "ExecPopup", Log.Severity.Info);
                 _popupWasShown = true;
                 CreateSuitePopupInitialDateRegistry(); // Run this first so that if the popup kept failing, it wont just give infinite skips.
                 TimeSpan popTimeSpan = TimeSpan.FromMinutes(_suiteConfig.PopupSettings.Timer);
                 string popArguments = $"--Config \"{popConfigPath}\" --SuiteLogo \"{suiteLogoPath}\" --CompanyLogo \"{companyLogoPath}\"";
-                _log.WriteLog($"Popup command: \"{_userPopExe}\" {popArguments}", "Popup", Log.Severity.Info);
+                _log.WriteLog($"Popup command: \"{_userPopExe}\" {popArguments}", "ExecPopup", Log.Severity.Info);
                 ImpersonatedProcessResult? result = StartProcessAsCurrentUser(_userPopExe, popArguments, popupDir, true, true, popTimeSpan);
                 switch ((PopupExitType?)result?.ExitCode)
                 {
                     case PopupExitType.Continue:
-                        _log.WriteLog($"Popup result was: {PopupExitType.Continue}", "Popup", Log.Severity.Info);
-                        _log.WriteLog($"Continuing with the suite execution", "Popup", Log.Severity.Info);
+                        _log.WriteLog($"Popup result was: {PopupExitType.Continue}", "ExecPopup", Log.Severity.Info);
+                        _log.WriteLog($"Continuing with the suite execution", "ExecPopup", Log.Severity.Info);
                         return;
                     case PopupExitType.DeviceLocked:
-                        _log.WriteLog($"Popup result was: {PopupExitType.DeviceLocked}", "Popup", Log.Severity.Info);
+                        _log.WriteLog($"Popup result was: {PopupExitType.DeviceLocked}", "ExecPopup", Log.Severity.Info);
                         if (_suiteConfig.PopupSettings.LockedAction == PopupAction.Skip)
                         {
-                            _log.WriteLog($"Device is locked, skipping suite execution", "Popup", Log.Severity.Info);
+                            _log.WriteLog($"Device is locked, skipping suite execution", "ExecPopup", Log.Severity.Info);
                             CleanupBeforeUserSkipExit();
                             Environment.Exit(1602);
                         }
 
-                        _log.WriteLog($"Device is locked, continuing with the suite execution", "Popup", Log.Severity.Info);
+                        _log.WriteLog($"Device is locked, continuing with the suite execution", "ExecPopup", Log.Severity.Info);
                         return;
                     case PopupExitType.Defer:
-                        _log.WriteLog($"Popup result was: {PopupExitType.Defer}", "Popup", Log.Severity.Info);
+                        _log.WriteLog($"Popup result was: {PopupExitType.Defer}", "ExecPopup", Log.Severity.Info);
                         if (TimeOnly.TryParse(result?.StandardOutput, out TimeOnly reminderTime))
                         {
 
                             if (_delayDaysRemaining > 0)
                             {
-                                _log.WriteLog($"User deferred suite execution to {reminderTime}", "Popup", Log.Severity.Info);
+                                _log.WriteLog($"User deferred suite execution to {reminderTime}", "ExecPopup", Log.Severity.Info);
                                 ScheduleReminder(reminderTime);
                                 // Remove the FailSafe recovery task so its boot/logon trigger can't pre-empt the
                                 // reminder we just scheduled. (Removes SuiteFailSafe_*, not the SuiteReminder_* task.)
@@ -338,33 +345,33 @@ namespace SuiteExecutor
 
                             return;
                         }
-                        _log.WriteLog($"Failed to parse reminder time from popup output: {result?.StandardOutput}", "Popup", Log.Severity.Error);
-                        _log.WriteLog($"For safety purposes in case this is an important package, proceeding with the suite.", "Popup", Log.Severity.Warning);
+                        _log.WriteLog($"Failed to parse reminder time from popup output: {result?.StandardOutput}", "ExecPopup", Log.Severity.Error);
+                        _log.WriteLog($"For safety purposes in case this is an important package, proceeding with the suite.", "ExecPopup", Log.Severity.Warning);
                         return;
                     case PopupExitType.TimerExpired:
-                        _log.WriteLog($"Popup result was: {PopupExitType.TimerExpired}", "Popup", Log.Severity.Info);
-                        _log.WriteLog($"Popup timer expired, will {_suiteConfig.PopupSettings.TimerExpireAction} the suite execution", "Popup", Log.Severity.Info);
+                        _log.WriteLog($"Popup result was: {PopupExitType.TimerExpired}", "ExecPopup", Log.Severity.Info);
+                        _log.WriteLog($"Popup timer expired, will {_suiteConfig.PopupSettings.TimerExpireAction} the suite execution", "ExecPopup", Log.Severity.Info);
                         // When the delay window is exhausted, DisableSuiteSkip() has already forced this to
                         // Continue, so a remaining Skip here means we are still within the allowed deferral window.
                         if (_suiteConfig.PopupSettings.TimerExpireAction == PopupAction.Skip)
                         {
-                            _log.WriteLog($"Timer expired and TimerExpireAction is Skip, skipping this suite run", "Popup", Log.Severity.Info);
+                            _log.WriteLog($"Timer expired and TimerExpireAction is Skip, skipping this suite run", "ExecPopup", Log.Severity.Info);
                             CleanupBeforeUserSkipExit();
                             Environment.Exit(1602);
                         }
 
                         return;
                     default:
-                        _log.WriteLog($"Popup result was an error/unexpected exit code: {result?.ExitCode}", "Popup", Log.Severity.Info);
-                        _log.WriteLog($"Popup failed, Exit code was: {result?.ExitCode}, Error: {result?.ErrorMessage}, Ran as user: {result?.UserName}", "Popup", Log.Severity.Error);
-                        _log.WriteLog($"For safety purposes in case this is an important package, proceeding with the suite.", "Popup", Log.Severity.Warning);
+                        _log.WriteLog($"Popup result was an error/unexpected exit code: {result?.ExitCode}", "ExecPopup", Log.Severity.Info);
+                        _log.WriteLog($"Popup failed, Exit code was: {result?.ExitCode}, Error: {result?.ErrorMessage}, Ran as user: {result?.UserName}", "ExecPopup", Log.Severity.Error);
+                        _log.WriteLog($"For safety purposes in case this is an important package, proceeding with the suite.", "ExecPopup", Log.Severity.Warning);
                         return;
                 }
             }
             catch (Exception ex)
             {
-                _log.WriteLog($"Popup failed with error: {ex.Message}", "Popup", Log.Severity.Error);
-                _log.WriteLog($"For safety purposes in case this is an important package, proceeding with the suite.", "Popup", Log.Severity.Warning);
+                _log.WriteLog($"Popup failed with error: {ex.Message}", "ExecPopup", Log.Severity.Error);
+                _log.WriteLog($"For safety purposes in case this is an important package, proceeding with the suite.", "ExecPopup", Log.Severity.Warning);
             }
         }
     }

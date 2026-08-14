@@ -24,7 +24,7 @@ Instead of hand-rolling a wrapper script per app, you build the suite visually: 
 - **Shortcuts** — create desktop or Start Menu shortcuts.
 - **Drivers** — install Windows drivers from an `.inf`, or remove them from the driver store.
 - **Rules** — conditional logic that gates other events on a file, registry value, or other condition matching.
-- **Popups** — end-user facing messaging while the suite runs: warn users before an upgrade, show install progress, let them defer with a timer, and preview exactly what they'll see. See the **[user popup guide](docs/user-popup-guide.md)** for how the popup works, linking it to process closures, and the deferral flow.
+- **Popups** — end-user facing messaging while the suite runs: warn users before an upgrade, show install progress, let them defer with a timer, preview exactly what they'll see, and automatically pause if the user's on a call. See the **[user popup guide](docs/user-popup-guide.md)** for how the popup works, linking it to process closures, and the deferral flow.
 
 ## Building a suite
 

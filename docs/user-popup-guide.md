@@ -52,6 +52,15 @@ A popup is only useful if someone is there to see it. These settings (all on the
 | **Locked Device action** | What to do when a user is logged in but the screen is locked/asleep — including if it locks *during* the timer. |
 | **ESP action** | What to do during Windows device initial setup (Autopilot ESP). |
 
+## Pausing while the user is in a call
+
+Interrupting someone mid-meeting — especially with a popup that's about to close their apps — is exactly the kind of thing this feature exists to avoid. Tick **Pause during meeting** on the Popups page (on by default) and the suite holds off showing the popup at all while the user's microphone is actively in use.
+
+- This checks for a **live audio capture stream**, not just microphone permission — so it still counts the user as being on a call even after they hit "mute" in Teams, Zoom, Meet, Webex, etc. Most conferencing apps keep the microphone stream open while muted (so features like live captions and "you're on mute" nudges keep working), so a software-muted mic still pauses the suite.
+- If the mic is in use, the suite exits the same way as a user-chosen deferral (exit code 1602) rather than waiting around for the call to end. Your deployment tool (Intune/SCCM) records the run as pending and simply re-evaluates the app on its normal schedule — there's no extra scheduled task or background process involved.
+- It's independent of the **Max Delay Days** allowance — pausing for a meeting never eats into a user's deferral budget.
+- It fails safe: if the check can't run for any reason (no active session, an error querying the microphone), the popup shows as normal rather than the suite silently blocking indefinitely.
+
 ## Conditions: showing the popup only when a script says so
 
 Two optional PowerShell gates run before the popup is shown, and both must pass:
@@ -64,3 +73,5 @@ Each script must output only `$True` (show the popup) or `$False` (skip the popu
 ## How it works under the hood
 
 `SuiteUserPopup.exe` is its own small AOT-compiled Avalonia app, bundled into every built suite (see the [developer guide](developer-guide.md)). The elevated `SuiteExecutor` launches it **in the logged-in user's session** and reads the outcome back from its exit code: continue (0), device locked (1), error (2), defer (3, with the chosen reminder time on stdout), timer expired (4), or missing logo (5). Everything the popup displays comes from a `popconfig.json` the Creator writes at build time, plus the logo images bundled next to it.
+
+The meeting-pause check runs the same exe in a separate, headless mode (`--CheckMeetingStatus`) that never shows any window — it queries Windows' audio session APIs directly for whether the default microphone has a live capture stream, and exits 0/1/2 for not-in-use/in-use/check-failed. `SuiteExecutor` runs this the same way it runs the real popup — as the logged-in user, since the Executor itself runs elevated/SYSTEM and has no direct visibility into that user's live audio sessions.
