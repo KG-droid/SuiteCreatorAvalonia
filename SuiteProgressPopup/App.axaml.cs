@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using SuiteProgressPopup.Services;
@@ -20,13 +21,20 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             StartupOptions options = StartupOptions.Current;
-            ProgressWindowViewModel viewModel = new ProgressWindowViewModel(options.SuiteLogoPath, options.ProgressFilePath, options.ProgressColourBrush);
-            ProgressWindow progressWindow = new ProgressWindow
-            {
-                DataContext = viewModel
-            };
+            ProgressWindowViewModel viewModel = new ProgressWindowViewModel(
+                options.SuiteLogoPath,
+                options.ProgressFilePath,
+                options.ProgressColourBrush,
+                options.IsLockdown,
+                options.CompanyLogoPath,
+                options.LockdownMaxMinutes,
+                options.LockdownMessage);
 
-            desktop.MainWindow = progressWindow;
+            Window mainWindow = options.IsLockdown
+                ? new LockdownWindow { DataContext = viewModel }
+                : new ProgressWindow { DataContext = viewModel };
+
+            desktop.MainWindow = mainWindow;
             AppLogService.Info("Main window created successfully.", nameof(App));
         }
 

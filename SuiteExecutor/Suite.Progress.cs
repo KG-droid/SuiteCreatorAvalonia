@@ -24,6 +24,19 @@ namespace SuiteExecutor
                 return;
             }
 
+            // The popup condition scripts are shared across both popup types, not just the warning popup -
+            // if the condition explicitly says not to show a popup, that applies to progress too.
+            if (_suiteConfig.PopupSettings.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.PopupSettings.GlobalPSCondition, "global popup condition"))
+            {
+                _log.WriteLog("Global popup condition was not met, skipping progress popup", "Progress", Log.Severity.Info);
+                return;
+            }
+            if (_suiteConfig.PopupSettings.HasPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.PopupSettings.PSCondition, "popup condition"))
+            {
+                _log.WriteLog("Popup condition was not met, skipping progress popup", "Progress", Log.Severity.Info);
+                return;
+            }
+
             try
             {
                 string popupDir = Path.Combine(_suiteRootDir, "Popup");
@@ -50,6 +63,19 @@ namespace SuiteExecutor
                 WriteProgressStatus(0, $"Preparing {_suiteConfig.BuildSettings.Name}...", isComplete: false, isError: false);
 
                 string progressArguments = $"--SuiteLogo \"{suiteLogoPath}\" --ProgressFile \"{progressFilePath}\" --LogFile \"{_logPath}\" --ProgressColour \"{_suiteConfig.PopupSettings.BackgroundColor.Value}\"";
+
+                if (_suiteConfig.PopupSettings.LockdownEnabled)
+                {
+                    string? companyLogoPath = ResolveCompanyLogoPath(popupDir);
+                    int maxMinutes = _suiteConfig.PopupSettings.LockdownMaxMinutes > 0 ? _suiteConfig.PopupSettings.LockdownMaxMinutes : 30;
+
+                    progressArguments += $" --Lockdown --MaxMinutes \"{maxMinutes}\"";
+                    if (companyLogoPath != null)
+                        progressArguments += $" --CompanyLogo \"{companyLogoPath}\"";
+                    if (!string.IsNullOrWhiteSpace(_suiteConfig.PopupSettings.LockdownMessage))
+                        progressArguments += $" --LockdownMessage \"{EscapeArgument(_suiteConfig.PopupSettings.LockdownMessage)}\"";
+                }
+
                 _log.WriteLog($"Launching progress popup: \"{_progressPopupExe}\" {progressArguments}", "Progress", Log.Severity.Info);
 
                 _progressPopupTask = Task.Run(() =>
@@ -70,6 +96,21 @@ namespace SuiteExecutor
             {
                 _log.WriteLog($"Failed to start progress popup: {ex.Message}", "Progress", Log.Severity.Error);
             }
+        }
+
+        // Escapes a value for embedding inside a double-quoted Win32 command-line argument
+        // (CommandLineToArgvW rules: a literal quote must be backslash-escaped).
+        private static string EscapeArgument(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+        private static string? ResolveCompanyLogoPath(string popupDir)
+        {
+            foreach (string ext in new[] { ".png", ".gif" })
+            {
+                string candidate = Path.Combine(popupDir, $"CompanyLogo{ext}");
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+            return null;
         }
 
         private void UpdateProgress(int percentage, string? statusText)

@@ -1,0 +1,78 @@
+<Window
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteProgressPopup.ViewModels"
+	xmlns:controls="using:SuiteCreatorControls.Controls"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	Topmost="True"
+	RequestedThemeVariant="Default"
+	WindowStartupLocation="CenterScreen"
+	ShowInTaskbar="False"
+	CanResize="False"
+	WindowDecorations="None"
+	WindowState="FullScreen"
+	Background="{DynamicResource SystemAltHighColor}"
+	x:Class="SuiteProgressPopup.Views.LockdownWindow"
+	x:DataType="vm:ProgressWindowViewModel">
+
+	<Design.DataContext>
+		<vm:ProgressWindowViewModel/>
+	</Design.DataContext>
+
+	<Grid>
+		<StackPanel
+			HorizontalAlignment="Center"
+			VerticalAlignment="Center"
+			Spacing="30"
+			MaxWidth="480">
+
+			<!-- Company logo, centered -->
+			<Image
+				Source="{Binding CompanyLogo}"
+				Stretch="Uniform"
+				MaxWidth="280"
+				MaxHeight="280"
+				HorizontalAlignment="Center"/>
+
+			<!-- Progress, underneath -->
+			<StackPanel
+				Spacing="10"
+				HorizontalAlignment="Stretch">
+
+				<TextBlock
+					Text="{Binding StatusText}"
+					FontSize="18"
+					HorizontalAlignment="Center"
+					TextWrapping="Wrap"
+					TextAlignment="Center"/>
+
+				<controls:ShimmerProgress
+					Height="14"
+					MinWidth="380"
+					Value="{Binding Percentage}"
+					IsIndeterminate="{Binding IsIndeterminate}"
+					Accent="{Binding ProgressColourBrush}"
+					TrackBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+					HorizontalAlignment="Stretch"/>
+
+				<TextBlock
+					Text="{Binding ElapsedTimeText, StringFormat='Time elapsed: {0}'}"
+					FontSize="13"
+					Opacity="0.7"
+					HorizontalAlignment="Center"/>
+
+				<TextBlock
+					Text="{Binding LockdownMessage}"
+					FontSize="13"
+					Opacity="0.7"
+					TextWrapping="Wrap"
+					TextAlignment="Center"
+					IsVisible="{Binding LockdownMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+					HorizontalAlignment="Center"/>
+
+			</StackPanel>
+		</StackPanel>
+	</Grid>
+</Window>

@@ -17,12 +17,21 @@ namespace SuiteProgressPopup.ViewModels
         private const int PollIntervalMs = 500;
         private const int CompletionLingerMs = 1500;
 
+        private const int ElapsedIntervalMs = 1000;
+
         private readonly string? _progressFilePath;
         private readonly DispatcherTimer _pollTimer;
+        private readonly DispatcherTimer? _lockdownDeadlineTimer;
+        private readonly DispatcherTimer? _elapsedTimer;
+        private readonly DateTime _startTime = DateTime.UtcNow;
         private bool _hasSeenCompletion;
+        private bool _explorerKilled;
 
         [ObservableProperty]
         private Bitmap? _suiteLogo;
+
+        [ObservableProperty]
+        private Bitmap? _companyLogo;
 
         [ObservableProperty]
         private int _percentage;
@@ -39,17 +48,40 @@ namespace SuiteProgressPopup.ViewModels
         [ObservableProperty]
         private SolidColorBrush _progressColourBrush;
 
+        [ObservableProperty]
+        private bool _isLockdown;
+
+        [ObservableProperty]
+        private string? _lockdownMessage;
+
+        [ObservableProperty]
+        private string _elapsedTimeText = "00:00";
+
         public ProgressWindowViewModel() : this(Path.Combine(AppContext.BaseDirectory, "SuiteLogo.png"), null)
         {
         }
 
-        public ProgressWindowViewModel(string suiteLogoPath, string? progressFilePath, SolidColorBrush? progressColourBrush = null)
+        public ProgressWindowViewModel(
+            string suiteLogoPath,
+            string? progressFilePath,
+            SolidColorBrush? progressColourBrush = null,
+            bool isLockdown = false,
+            string? companyLogoPath = null,
+            int lockdownMaxMinutes = 30,
+            string? lockdownMessage = null)
         {
             _progressFilePath = progressFilePath;
             LoadSuiteLogo(suiteLogoPath);
             ProgressColourBrush = progressColourBrush ?? new SolidColorBrush(Colors.DarkGreen);
             ApplyLogoOutlineIfNeeded(suiteLogoPath);
-            LogInfo("Progress window view model initialized.");
+            IsLockdown = isLockdown;
+            LockdownMessage = string.IsNullOrWhiteSpace(lockdownMessage) ? "Please do not turn off your computer." : lockdownMessage;
+            LogInfo($"Progress window view model initialized. Lockdown={isLockdown}");
+
+            if (isLockdown)
+            {
+                LoadCompanyLogo(companyLogoPath);
+            }
 
             _pollTimer = new DispatcherTimer
             {
@@ -60,7 +92,76 @@ namespace SuiteProgressPopup.ViewModels
             if (!Design.IsDesignMode)
             {
                 _pollTimer.Start();
+
+                if (isLockdown)
+                {
+                    LockdownService.KillExplorer();
+                    _explorerKilled = true;
+
+                    // Best-effort safety net: if this process is torn down abruptly (unhandled exception,
+                    // Ctrl+C) rather than exiting through ScheduleExit/OnLockdownDeadlineElapsed, still try
+                    // to restore Explorer so the user isn't left locked out.
+                    AppDomain.CurrentDomain.ProcessExit += (_, _) => EndLockdownIfNeeded();
+
+                    _lockdownDeadlineTimer = new DispatcherTimer
+                    {
+                        Interval = TimeSpan.FromMinutes(Math.Max(1, lockdownMaxMinutes))
+                    };
+                    _lockdownDeadlineTimer.Tick += OnLockdownDeadlineElapsed;
+                    _lockdownDeadlineTimer.Start();
+
+                    _elapsedTimer = new DispatcherTimer
+                    {
+                        Interval = TimeSpan.FromMilliseconds(ElapsedIntervalMs)
+                    };
+                    _elapsedTimer.Tick += OnElapsedTick;
+                    _elapsedTimer.Start();
+                }
             }
+        }
+
+        private void LoadCompanyLogo(string? filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            {
+                LogWarning($"Lockdown company logo not found: {filePath}");
+                return;
+            }
+
+            try
+            {
+                using var fs = File.OpenRead(filePath);
+                CompanyLogo = new Bitmap(fs);
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"Failed to load lockdown company logo: {ex.Message}");
+            }
+        }
+
+        private void OnElapsedTick(object? sender, EventArgs e)
+        {
+            TimeSpan elapsed = DateTime.UtcNow - _startTime;
+            ElapsedTimeText = elapsed.TotalHours >= 1
+                ? elapsed.ToString(@"hh\:mm\:ss")
+                : elapsed.ToString(@"mm\:ss");
+        }
+
+        private void OnLockdownDeadlineElapsed(object? sender, EventArgs e)
+        {
+            LogWarning("Lockdown max time limit reached before the suite completed; self-terminating and restoring Explorer.");
+            _lockdownDeadlineTimer?.Stop();
+            EndLockdownIfNeeded();
+            ApplicationHelper.ExitApplication(1);
+        }
+
+        private void EndLockdownIfNeeded()
+        {
+            if (!_explorerKilled)
+                return;
+
+            LockdownService.RestoreExplorer();
+            _explorerKilled = false;
         }
 
         private void LoadSuiteLogo(string filePath)
@@ -130,9 +231,11 @@ namespace SuiteProgressPopup.ViewModels
 
         private void ScheduleExit()
         {
+            _lockdownDeadlineTimer?.Stop();
             DispatcherTimer.RunOnce(() =>
             {
                 LogInfo("Progress popup exiting after completion linger period.");
+                EndLockdownIfNeeded();
                 ApplicationHelper.ExitApplication(0);
             }, TimeSpan.FromMilliseconds(CompletionLingerMs));
         }
@@ -141,6 +244,20 @@ namespace SuiteProgressPopup.ViewModels
         {
             _pollTimer.Tick -= OnPollTick;
             _pollTimer.Stop();
+
+            if (_lockdownDeadlineTimer is not null)
+            {
+                _lockdownDeadlineTimer.Tick -= OnLockdownDeadlineElapsed;
+                _lockdownDeadlineTimer.Stop();
+            }
+
+            if (_elapsedTimer is not null)
+            {
+                _elapsedTimer.Tick -= OnElapsedTick;
+                _elapsedTimer.Stop();
+            }
+
+            EndLockdownIfNeeded();
         }
     }
 }

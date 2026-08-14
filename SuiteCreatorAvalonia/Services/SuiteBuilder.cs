@@ -735,18 +735,10 @@ namespace SuiteCreatorAvalonia.Services
                         ImageLoader.GetFromBase64(popupSettings.SuiteLogoBase64)?.Save(Path.Combine(popDIR, "SuiteLogo.png"));
                     }
 
-                    if (popupSettings.ShowPopupWarning || hasBlockingProcClosures)
+                    // Company Logo is shared by the warning popup and the progress popup's fullscreen lockdown
+                    // mode, so it needs writing whenever either might display it.
+                    if (popupSettings.ShowPopupWarning || hasBlockingProcClosures || (popupSettings.ShowProgress && popupSettings.LockdownEnabled))
                     {
-                        Report("Creating warning popup files");
-
-                        var popConfig = CreatePopConfig(popupSettings, suiteExecConfig);
-                        var popJsonPath = Path.Combine(popDIR, "popconfig.json");
-                        var popJson = JsonSerializer.Serialize(popConfig, new JsonSerializerOptions
-                        {
-                            WriteIndented = true,
-                        });
-                        File.WriteAllText(popJsonPath, popJson);
-                        // Company Logo
                         if (string.IsNullOrWhiteSpace(companyLogoBase64) || companyLogoBytes == null)
                         {
                             SaveAvaloniaAssetToFile(new Uri("avares://SuiteCreatorAvalonia/Assets/Images/SuiteCreatorLogoImage.png"), Path.Combine(popDIR, "CompanyLogo.png"));
@@ -758,6 +750,19 @@ namespace SuiteCreatorAvalonia.Services
                             Directory.CreateDirectory(Path.GetDirectoryName(logoDestPath)!);
                             File.WriteAllBytes(logoDestPath, companyLogoBytes);
                         }
+                    }
+
+                    if (popupSettings.ShowPopupWarning || hasBlockingProcClosures)
+                    {
+                        Report("Creating warning popup files");
+
+                        var popConfig = CreatePopConfig(popupSettings, suiteExecConfig);
+                        var popJsonPath = Path.Combine(popDIR, "popconfig.json");
+                        var popJson = JsonSerializer.Serialize(popConfig, new JsonSerializerOptions
+                        {
+                            WriteIndented = true,
+                        });
+                        File.WriteAllText(popJsonPath, popJson);
                         // Popup exec copy
                         var suiteUserPopPath = Path.Combine(AppContext.BaseDirectory, "SuiteExec", _suiteUserPopupName);
                         if (File.Exists(suiteUserPopPath))

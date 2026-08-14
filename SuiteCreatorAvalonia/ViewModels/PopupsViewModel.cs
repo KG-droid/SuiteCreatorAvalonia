@@ -39,6 +39,15 @@ namespace SuiteCreatorAvalonia.ViewModels
         private bool _showPopupPreview = true;
 
         [ObservableProperty]
+        private bool _lockdownEnabled = false;
+
+        [ObservableProperty]
+        private int? _lockdownMaxMinutes = 30;
+
+        [ObservableProperty]
+        private string _lockdownMessage = "Please do not turn off your computer.";
+
+        [ObservableProperty]
         private bool _linkToProcClosures = true;
 
         [ObservableProperty]
@@ -299,6 +308,9 @@ namespace SuiteCreatorAvalonia.ViewModels
                 SetDefaultSuiteLogo();
             else
                 SuiteLogo = ImageLoader.GetFromBase64(popSettings.SuiteLogoBase64);
+            LockdownEnabled = popSettings.LockdownEnabled;
+            LockdownMaxMinutes = popSettings.LockdownMaxMinutes > 0 ? popSettings.LockdownMaxMinutes : 30;
+            LockdownMessage = string.IsNullOrWhiteSpace(popSettings.LockdownMessage) ? "Please do not turn off your computer." : popSettings.LockdownMessage;
             _isLoading = false;
         }
 
@@ -335,6 +347,9 @@ namespace SuiteCreatorAvalonia.ViewModels
                 UninstAction = UninstAction,
                 HasPSCondition = HasPopupCondition,
                 SuiteLogoBase64 = SuiteLogoBase64, // Saving takes too long if we dont cache this base64
+                LockdownEnabled = LockdownEnabled,
+                LockdownMaxMinutes = LockdownMaxMinutes != null ? (int)LockdownMaxMinutes : 30,
+                LockdownMessage = LockdownMessage,
             };
             _suiteCoreManager.UpdatePopupSettings(popSettings);
         }

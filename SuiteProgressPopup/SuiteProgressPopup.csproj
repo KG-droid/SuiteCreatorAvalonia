@@ -15,9 +15,9 @@
 	<PropertyGroup>
 		<PackageIcon>SuiteCreatorLogoImage.png</PackageIcon>
 		<ApplicationIcon>SuiteCreatorLogo.ico</ApplicationIcon>
-		<Version>1.0.2</Version>
-		<AssemblyVersion>1.0.2</AssemblyVersion>
-		<FileVersion>1.0.2</FileVersion>
+		<Version>1.0.3</Version>
+		<AssemblyVersion>1.0.3</AssemblyVersion>
+		<FileVersion>1.0.3</FileVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<Content Include="SuiteCreatorLogo.ico" />
@@ -47,6 +47,9 @@
 	<ItemGroup>
 		<Compile Update="Views\ProgressWindow.axaml.cs">
 			<DependentUpon>ProgressWindow.axaml</DependentUpon>
+		</Compile>
+		<Compile Update="Views\LockdownWindow.axaml.cs">
+			<DependentUpon>LockdownWindow.axaml</DependentUpon>
 		</Compile>
 	</ItemGroup>
 
