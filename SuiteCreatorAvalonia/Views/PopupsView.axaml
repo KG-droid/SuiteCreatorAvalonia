@@ -21,6 +21,7 @@
 	<UserControl.Resources>
 		<converters:AnyTrueConverter x:Key="AnyTrue" />
 		<converters:LogoSectionVisibleConverter x:Key="LogoSectionVisible" />
+		<converters:WarningFooterVisibleConverter x:Key="WarningFooterVisible" />
 	</UserControl.Resources>
 
 	<Design.DataContext>
@@ -767,10 +768,15 @@
 
 				<!-- Advisory footer text -->
 				<TextBlock
-					IsVisible="{Binding IsChecked, ElementName=SuitePopupEnable_Checkbox}"
 					Margin="10,0,0,0"
 					TextWrapping="Wrap"
 					Foreground="#FF838383">
+					<TextBlock.IsVisible>
+						<MultiBinding Converter="{StaticResource WarningFooterVisible}">
+							<Binding ElementName="SuitePopupEnable_Checkbox" Path="IsChecked"/>
+							<Binding ElementName="Popups_TabControl" Path="SelectedIndex"/>
+						</MultiBinding>
+					</TextBlock.IsVisible>
 					<Run Text="* If the device goes to sleep/lock screen during the timer, then the suite will use the action on the &quot;Locked Device Action&quot; dropdown to decide what to do"/>
 					<LineBreak/>
 					<LineBreak/>
@@ -782,6 +788,7 @@
 					<Run Text="This also determines the action to take if the device goes to sleep/locked screen during the Timer"/>
 					<Run Text="(Normally when the user has left the device, after the Timer has started)"/>
 				</TextBlock>
+
 			</StackPanel>
 		</ScrollViewer>
 	</Grid>
