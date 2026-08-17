@@ -99,20 +99,20 @@ namespace SuiteExecutor
             return true;
         }
 
-        private void ExecutePackage(PackageBase package)
+        private void ExecutePackage(PackageBase package, double stageStartPercent, double stageEndPercent, string? statusText)
         {
             try
             {
                 switch (_action)
                 {
                     case SuiteAction.Deployment:
-                        ExecutePackageDeploy(package);
+                        ExecutePackageDeploy(package, stageStartPercent, stageEndPercent, statusText);
                         break;
                     case SuiteAction.Removal:
-                        ExecutePackageRemove(package);
+                        ExecutePackageRemove(package, stageStartPercent, stageEndPercent, statusText);
                         break;
                     case SuiteAction.Rollback:
-                        ExecutePackageRollback(package);
+                        ExecutePackageRollback(package, stageStartPercent, stageEndPercent, statusText);
                         break;
                 }
 
@@ -224,36 +224,40 @@ namespace SuiteExecutor
             throw new InvalidOperationException($"Post-execution detection check failed for {package.Name}");
         }
 
-        private void ExecutePackageDeploy(PackageBase package)
+        private void ExecutePackageDeploy(PackageBase package, double stageStartPercent, double stageEndPercent, string? statusText)
         {
             switch (package)
             {
                 case MSIExec msi:
                     _log.WriteLog($"Installing MSI package: {msi.Name}", "Execution", Log.Severity.Info);
-                    ActionType msiResult = msi.ExecuteInstall();
+                    ActionType msiResult = ActionType.Continue;
+                    RunWithEstimatedProgress(msi.EstimatedInstallSeconds, stageStartPercent, stageEndPercent, statusText, () => msiResult = msi.ExecuteInstall());
                     HandleActionType(msiResult, msi.Name!);
                     break;
                 case MSIRemovalExec msiRem:
                     _log.WriteLog($"Executing MSI removal: {msiRem.Name}", "Execution", Log.Severity.Info);
-                    ActionType msiRemResult = msiRem.Execute();
+                    ActionType msiRemResult = ActionType.Continue;
+                    RunWithEstimatedProgress(msiRem.EstimatedUninstallSeconds, stageStartPercent, stageEndPercent, statusText, () => msiRemResult = msiRem.Execute());
                     HandleActionType(msiRemResult, msiRem.Name!);
                     break;
                 case MSIxExec msix:
                     _log.WriteLog($"Installing MSIx package: {msix.Name}", "Execution", Log.Severity.Info);
-                    msix.ExecuteInstall();
+                    RunWithEstimatedProgress(msix.EstimatedInstallSeconds, stageStartPercent, stageEndPercent, statusText, () => msix.ExecuteInstall());
                     break;
                 case MSIxRemovalExec msixRem:
                     _log.WriteLog($"Executing MSIx removal: {msixRem.Name}", "Execution", Log.Severity.Info);
-                    msixRem.Execute();
+                    RunWithEstimatedProgress(msixRem.EstimatedUninstallSeconds, stageStartPercent, stageEndPercent, statusText, () => msixRem.Execute());
                     break;
                 case OtherExec other:
                     _log.WriteLog($"Installing Other package: {other.Name}", "Execution", Log.Severity.Info);
-                    ActionType otherResult = other.ExecuteInstall();
+                    ActionType otherResult = ActionType.Continue;
+                    RunWithEstimatedProgress(other.EstimatedInstallSeconds, stageStartPercent, stageEndPercent, statusText, () => otherResult = other.ExecuteInstall());
                     HandleActionType(otherResult, other.Name!, other.RestartCountdown);
                     break;
                 case OtherRemovalExec otherRem:
                     _log.WriteLog($"Executing Other removal: {otherRem.Name}", "Execution", Log.Severity.Info);
-                    ActionType otherRemResult = otherRem.ExecuteUninstall();
+                    ActionType otherRemResult = ActionType.Continue;
+                    RunWithEstimatedProgress(otherRem.EstimatedUninstallSeconds, stageStartPercent, stageEndPercent, statusText, () => otherRemResult = otherRem.ExecuteUninstall());
                     HandleActionType(otherRemResult, otherRem.Name!, otherRem.RestartCountdown);
                     break;
                 default:
@@ -262,22 +266,24 @@ namespace SuiteExecutor
             }
         }
 
-        private void ExecutePackageRemove(PackageBase package)
+        private void ExecutePackageRemove(PackageBase package, double stageStartPercent, double stageEndPercent, string? statusText)
         {
             switch (package)
             {
                 case MSIExec msi:
                     _log.WriteLog($"Uninstalling MSI package: {msi.Name}", "Execution", Log.Severity.Info);
-                    ActionType msiResult = msi.ExecuteUninstall();
+                    ActionType msiResult = ActionType.Continue;
+                    RunWithEstimatedProgress(msi.EstimatedUninstallSeconds, stageStartPercent, stageEndPercent, statusText, () => msiResult = msi.ExecuteUninstall());
                     HandleActionType(msiResult, msi.Name!);
                     break;
                 case MSIxExec msix:
                     _log.WriteLog($"Uninstalling MSIx package: {msix.Name}", "Execution", Log.Severity.Info);
-                    msix.ExecuteUninstall();
+                    RunWithEstimatedProgress(msix.EstimatedUninstallSeconds, stageStartPercent, stageEndPercent, statusText, () => msix.ExecuteUninstall());
                     break;
                 case OtherExec other:
                     _log.WriteLog($"Uninstalling Other package: {other.Name}", "Execution", Log.Severity.Info);
-                    ActionType otherResult = other.ExecuteUninstall();
+                    ActionType otherResult = ActionType.Continue;
+                    RunWithEstimatedProgress(other.EstimatedUninstallSeconds, stageStartPercent, stageEndPercent, statusText, () => otherResult = other.ExecuteUninstall());
                     HandleActionType(otherResult, other.Name!, other.RestartCountdown);
                     break;
                 case MSIRemovalExec:
@@ -291,18 +297,22 @@ namespace SuiteExecutor
             }
         }
 
-        private void ExecutePackageRollback(PackageBase package)
+        private void ExecutePackageRollback(PackageBase package, double stageStartPercent, double stageEndPercent, string? statusText)
         {
             switch (package)
             {
                 case MSIExec msi:
                     _log.WriteLog($"Rolling back MSI package: {msi.Name}", "Execution", Log.Severity.Info);
-                    ActionType msiResult = msi.ExecuteRollback();
+                    ActionType msiResult = ActionType.Continue;
+                    int msiRollbackEstimate = msi.EstimatedUninstallSeconds + (msi.Rollback?.EstimatedInstallSeconds ?? 0);
+                    RunWithEstimatedProgress(msiRollbackEstimate, stageStartPercent, stageEndPercent, statusText, () => msiResult = msi.ExecuteRollback());
                     HandleActionType(msiResult, msi.Name!);
                     break;
                 case OtherExec other:
                     _log.WriteLog($"Rolling back Other package: {other.Name}", "Execution", Log.Severity.Info);
-                    ActionType otherResult = other.ExecuteRollback();
+                    ActionType otherResult = ActionType.Continue;
+                    int otherRollbackEstimate = other.EstimatedUninstallSeconds + other.EstimatedInstallSeconds;
+                    RunWithEstimatedProgress(otherRollbackEstimate, stageStartPercent, stageEndPercent, statusText, () => otherResult = other.ExecuteRollback());
                     HandleActionType(otherResult, other.Name!, other.RestartCountdown);
                     break;
                 case MSIRemovalExec:

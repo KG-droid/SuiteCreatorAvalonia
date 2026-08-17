@@ -34,8 +34,10 @@ namespace SuiteExecutor
                 Stage stage = stages[i];
                 _log.WriteLog($"--- Stage {i + 1}/{stages.Count}: {stage.Name} (Id: {stage.Id}) ---", "Execution", Log.Severity.Info);
 
-                int stagePercentage = stages.Count > 0 ? (int)Math.Round(i / (double)stages.Count * 100) : 0;
-                UpdateProgress(stagePercentage, !string.IsNullOrWhiteSpace(stage.Name) ? $"{_action}: {stage.Name}" : $"Suite {_action}: {_suiteConfig.BuildSettings.Name}");
+                double stageStartPercent = stages.Count > 0 ? i / (double)stages.Count * 100 : 0;
+                double stageEndPercent = stages.Count > 0 ? (i + 1) / (double)stages.Count * 100 : 100;
+                string stageStatusText = !string.IsNullOrWhiteSpace(stage.Name) ? $"{_action}: {stage.Name}" : $"Suite {_action}: {_suiteConfig.BuildSettings.Name}";
+                UpdateProgress((int)Math.Round(stageStartPercent), stageStatusText);
 
                 PackageBase? package = ResolvePackage(stage);
                 bool executePackage = package != null && ShouldPackageExecute(package);
@@ -55,7 +57,7 @@ namespace SuiteExecutor
 
                 if (executePackage)
                 {
-                    ExecutePackage(package!);
+                    ExecutePackage(package!, stageStartPercent, stageEndPercent, stageStatusText);
                 }
 
                 RunEventsForStage(allEvents, stage.Id, before: false);

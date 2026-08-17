@@ -1,0 +1,47 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	services:DialogManager.Register="{Binding}"
+    mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="280"
+    x:Class="SuiteCreatorAvalonia.Views.ProgressTimingInfoView"
+	x:DataType="vm:ProgressTimingInfoViewModel">
+
+	<Design.DataContext>
+		<vm:ProgressTimingInfoViewModel/>
+	</Design.DataContext>
+
+	<Grid RowDefinitions="Auto,*,Auto" Width="520">
+		<Grid Grid.Row="0" Margin="20,16,12,0" ColumnDefinitions="*,Auto">
+			<TextBlock Grid.Column="0" FontWeight="Bold" FontSize="16" Text="Progress popup enabled" VerticalAlignment="Center"/>
+			<Button
+				Grid.Column="1"
+				Classes="IconButton"
+				Tag="Close"
+				Command="{Binding CloseCommand}"
+				ToolTip.Tip="Close"
+				VerticalAlignment="Top"/>
+		</Grid>
+
+		<StackPanel Grid.Row="1" Margin="20,10,20,10" Spacing="10">
+			<TextBlock
+				TextWrapping="Wrap"
+				Text="Now that the progress popup is enabled, each package's MSI, MSIx or Other install/removal details page has an 'Estimated Duration (seconds)' field."/>
+			<TextBlock
+				TextWrapping="Wrap"
+				Text="Suite Creator has no way to read real progress out of an install or uninstall, so the progress bar instead animates toward the next stage over the duration you set there. Leave a field at 0 to skip animating that package - the bar will just jump ahead once it finishes, like before."/>
+			<TextBlock
+				TextWrapping="Wrap"
+				Text="You can go set these now, or come back to it later from each package's own details page."/>
+		</StackPanel>
+
+		<StackPanel Grid.Row="2" Margin="20,0,20,16" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+			<Button Content="Close" Command="{Binding CloseCommand}"/>
+			<Button Content="Go to Packages" Command="{Binding GoToPackagesCommand}"/>
+		</StackPanel>
+	</Grid>
+
+</UserControl>

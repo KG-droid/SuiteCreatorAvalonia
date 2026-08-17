@@ -146,6 +146,15 @@ namespace SuiteCreatorAvalonia.ViewModels
         [ObservableProperty]
         private SuiteAction _showSampleFor = SuiteAction.Deployment;
 
+        partial void OnShowProgressChanged(bool value)
+        {
+            // Only surface this the moment an admin actually flips it on (not while settings are
+            // still being loaded from disk) - it's a one-time pointer to the per-package Estimated
+            // Duration fields that only become visible once this toggle is enabled.
+            if (_isLoading || !value) return;
+            _ = this.ShowDialogAsync(new ProgressTimingInfoViewModel());
+        }
+
         partial void OnHasInstallPopupChanged(bool value)
         {
             SetDefaultShowSampleFor();

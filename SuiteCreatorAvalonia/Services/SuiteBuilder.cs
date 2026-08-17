@@ -157,6 +157,8 @@ namespace SuiteCreatorAvalonia.Services
                             LegacyLongFilePath = msiPkg.LegacyLongFilePath,
                             LogPath = msiPkg.LogPath,
                             Properties = msiPkg.Properties?.Select(p => p.Clone()).ToList(),
+                            EstimatedInstallSeconds = msiPkg.EstimatedInstallSeconds,
+                            EstimatedUninstallSeconds = msiPkg.EstimatedUninstallSeconds,
                             Rollback = msiPkg.Rollback != null
                                 ? new MSIExec(log)
                                 {
@@ -169,7 +171,9 @@ namespace SuiteCreatorAvalonia.Services
                                     IsRemoveFamily = msiPkg.Rollback.IsRemoveFamily,
                                     LegacyLongFilePath = msiPkg.Rollback.LegacyLongFilePath,
                                     LogPath = msiPkg.Rollback.LogPath,
-                                    Properties = msiPkg.Rollback.Properties?.Select(p => p.Clone()).ToList()
+                                    Properties = msiPkg.Rollback.Properties?.Select(p => p.Clone()).ToList(),
+                                    EstimatedInstallSeconds = msiPkg.Rollback.EstimatedInstallSeconds,
+                                    EstimatedUninstallSeconds = msiPkg.Rollback.EstimatedUninstallSeconds
                                 }
                                 : null,
                             UpgradeCode = upgradeCode,
@@ -196,6 +200,8 @@ namespace SuiteCreatorAvalonia.Services
                             IsDeferInUse = msixPkg.IsDeferInUse,
                             HasDependents = msixPkg.HasDependents,
                             Dependents = msixPkg.Dependents != null ? new List<string>(msixPkg.Dependents) : null,
+                            EstimatedInstallSeconds = msixPkg.EstimatedInstallSeconds,
+                            EstimatedUninstallSeconds = msixPkg.EstimatedUninstallSeconds,
                             Rollback = !string.IsNullOrWhiteSpace(msixPkg.Rollback?.MSIxFile)
                                 ? new MSIxExec(log)
                                 {
@@ -207,7 +213,9 @@ namespace SuiteCreatorAvalonia.Services
                                     IsForceThisVersion = msixPkg.Rollback.IsForceThisVersion,
                                     IsDeferInUse = msixPkg.Rollback.IsDeferInUse,
                                     HasDependents = msixPkg.Rollback.HasDependents,
-                                    Dependents = msixPkg.Rollback.Dependents != null ? new List<string>(msixPkg.Rollback.Dependents) : null
+                                    Dependents = msixPkg.Rollback.Dependents != null ? new List<string>(msixPkg.Rollback.Dependents) : null,
+                                    EstimatedInstallSeconds = msixPkg.Rollback.EstimatedInstallSeconds,
+                                    EstimatedUninstallSeconds = msixPkg.Rollback.EstimatedUninstallSeconds
                                 }
                                 : null,
                             PackageFamilyName = packageFamilyName,
@@ -227,7 +235,8 @@ namespace SuiteCreatorAvalonia.Services
                             Context = msiRem.Context,
                             Architecture = msiRem.Architecture,
                             RestartBehavior = msiRem.RestartBehavior,
-                            Properties = msiRem.Properties?.Select(p => p.Clone()).ToList()
+                            Properties = msiRem.Properties?.Select(p => p.Clone()).ToList(),
+                            EstimatedUninstallSeconds = msiRem.EstimatedUninstallSeconds
                         });
                         break;
                     case MSIxRemoval msixRem:
@@ -237,7 +246,8 @@ namespace SuiteCreatorAvalonia.Services
                             Name = msixRem.Name,
                             RequirementRuleSetId = msixRem.RequirementRuleSetId,
                             IsSpecificVersionRemoval = msixRem.IsSpecificVersionRemoval,
-                            PFN = msixRem.PFN
+                            PFN = msixRem.PFN,
+                            EstimatedUninstallSeconds = msixRem.EstimatedUninstallSeconds
                         });
                         break;
                     case OtherPkg otherPkg:
@@ -257,7 +267,9 @@ namespace SuiteCreatorAvalonia.Services
                             CustomExitCodes = otherPkg.CustomExitCodes,
                             ExitCodes = otherPkg.ExitCodes?.Select(e => e.Clone()).ToList(),
                             InstallCommand = otherPkg.InstallCommand?.Select(c => c is FileVar fv ? new RelativeFileVar(Path.GetFileName(fv.Node.FullPath)) : c.Clone()).ToList(),
-                            RollbackCommand = otherPkg.RollbackCommand?.Select(c => c is FileVar fv ? new RelativeFileVar(Path.GetFileName(fv.Node.FullPath)) : c.Clone()).ToList()
+                            RollbackCommand = otherPkg.RollbackCommand?.Select(c => c is FileVar fv ? new RelativeFileVar(Path.GetFileName(fv.Node.FullPath)) : c.Clone()).ToList(),
+                            EstimatedInstallSeconds = otherPkg.EstimatedInstallSeconds,
+                            EstimatedUninstallSeconds = otherPkg.EstimatedUninstallSeconds
                         });
                         break;
                     case OtherRemovalPkg otherRemPkg:
@@ -273,7 +285,8 @@ namespace SuiteCreatorAvalonia.Services
                             SecureParams = otherRemPkg.SecureParams,
                             RestartBehavior = otherRemPkg.RestartBehavior,
                             CustomExitCodes = otherRemPkg.CustomExitCodes,
-                            ExitCodes = otherRemPkg.ExitCodes?.Select(e => e.Clone()).ToList()
+                            ExitCodes = otherRemPkg.ExitCodes?.Select(e => e.Clone()).ToList(),
+                            EstimatedUninstallSeconds = otherRemPkg.EstimatedUninstallSeconds
                         });
                         break;
                     default:

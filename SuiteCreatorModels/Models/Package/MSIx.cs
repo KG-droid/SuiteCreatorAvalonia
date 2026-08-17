@@ -12,6 +12,8 @@ namespace SuiteCreatorAvalonia.Models.Package
         public List<string>? Dependents { get; set; }
         public bool RemoveOnSuiteRemoval { get; set; } = true;
         public MSIx? Rollback { get; set; }
+        public int EstimatedInstallSeconds { get; set; }
+        public int EstimatedUninstallSeconds { get; set; }
 
         protected MSIx(MSIx source)
         {
@@ -26,6 +28,8 @@ namespace SuiteCreatorAvalonia.Models.Package
             RemoveOnSuiteRemoval = source.RemoveOnSuiteRemoval;
             Rollback = source.Rollback?.Clone();
             RequirementRuleSetId = source.RequirementRuleSetId;
+            EstimatedInstallSeconds = source.EstimatedInstallSeconds;
+            EstimatedUninstallSeconds = source.EstimatedUninstallSeconds;
         }
 
         public MSIx() : base() { }
@@ -51,6 +55,8 @@ namespace SuiteCreatorAvalonia.Models.Package
                 RemoveOnSuiteRemoval = msix.RemoveOnSuiteRemoval;
                 Rollback = msix.Rollback?.Clone();
                 RequirementRuleSetId = msix.RequirementRuleSetId;
+                EstimatedInstallSeconds = msix.EstimatedInstallSeconds;
+                EstimatedUninstallSeconds = msix.EstimatedUninstallSeconds;
             }
         }
 

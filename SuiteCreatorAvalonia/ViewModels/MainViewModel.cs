@@ -184,6 +184,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             HelpService.Instance.NavigateToPage = type => SetView(type);
             AppNavigationService.Instance.NavigateToPackage = NavigateToPackage;
             AppNavigationService.Instance.NavigateToEvent = NavigateToEvent;
+            AppNavigationService.Instance.NavigateToPackagesTab = () => SetView(typeof(PackageViewModel));
             CurrentTabView = tabFac.GetVM(typeof(PackageViewModel));
             _backNavigationStack.Push(CurrentTabView.GetType());
             ConfigureTabButtons();

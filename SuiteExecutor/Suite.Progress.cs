@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Text.Json.Nodes;
+using System.Threading;
 using static SuiteTools.UserTools.ProcessExtensions;
 using Log = Logger.Log;
 
@@ -150,6 +152,57 @@ namespace SuiteExecutor
             catch (Exception ex)
             {
                 _log.WriteLog($"Error waiting for progress popup to exit: {ex.Message}", "Progress", Log.Severity.Warning);
+            }
+        }
+
+        // Package installs/uninstalls run as a single blocking external process with no real progress
+        // callback available (see MSITools/OtherExecBase - everything shells out to msiexec.exe or a
+        // command line). estimatedSeconds is an admin-configured guess at how long that call will take;
+        // while it runs on the caller's thread, a background task interpolates progress across
+        // [startPercent, endPercent) so the bar isn't frozen for the whole stage. If no estimate is
+        // configured (0) or the popup isn't running, the action just runs with no ticking.
+        private void RunWithEstimatedProgress(int estimatedSeconds, double startPercent, double endPercent, string? statusText, Action action)
+        {
+            if (estimatedSeconds <= 0 || !_progressPopupStarted)
+            {
+                action();
+                return;
+            }
+
+            using CancellationTokenSource cts = new();
+            Task tickTask = Task.Run(() => TickEstimatedProgress(estimatedSeconds, startPercent, endPercent, statusText, cts.Token));
+            try
+            {
+                action();
+            }
+            finally
+            {
+                cts.Cancel();
+                try
+                {
+                    tickTask.Wait();
+                }
+                catch (Exception ex)
+                {
+                    _log.WriteLog($"Estimated progress ticking ended with error: {ex.Message}", "Progress", Log.Severity.Warning);
+                }
+            }
+        }
+
+        // Capped short of endPercent so an under-estimate doesn't leave the bar visually stalled at the
+        // window's ceiling before the process actually finishes - the next stage boundary (or the final
+        // completion write) snaps progress forward regardless of where ticking left off.
+        private void TickEstimatedProgress(int estimatedSeconds, double startPercent, double endPercent, string? statusText, CancellationToken token)
+        {
+            double cappedEnd = startPercent + (endPercent - startPercent) * 0.95;
+            Stopwatch sw = Stopwatch.StartNew();
+            while (!token.IsCancellationRequested)
+            {
+                double ratio = Math.Clamp(sw.Elapsed.TotalSeconds / estimatedSeconds, 0, 1);
+                double percent = startPercent + (cappedEnd - startPercent) * ratio;
+                UpdateProgress((int)Math.Round(percent), statusText);
+                if (token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(500)))
+                    break;
             }
         }
 

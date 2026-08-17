@@ -30,7 +30,7 @@ x:DataType="vm:PackageMSIRemoveDetailsViewModel">
 		services:Help.Text="This removes an existing MSI product that isn't installed by this suite (for example, an older or conflicting version), so there's no MSI file for Suite Creator to read a code from automatically. Browse an MSI to grab its Upgrade/ProductCode, or paste the code in yourself — the removal command (msiexec /x with that code) and detection are then built from it for you.">
 			<Grid
 			ColumnDefinitions="Auto,10,*,Auto"
-			RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+			RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
 				<!-- Package Name -->
 				<TextBlock
@@ -234,6 +234,26 @@ x:DataType="vm:PackageMSIRemoveDetailsViewModel">
 				VerticalAlignment="Center"
 				SelectedItem="{Binding RestartBehavior}"
 				ItemsSource="{helpers:EnumValues {x:Type enums:RestartBehavior}}"/>
+
+				<!-- Estimated Uninstall Duration -->
+				<TextBlock
+				Grid.Row="11"
+				Grid.Column="0"
+				VerticalAlignment="Center"
+				Margin="0,0,10,0"
+				IsVisible="{Binding IsProgressPopupEnabled}"
+				Text="Estimated Uninstall Duration (seconds):"/>
+				<NumericUpDown
+				Grid.Row="11"
+				Grid.Column="2"
+				IsVisible="{Binding IsProgressPopupEnabled}"
+				Value="{Binding EstimatedUninstallSeconds}"
+				Minimum="0"
+				Maximum="86400"
+				FormatString="0"
+				HorizontalAlignment="Left"
+				Width="130"
+				ToolTip.Tip="Approximate time this uninstall takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
 
 			</Grid>
 

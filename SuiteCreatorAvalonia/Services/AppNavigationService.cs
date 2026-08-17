@@ -11,5 +11,6 @@ namespace SuiteCreatorAvalonia.Services
 
         public Action<PackageBase>? NavigateToPackage { get; set; }
         public Action<EventCore>? NavigateToEvent { get; set; }
+        public Action? NavigateToPackagesTab { get; set; }
     }
 }

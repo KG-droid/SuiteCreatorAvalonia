@@ -37,7 +37,8 @@ namespace SuiteCreatorAvalonia.Models.Package
                 InstallType = InstallType,
                 PowerShellScriptPath = PowerShellScriptPath,
                 PowerShellScriptArgs = PowerShellScriptArgs,
-                LegacyLongFilePath = LegacyLongFilePath
+                LegacyLongFilePath = LegacyLongFilePath,
+                EstimatedUninstallSeconds = EstimatedUninstallSeconds
             };
         }
         public override void UpdateFrom(Stage stage)
@@ -59,6 +60,7 @@ namespace SuiteCreatorAvalonia.Models.Package
             PowerShellScriptPath = otherRemovalBase.PowerShellScriptPath;
             PowerShellScriptArgs = otherRemovalBase.PowerShellScriptArgs;
             LegacyLongFilePath = otherRemovalBase.LegacyLongFilePath;
+            EstimatedUninstallSeconds = otherRemovalBase.EstimatedUninstallSeconds;
         }
         public override string? Validate()
         {

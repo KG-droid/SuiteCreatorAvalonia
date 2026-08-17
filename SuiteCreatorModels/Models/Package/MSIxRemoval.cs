@@ -7,6 +7,7 @@ namespace SuiteCreatorAvalonia.Models.Package
     {
         public bool IsSpecificVersionRemoval { get; set; }
         public string? PFN { get; set; }
+        public int EstimatedUninstallSeconds { get; set; }
 
         public override MSIxRemoval Clone()
         {
@@ -17,6 +18,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                 IsSpecificVersionRemoval = IsSpecificVersionRemoval,
                 PFN = PFN,
                 RequirementRuleSetId = RequirementRuleSetId,
+                EstimatedUninstallSeconds = EstimatedUninstallSeconds,
             };
         }
 
@@ -30,6 +32,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                 IsSpecificVersionRemoval = msixrem.IsSpecificVersionRemoval;
                 PFN = msixrem.PFN;
                 RequirementRuleSetId = msixrem.RequirementRuleSetId;
+                EstimatedUninstallSeconds = msixrem.EstimatedUninstallSeconds;
             }
         }
 

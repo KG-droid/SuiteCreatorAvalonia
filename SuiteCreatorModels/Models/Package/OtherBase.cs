@@ -7,6 +7,7 @@ namespace SuiteCreatorAvalonia.Models.Package
         public List<VariableText>? InstallCommand { get; set; }
         public List<VariableText>? RollbackCommand { get; set; }
         public bool RemoveOnSuiteRemoval { get; set; } = true;
+        public int EstimatedInstallSeconds { get; set; }
 
         public override PackageBase Clone()
         {
@@ -36,7 +37,9 @@ namespace SuiteCreatorAvalonia.Models.Package
                 InstallCommand = InstallCommand != null ? InstallCommand.Select(c => c.Clone()).ToList() : null,
                 RollbackCommand = RollbackCommand != null ? RollbackCommand.Select(c => c.Clone()).ToList() : null,
                 RollbackDetectionRuleSetId = RollbackDetectionRuleSetId,
-                RemoveOnSuiteRemoval = RemoveOnSuiteRemoval
+                RemoveOnSuiteRemoval = RemoveOnSuiteRemoval,
+                EstimatedInstallSeconds = EstimatedInstallSeconds,
+                EstimatedUninstallSeconds = EstimatedUninstallSeconds
             };
         }
         public override void UpdateFrom(Stage stage)
@@ -67,6 +70,8 @@ namespace SuiteCreatorAvalonia.Models.Package
             RollbackCommand = otherBase.RollbackCommand != null ? otherBase.RollbackCommand.Select(c => c.Clone()).ToList() : null;
             RollbackDetectionRuleSetId = otherBase.RollbackDetectionRuleSetId;
             RemoveOnSuiteRemoval = otherBase.RemoveOnSuiteRemoval;
+            EstimatedInstallSeconds = otherBase.EstimatedInstallSeconds;
+            EstimatedUninstallSeconds = otherBase.EstimatedUninstallSeconds;
         }
 
         public override string? Validate()

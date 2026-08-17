@@ -78,6 +78,15 @@ namespace SuiteCreatorAvalonia.ViewModels
         private RestartBehaviorEnum _restartBehavior = RestartBehaviorEnum.Ignore;
 
         [ObservableProperty]
+        private int _estimatedInstallSeconds;
+
+        [ObservableProperty]
+        private int _estimatedUninstallSeconds;
+
+        [ObservableProperty]
+        private bool _isProgressPopupEnabled;
+
+        [ObservableProperty]
         private string? _productCode;
 
         [ObservableProperty]
