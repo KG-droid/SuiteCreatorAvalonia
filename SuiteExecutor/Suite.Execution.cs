@@ -184,6 +184,14 @@ namespace SuiteExecutor
                     if (seq == Sequence.DuringRemoveBeforeStage)
                         return true;
                 }
+
+                // Dedicated Rollback hooks, e.g. to restore detection for the package a rollback reinstalls -
+                // these only fire during Rollback, not a plain Removal.
+                if (_action == SuiteAction.Rollback)
+                {
+                    if (seq == Sequence.DuringRollbackBeforeStage)
+                        return true;
+                }
             }
             else
             {
@@ -199,6 +207,12 @@ namespace SuiteExecutor
                 if (_action == SuiteAction.Removal || _action == SuiteAction.Rollback)
                 {
                     if (seq == Sequence.DuringRemoveAfterStage)
+                        return true;
+                }
+
+                if (_action == SuiteAction.Rollback)
+                {
+                    if (seq == Sequence.DuringRollbackAfterStage)
                         return true;
                 }
             }
