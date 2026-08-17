@@ -204,7 +204,7 @@ namespace SuiteExecutor
                     CreateUninstallMedia();
                     WriteSuiteDetectionRegistry();
                 }
-                else if (action == SuiteAction.Removal)
+                else if (action == SuiteAction.Removal || action == SuiteAction.Rollback)
                 {
                     RemoveSuiteDetectionRegistry();
                     RemoveUninstallMedia();
