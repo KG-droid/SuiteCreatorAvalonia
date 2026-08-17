@@ -1192,6 +1192,28 @@ namespace SuiteCreatorAvalonia.Services
                     ObjectForError = new Build()
                 });
             }
+            // Validate Rollback-only schedules (DuringRollbackBeforeStage/AfterStage) have a rollback to run for -
+            // those sequences only fire during a Rollback run (see Suite.Execution.cs IsScheduleApplicable), so
+            // scheduling an event on them is a no-op unless some package actually has a Rollback configured.
+            if (!_suiteCoreManager.GetPackages().Any(PackageHasRollbackConfigured))
+            {
+                foreach (EventCore evt in GetAllEventsForRollbackScheduleCheck())
+                {
+                    bool hasRollbackSchedule = evt.Schedules.Any(s =>
+                        s.StageSequence == SuiteCreatorAvalonia.Enums.Sequence.DuringRollbackBeforeStage ||
+                        s.StageSequence == SuiteCreatorAvalonia.Enums.Sequence.DuringRollbackAfterStage);
+
+                    if (hasRollbackSchedule)
+                    {
+                        validationErrors.Add(new SuiteValidationError
+                        {
+                            Message = $"A {evt.GetType().Name} event is scheduled to run during Rollback, but no package in the suite has a Rollback configured.",
+                            ObjectForError = evt
+                        });
+                    }
+                }
+            }
+
             if (validationErrors.Count > 0)
             {
                 _validationReport = validationErrors;
@@ -1202,6 +1224,37 @@ namespace SuiteCreatorAvalonia.Services
                 _validationReport = null;
                 return null;
             }
+        }
+
+        // Only MSI and Other packages can actually execute a Rollback (see Suite.Execution.Package.cs
+        // ExecutePackageRollback - MSIx packages are always skipped there, even if a Rollback is configured on one).
+        private static bool PackageHasRollbackConfigured(PackageBase pkg)
+        {
+            return pkg switch
+            {
+                MSIPkg msi => msi.Rollback != null,
+                OtherPkg other => other.RollbackInstallType == OtherInstallType.PowerShell
+                    ? !string.IsNullOrWhiteSpace(other.RollbackPowerShellScriptPath)
+                    : other.RollbackCommand != null && other.RollbackCommand.Any(c => !string.IsNullOrWhiteSpace(c?.GetValue())),
+                _ => false
+            };
+        }
+
+        private List<EventCore> GetAllEventsForRollbackScheduleCheck()
+        {
+            List<EventCore> allEvents = new();
+            allEvents.AddRange(_suiteCoreManager.GetCertEvents());
+            allEvents.AddRange(_suiteCoreManager.GetDriverEvents());
+            allEvents.AddRange(_suiteCoreManager.GetProcessClosureEvents());
+            allEvents.AddRange(_suiteCoreManager.GetEnvironmentEvents());
+            allEvents.AddRange(_suiteCoreManager.GetExecutableEvents());
+            allEvents.AddRange(_suiteCoreManager.GetExtensionEvents());
+            allEvents.AddRange(_suiteCoreManager.GetFileEvents());
+            allEvents.AddRange(_suiteCoreManager.GetPowerShellEvents());
+            allEvents.AddRange(_suiteCoreManager.GetRegistryEvents());
+            allEvents.AddRange(_suiteCoreManager.GetServiceClosureEvents());
+            allEvents.AddRange(_suiteCoreManager.GetShortcutEvents());
+            return allEvents;
         }
 
         private static long GetPackagesTotalBytes(List<PackageBase> packages)
