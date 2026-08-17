@@ -136,7 +136,26 @@ namespace SuiteProgressPopup.ViewModels
             catch (Exception ex)
             {
                 LogWarning($"Failed to load lockdown company logo: {ex.Message}");
+                return;
             }
+
+            ApplyCompanyLogoOutlineIfNeeded(filePath);
+        }
+
+        // Mirrors ApplyLogoOutlineIfNeeded for the suite logo: the company logo is shown against
+        // the same lockdown window background, so it needs the same halo treatment when it's too
+        // close in colour to read clearly on its own.
+        private void ApplyCompanyLogoOutlineIfNeeded(string companyLogoPath)
+        {
+            Color themeBackgroundColour = TryGetThemeBackgroundColour() ?? Colors.Black;
+
+            if (!LogoContrastHelper.NeedsOutline(companyLogoPath, themeBackgroundColour))
+                return;
+
+            Color outlineColour = LogoContrastHelper.GetReadableForeground(themeBackgroundColour);
+            Bitmap? outlined = LogoContrastHelper.CreateLogoWithOutline(companyLogoPath, outlineColour);
+            if (outlined is not null)
+                CompanyLogo = outlined;
         }
 
         private void OnElapsedTick(object? sender, EventArgs e)
