@@ -8,11 +8,9 @@
 	mc:Ignorable="d"
 	Topmost="True"
 	RequestedThemeVariant="Default"
-	WindowStartupLocation="CenterScreen"
 	ShowInTaskbar="False"
 	CanResize="False"
 	WindowDecorations="None"
-	WindowState="FullScreen"
 	Background="{DynamicResource SystemAltHighColor}"
 	x:Class="SuiteProgressPopup.Views.LockdownWindow"
 	x:DataType="vm:ProgressWindowViewModel">
@@ -28,13 +26,18 @@
 			Spacing="30"
 			MaxWidth="480">
 
-			<!-- Company logo, centered -->
-			<Image
-				Source="{Binding CompanyLogo}"
-				Stretch="Uniform"
-				MaxWidth="280"
-				MaxHeight="280"
-				HorizontalAlignment="Center"/>
+			<Grid>
+				<Border
+					IsVisible="{Binding CompanyLogoGlowBrush, Converter={x:Static ObjectConverters.IsNotNull}}"
+					Background="{Binding CompanyLogoGlowBrush}"
+					Width="{Binding CompanyLogoGlowWidth}"
+					Height="{Binding CompanyLogoGlowHeight}"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"/>
+				<ContentControl
+					Name="CompanyLogo_ContentControl"
+					HorizontalAlignment="Center"/>
+			</Grid>
 
 			<!-- Progress, underneath -->
 			<StackPanel
