@@ -25,7 +25,6 @@ namespace SuiteProgressPopup.ViewModels
         private readonly DispatcherTimer? _elapsedTimer;
         private readonly DateTime _startTime = DateTime.UtcNow;
         private bool _hasSeenCompletion;
-        private bool _explorerKilled;
 
         [ObservableProperty]
         private Bitmap? _suiteLogo;
@@ -95,14 +94,6 @@ namespace SuiteProgressPopup.ViewModels
 
                 if (isLockdown)
                 {
-                    LockdownService.KillExplorer();
-                    _explorerKilled = true;
-
-                    // Best-effort safety net: if this process is torn down abruptly (unhandled exception,
-                    // Ctrl+C) rather than exiting through ScheduleExit/OnLockdownDeadlineElapsed, still try
-                    // to restore Explorer so the user isn't left locked out.
-                    AppDomain.CurrentDomain.ProcessExit += (_, _) => EndLockdownIfNeeded();
-
                     _lockdownDeadlineTimer = new DispatcherTimer
                     {
                         Interval = TimeSpan.FromMinutes(Math.Max(1, lockdownMaxMinutes))
@@ -168,19 +159,9 @@ namespace SuiteProgressPopup.ViewModels
 
         private void OnLockdownDeadlineElapsed(object? sender, EventArgs e)
         {
-            LogWarning("Lockdown max time limit reached before the suite completed; self-terminating and restoring Explorer.");
+            LogWarning("Lockdown max time limit reached before the suite completed; self-terminating.");
             _lockdownDeadlineTimer?.Stop();
-            EndLockdownIfNeeded();
             ApplicationHelper.ExitApplication(1);
-        }
-
-        private void EndLockdownIfNeeded()
-        {
-            if (!_explorerKilled)
-                return;
-
-            LockdownService.RestoreExplorer();
-            _explorerKilled = false;
         }
 
         private void LoadSuiteLogo(string filePath)
@@ -254,7 +235,6 @@ namespace SuiteProgressPopup.ViewModels
             DispatcherTimer.RunOnce(() =>
             {
                 LogInfo("Progress popup exiting after completion linger period.");
-                EndLockdownIfNeeded();
                 ApplicationHelper.ExitApplication(0);
             }, TimeSpan.FromMilliseconds(CompletionLingerMs));
         }
@@ -275,8 +255,6 @@ namespace SuiteProgressPopup.ViewModels
                 _elapsedTimer.Tick -= OnElapsedTick;
                 _elapsedTimer.Stop();
             }
-
-            EndLockdownIfNeeded();
         }
     }
 }

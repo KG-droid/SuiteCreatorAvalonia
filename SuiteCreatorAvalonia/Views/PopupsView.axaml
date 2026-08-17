@@ -555,7 +555,7 @@
 										HorizontalAlignment="Left"
 										VerticalAlignment="Center"/>
 									<TextBlock
-										Text="Makes the progress popup cover the whole screen, stays on top, and closes Explorer for the duration so the user can't use the computer while the suite runs. Explorer is restored automatically when the suite finishes or the max lockdown time below is reached."
+										Text="Makes the progress popup cover the whole screen and stay on top for the duration of the suite, discouraging the user from using the computer while it runs."
 										TextWrapping="Wrap"
 										Grid.Column="4"
 										HorizontalAlignment="Left"
@@ -585,7 +585,7 @@
 										Value="{Binding LockdownMaxMinutes}"
 										VerticalAlignment="Center"/>
 									<TextBlock
-										Text="If the suite is still running after this many minutes, lockdown self-terminates and Explorer is restored so the user isn't locked out indefinitely."
+										Text="If the suite is still running after this many minutes, lockdown self-terminates so the user isn't stuck on the fullscreen popup indefinitely."
 										TextWrapping="Wrap"
 										Grid.Column="4"
 										Grid.Row="0"

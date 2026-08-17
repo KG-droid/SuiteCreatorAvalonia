@@ -153,9 +153,9 @@ namespace SuiteProgressPopup
             Console.WriteLine("  --SuiteLogo <path> or -sl <path>        : Path to Suite logo PNG file");
             Console.WriteLine("  --ProgressFile <path> or -pf <path>     : Path to a progress JSON file this popup will poll for updates");
             Console.WriteLine("  --LogFile <path> or -l <path>          : Path to log file for this popup");
-            Console.WriteLine("  --Lockdown or -lk                       : Show a fullscreen, topmost, Explorer-blocking lockdown popup instead of the small progress toast");
+            Console.WriteLine("  --Lockdown or -lk                       : Show a fullscreen, topmost lockdown popup instead of the small progress toast");
             Console.WriteLine("  --CompanyLogo <path> or -cl <path>      : Path to a company logo image shown centered in lockdown mode");
-            Console.WriteLine("  --MaxMinutes <n> or -mm <n>              : Maximum minutes lockdown mode may run before it self-terminates and restores Explorer (default 30)");
+            Console.WriteLine("  --MaxMinutes <n> or -mm <n>              : Maximum minutes lockdown mode may run before it self-terminates (default 30)");
             Console.WriteLine("  --LockdownMessage <text> or -lm <text>  : Message shown underneath the progress bar for the duration of lockdown mode");
             Console.WriteLine();
             Console.WriteLine("If no parameters are provided, the app will look for 'SuiteLogo.png' and 'progress.json' in the executable directory.");
