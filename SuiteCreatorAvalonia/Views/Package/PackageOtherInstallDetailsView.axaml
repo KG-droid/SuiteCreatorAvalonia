@@ -428,13 +428,56 @@
 							SelectedItem="{Binding RestartBehavior}"
 							ItemsSource="{helpers:EnumValues {x:Type enums:RestartBehavior}}"/>
 
-						<!--Context-->
+						<!--Estimated Durations-->
 						<TextBlock
 							Grid.Row="1"
 							Grid.Column="0"
+							IsVisible="{Binding IsProgressPopupEnabled}"
+							Text="Estimated Duration (seconds):"/>
+						<StackPanel
+							Grid.Row="1"
+							Grid.Column="2"
+							Orientation="Horizontal"
+							IsVisible="{Binding IsProgressPopupEnabled}"
+							Spacing="15">
+							<StackPanel
+								Orientation="Horizontal"
+								Spacing="5">
+								<TextBlock
+									VerticalAlignment="Center"
+									Text="Install:"/>
+								<NumericUpDown
+									Value="{Binding EstimatedInstallSeconds}"
+									Minimum="0"
+									Maximum="86400"
+									FormatString="0"
+									Width="130"
+									ToolTip.Tip="Approximate time this install takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
+							</StackPanel>
+							<StackPanel
+								Orientation="Horizontal"
+								Spacing="5"
+								IsVisible="{Binding IsChecked, ElementName=RemoveOnSuiteRemoval_ToggleSwitch}">
+								<TextBlock
+									VerticalAlignment="Center"
+									Text="Uninstall:"/>
+								<NumericUpDown
+									Value="{Binding EstimatedUninstallSeconds}"
+									Minimum="0"
+									Maximum="86400"
+									FormatString="0"
+									Width="130"
+									ToolTip.Tip="Approximate time this uninstall takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
+							</StackPanel>
+						</StackPanel>
+
+						<!--Context-->
+						<TextBlock
+							Grid.Row="2"
+							Grid.Column="0"
 							Text="Context:"/>
 						<ToggleSwitch
-							Grid.Row="1"
+							Grid.Row="2"
 							Grid.Column="2"
 							IsChecked="{Binding IsUserContext}"
 							OnContent="User (Runs for each logged on user on the device)"
@@ -442,11 +485,11 @@
 
 						<!--Secure CMD-->
 						<TextBlock
-							Grid.Row="2"
+							Grid.Row="3"
 							Grid.Column="0"
 							Text="Secure CMD:"/>
 						<ToggleSwitch
-							Grid.Row="2"
+							Grid.Row="3"
 							Grid.Column="2"
 							IsChecked="{Binding IsSecureCMD}"
 							OnContent="Command lines will not be written to the suite log"
@@ -455,13 +498,13 @@
 						<!-- Legacy Long file path support -->
 						<TextBlock
 							Grid.Column="0"
-							Grid.Row="3"
+							Grid.Row="4"
 							VerticalAlignment="Center"
 							Text="Legacy File Path:"/>
 						<StackPanel
 							Orientation="Horizontal"
 							Grid.Column="2"
-							Grid.Row="3">
+							Grid.Row="4">
 							<ToggleSwitch
 								IsChecked="{Binding LegacyLongFilePath}"
 								VerticalAlignment="Center"
@@ -476,18 +519,18 @@
 
 						<!--Custom Exit Codes-->
 						<TextBlock
-							Grid.Row="4"
+							Grid.Row="5"
 							Grid.Column="0"
 							Text="Custom Exit Codes:"/>
 						<ToggleSwitch
 							Name="CustomExit_ToggleSwitch"
 							IsChecked="{Binding IsCustomExitCodes}"
-							Grid.Row="4"
+							Grid.Row="5"
 							Grid.Column="2"
 							OnContent=""
 							OffContent=""/>
 						<Grid
-							Grid.Row="5"
+							Grid.Row="6"
 							Grid.Column="0"
 							Grid.ColumnSpan="3"
 							IsVisible="{Binding IsChecked, ElementName='CustomExit_ToggleSwitch'}"
@@ -531,13 +574,13 @@
 						
 						<!--Rollback toggle-->
 						<TextBlock
-							Grid.Row="6"
+							Grid.Row="7"
 							Grid.Column="0"
 							Text="Add rollback:"/>
 						<ToggleSwitch
 							Name="Rollback_ToggleSwitch"
 							IsChecked="{Binding AddRollBack}"
-							Grid.Row="6"
+							Grid.Row="7"
 							Grid.Column="2"
 							OnContent=""
 							OffContent=""/>
@@ -548,7 +591,7 @@
 							Header="Rollback Details"
 							IsVisible="{Binding IsChecked, ElementName=Rollback_ToggleSwitch}"
 							HorizontalAlignment="Stretch"
-							Grid.Row="7"
+							Grid.Row="8"
 							Grid.Column="0"
 							Grid.ColumnSpan="3">
 							<StackPanel>
@@ -627,49 +670,6 @@
 								</StackPanel>
 							</StackPanel>
 						</Expander>
-
-						<!--Estimated Durations-->
-						<TextBlock
-							Grid.Row="8"
-							Grid.Column="0"
-							IsVisible="{Binding IsProgressPopupEnabled}"
-							Text="Estimated Duration (seconds):"/>
-						<StackPanel
-							Grid.Row="8"
-							Grid.Column="2"
-							Orientation="Horizontal"
-							IsVisible="{Binding IsProgressPopupEnabled}"
-							Spacing="15">
-							<StackPanel
-								Orientation="Horizontal"
-								Spacing="5">
-								<TextBlock
-									VerticalAlignment="Center"
-									Text="Install:"/>
-								<NumericUpDown
-									Value="{Binding EstimatedInstallSeconds}"
-									Minimum="0"
-									Maximum="86400"
-									FormatString="0"
-									Width="130"
-									ToolTip.Tip="Approximate time this install takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
-							</StackPanel>
-							<StackPanel
-								Orientation="Horizontal"
-								Spacing="5"
-								IsVisible="{Binding IsChecked, ElementName=RemoveOnSuiteRemoval_ToggleSwitch}">
-								<TextBlock
-									VerticalAlignment="Center"
-									Text="Uninstall:"/>
-								<NumericUpDown
-									Value="{Binding EstimatedUninstallSeconds}"
-									Minimum="0"
-									Maximum="86400"
-									FormatString="0"
-									Width="130"
-									ToolTip.Tip="Approximate time this uninstall takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
-							</StackPanel>
-						</StackPanel>
 					</Grid>
 				</StackPanel>
 			</ScrollViewer>
