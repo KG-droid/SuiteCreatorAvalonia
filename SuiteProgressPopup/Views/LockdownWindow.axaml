@@ -26,14 +26,19 @@
 			Spacing="30"
 			MaxWidth="480">
 
-			<Grid>
+			<Grid ClipToBounds="False">
 				<Border
 					IsVisible="{Binding CompanyLogoGlowBrush, Converter={x:Static ObjectConverters.IsNotNull}}"
 					Background="{Binding CompanyLogoGlowBrush}"
-					Width="{Binding CompanyLogoGlowWidth}"
-					Height="{Binding CompanyLogoGlowHeight}"
+					Width="{Binding CompanyLogoWidth}"
+					Height="{Binding CompanyLogoHeight}"
 					HorizontalAlignment="Center"
-					VerticalAlignment="Center"/>
+					VerticalAlignment="Center"
+					ClipToBounds="False">
+					<Border.RenderTransform>
+						<ScaleTransform ScaleX="{Binding CompanyLogoGlowScaleX}" ScaleY="{Binding CompanyLogoGlowScaleY}"/>
+					</Border.RenderTransform>
+				</Border>
 				<ContentControl
 					Name="CompanyLogo_ContentControl"
 					HorizontalAlignment="Center"/>

@@ -49,14 +49,24 @@ namespace SuiteProgressPopup.ViewModels
         [ObservableProperty]
         private IBrush? _companyLogoGlowBrush;
 
+        // The glow Border in LockdownWindow.axaml is kept at the logo's own footprint (no padding)
+        // and enlarged visually via RenderTransform instead of Width/Height. RenderTransform doesn't
+        // feed back into layout, so blowing the glow up doesn't push the progress bar/text below it
+        // down the window - only the Width/Height approach did that.
+        [ObservableProperty]
+        private double _companyLogoWidth;
+
+        [ObservableProperty]
+        private double _companyLogoHeight;
+
         // Sized to match the logo's own aspect ratio (as rendered at CompanyLogoMaxDimension, plus
         // padding) rather than a fixed circle - a wide/elongated logo would otherwise stick out past
         // a circular glow at its extremities (e.g. the head/tail of a running horse silhouette).
         [ObservableProperty]
-        private double _companyLogoGlowWidth;
+        private double _companyLogoGlowScaleX = 1;
 
         [ObservableProperty]
-        private double _companyLogoGlowHeight;
+        private double _companyLogoGlowScaleY = 1;
 
         [ObservableProperty]
         private int _percentage;
@@ -203,8 +213,10 @@ namespace SuiteProgressPopup.ViewModels
             CompanyLogoGlowBrush = CreateRadialGlowBrush(glowColour);
 
             (double renderedWidth, double renderedHeight) = GetRenderedSizeWithinBounds(companyLogoPath, CompanyLogoMaxDimension);
-            CompanyLogoGlowWidth = renderedWidth + CompanyLogoGlowPaddingPx;
-            CompanyLogoGlowHeight = renderedHeight + CompanyLogoGlowPaddingPx;
+            CompanyLogoWidth = renderedWidth;
+            CompanyLogoHeight = renderedHeight;
+            CompanyLogoGlowScaleX = (renderedWidth + CompanyLogoGlowPaddingPx) / renderedWidth;
+            CompanyLogoGlowScaleY = (renderedHeight + CompanyLogoGlowPaddingPx) / renderedHeight;
         }
 
         // A soft ambient glow needs a fade so gradual the eye can't pin down where it ends, rather
