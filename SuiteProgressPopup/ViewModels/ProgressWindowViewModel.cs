@@ -21,10 +21,10 @@ namespace SuiteProgressPopup.ViewModels
 
         private const int ElapsedIntervalMs = 1000;
         private const int CompanyLogoMaxDimension = 280;
-        private const int CompanyLogoGlowPaddingPx = 500;
+        private const int CompanyLogoGlowPaddingPx = 600;
         private const byte CompanyLogoGlowMaxAlpha = 100;
         private const double CompanyLogoGlowSigma = 0.38;
-        private const double GlowShadeAmount = 0.4;
+        private const double GlowShadeAmount = 0.2;
 
         private readonly string? _progressFilePath;
         private readonly DispatcherTimer _pollTimer;
