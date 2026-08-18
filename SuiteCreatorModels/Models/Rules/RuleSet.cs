@@ -61,11 +61,36 @@ namespace SuiteCreatorAvalonia.Models.Rules
                 return "RuleSet doesnt have any configured rules";
             }
 
+            int groupDepth = 0;
             for (int i = 0; i < Rules.Count; i++)
             {
                 RuleBase currentRuleBase = Rules[i];
-                if (currentRuleBase is RuleOperator)
+                if (currentRuleBase is RuleOperator ruleOperator)
                 {
+                    if (ruleOperator.Type == RuleType.GroupOpen)
+                    {
+                        groupDepth++;
+                    }
+                    else if (ruleOperator.Type == RuleType.GroupClose)
+                    {
+                        groupDepth--;
+                        if (groupDepth < 0)
+                        {
+                            return "A Ruleset has a closing group ')' with no matching opening group";
+                        }
+                    }
+                    else if (ruleOperator.Type == RuleType.OR)
+                    {
+                        if (i == 0)
+                        {
+                            return "A Ruleset cannot start with an OR operator";
+                        }
+                        if (i == Rules.Count - 1)
+                        {
+                            return "A Ruleset cannot end with an OR operator, it must be followed by a rule or group";
+                        }
+                    }
+
                     if (i != Rules.Count - 1)
                     {
                         RuleBase nextRule = Rules[i + 1];
@@ -83,6 +108,10 @@ namespace SuiteCreatorAvalonia.Models.Rules
                         return valResult;
                     }
                 }
+            }
+            if (groupDepth != 0)
+            {
+                return "A Ruleset has an opening group '(' with no matching closing group";
             }
             return null;
         }
