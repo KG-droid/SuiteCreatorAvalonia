@@ -58,7 +58,12 @@ namespace SuiteExecutor
                         _log.WriteLog($"Set OtherRemovalExec SourceDir for '{otherRem.Name}': {packageDir}", "PathResolution", Log.Severity.Info);
                         ResolveRemovalRelativeFileVars(otherRem.Removal, packageDir);
                         break;
-                    case MSIRemovalExec:
+                    case MSIRemovalExec msiRem:
+                        if (msiRem.RepairOldProductOnFailure && !string.IsNullOrWhiteSpace(msiRem.RepairMsiPath))
+                        {
+                            ResolveMSIRemovalExecRepairPath(msiRem, packageDir);
+                        }
+                        break;
                     case MSIxRemovalExec:
                         // No file paths to resolve — these use removal codes
                         break;
@@ -135,6 +140,51 @@ namespace SuiteExecutor
                 msi.PatchFile = mspFiles[0];
                 _log.WriteLog($"Resolved MSP file for '{msi.Name}': {msi.PatchFile}", "PathResolution", Log.Severity.Info);
             }
+
+            if (msi.Rollback != null)
+            {
+                string rollbackDir = Path.Combine(packageDir, "Rollback");
+                if (Directory.Exists(rollbackDir))
+                {
+                    string[] rollbackMsiFiles = Directory.GetFiles(rollbackDir, "*.msi");
+                    if (rollbackMsiFiles.Length > 0)
+                    {
+                        msi.RollbackMSIFile = rollbackMsiFiles[0];
+                        _log.WriteLog($"Resolved rollback MSI file for '{msi.Name}': {msi.RollbackMSIFile}", "PathResolution", Log.Severity.Info);
+                    }
+
+                    string[] rollbackMstFiles = Directory.GetFiles(rollbackDir, "*.mst");
+                    if (rollbackMstFiles.Length > 0)
+                    {
+                        msi.RollbackTransformsFile = rollbackMstFiles[0];
+                        _log.WriteLog($"Resolved rollback MST file for '{msi.Name}': {msi.RollbackTransformsFile}", "PathResolution", Log.Severity.Info);
+                    }
+
+                    string[] rollbackMspFiles = Directory.GetFiles(rollbackDir, "*.msp");
+                    if (rollbackMspFiles.Length > 0)
+                    {
+                        msi.RollbackPatchFile = rollbackMspFiles[0];
+                        _log.WriteLog($"Resolved rollback MSP file for '{msi.Name}': {msi.RollbackPatchFile}", "PathResolution", Log.Severity.Info);
+                    }
+                }
+            }
+        }
+
+        private void ResolveMSIRemovalExecRepairPath(MSIRemovalExec msiRem, string packageDir)
+        {
+            string repairDir = Path.Combine(packageDir, "Repair");
+            if (!Directory.Exists(repairDir))
+            {
+                _log.WriteLog($"Repair directory not found for MSI removal '{msiRem.Name}': {repairDir}", "PathResolution", Log.Severity.Warning);
+                return;
+            }
+
+            string[] repairMsiFiles = Directory.GetFiles(repairDir, "*.msi");
+            if (repairMsiFiles.Length > 0)
+            {
+                msiRem.RepairMsiPath = repairMsiFiles[0];
+                _log.WriteLog($"Resolved repair MSI file for '{msiRem.Name}': {msiRem.RepairMsiPath}", "PathResolution", Log.Severity.Info);
+            }
         }
 
         private void ResolveMSIxExecPaths(MSIxExec msix, string packageDir)
@@ -155,6 +205,25 @@ namespace SuiteExecutor
             {
                 msix.MSIxFile = msixFiles[0];
                 _log.WriteLog($"Resolved MSIx file for '{msix.Name}': {msix.MSIxFile}", "PathResolution", Log.Severity.Info);
+            }
+
+            if (msix.Rollback != null)
+            {
+                string rollbackDir = Path.Combine(packageDir, "Rollback");
+                if (Directory.Exists(rollbackDir))
+                {
+                    string[] rollbackMsixFiles = Directory.GetFiles(rollbackDir, "*.msix")
+                        .Concat(Directory.GetFiles(rollbackDir, "*.msixbundle"))
+                        .Concat(Directory.GetFiles(rollbackDir, "*.appx"))
+                        .Concat(Directory.GetFiles(rollbackDir, "*.appxbundle"))
+                        .ToArray();
+
+                    if (rollbackMsixFiles.Length > 0)
+                    {
+                        msix.Rollback.MSIxFile = rollbackMsixFiles[0];
+                        _log.WriteLog($"Resolved rollback MSIx file for '{msix.Name}': {msix.Rollback.MSIxFile}", "PathResolution", Log.Severity.Info);
+                    }
+                }
             }
         }
 
