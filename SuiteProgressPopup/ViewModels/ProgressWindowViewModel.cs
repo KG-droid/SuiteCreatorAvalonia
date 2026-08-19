@@ -24,7 +24,6 @@ namespace SuiteProgressPopup.ViewModels
         private const int CompanyLogoGlowPaddingPx = 600;
         private const byte CompanyLogoGlowMaxAlpha = 100;
         private const double CompanyLogoGlowSigma = 0.38;
-        private const double GlowShadeAmount = 0.2;
 
         private readonly string? _progressFilePath;
         private readonly DispatcherTimer _pollTimer;
@@ -209,8 +208,7 @@ namespace SuiteProgressPopup.ViewModels
             if (!LogoContrastHelper.NeedsGlow(companyLogoPath, themeBackgroundColour))
                 return;
 
-            Color glowColour = GetGlowColour();
-            CompanyLogoGlowBrush = CreateRadialGlowBrush(glowColour);
+            CompanyLogoGlowBrush = CreateRadialGlowBrush(ProgressColourBrush.Color);
 
             (double renderedWidth, double renderedHeight) = GetRenderedSizeWithinBounds(companyLogoPath, CompanyLogoMaxDimension);
             CompanyLogoWidth = renderedWidth;
@@ -289,32 +287,10 @@ namespace SuiteProgressPopup.ViewModels
             if (!LogoContrastHelper.NeedsGlow(suiteLogoPath, themeBackgroundColour))
                 return;
 
-            Bitmap? withGlow = LogoContrastHelper.CreateLogoWithGlow(suiteLogoPath, GetGlowColour());
+            Bitmap? withGlow = LogoContrastHelper.CreateLogoWithGlow(suiteLogoPath, ProgressColourBrush.Color);
             if (withGlow is not null)
                 SuiteLogo = withGlow;
         }
-
-        // The glow is a shade of the suite's own accent colour (--ProgressColour) rather than a
-        // generic black/white: darker for dark mode so it doesn't wash out against a dark
-        // background, lighter for light mode so it doesn't turn muddy against a light one.
-        private Color GetGlowColour()
-        {
-            Color accent = ProgressColourBrush.Color;
-            ThemeVariant themeVariant = Avalonia.Application.Current?.ActualThemeVariant ?? ThemeVariant.Dark;
-            return themeVariant == ThemeVariant.Light
-                ? Lighten(accent, GlowShadeAmount)
-                : Darken(accent, GlowShadeAmount);
-        }
-
-        private static Color Darken(Color colour, double amount) => Color.FromRgb(
-            (byte)(colour.R * (1 - amount)),
-            (byte)(colour.G * (1 - amount)),
-            (byte)(colour.B * (1 - amount)));
-
-        private static Color Lighten(Color colour, double amount) => Color.FromRgb(
-            (byte)(colour.R + (255 - colour.R) * amount),
-            (byte)(colour.G + (255 - colour.G) * amount),
-            (byte)(colour.B + (255 - colour.B) * amount));
 
         private static Color? TryGetThemeBackgroundColour()
         {
