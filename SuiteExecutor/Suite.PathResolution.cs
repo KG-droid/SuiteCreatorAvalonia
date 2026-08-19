@@ -3,6 +3,8 @@ using SuiteCreatorAvalonia.Models.Common;
 using SuiteCreatorAvalonia.Models.Package;
 using SuiteOperations.Events;
 using SuiteOperations.Package;
+using SuiteTools;
+using System.Collections;
 using Windows.Storage;
 using Log = Logger.Log;
 
@@ -151,6 +153,17 @@ namespace SuiteExecutor
                     {
                         msi.RollbackMSIFile = rollbackMsiFiles[0];
                         _log.WriteLog($"Resolved rollback MSI file for '{msi.Name}': {msi.RollbackMSIFile}", "PathResolution", Log.Severity.Info);
+
+                        if (msi.Rollback is MSIExec rollbackExec)
+                        {
+                            Hashtable rollbackProps = MSITools.GetMSIProperties(msi.RollbackMSIFile);
+                            rollbackExec.ProductCode = rollbackProps["ProductCode"] as string;
+                            rollbackExec.UpgradeCode = rollbackProps["UpgradeCode"] as string;
+                            rollbackExec.Architecture = MSITools.GetMSISummaryInfoFromMSI(msi.RollbackMSIFile).Is64Bit()
+                                ? System.Runtime.InteropServices.Architecture.X64
+                                : System.Runtime.InteropServices.Architecture.X86;
+                            _log.WriteLog($"Resolved rollback ProductCode/UpgradeCode for '{msi.Name}': {rollbackExec.ProductCode} / {rollbackExec.UpgradeCode}", "PathResolution", Log.Severity.Info);
+                        }
                     }
 
                     string[] rollbackMstFiles = Directory.GetFiles(rollbackDir, "*.mst");
@@ -222,6 +235,14 @@ namespace SuiteExecutor
                     {
                         msix.Rollback.MSIxFile = rollbackMsixFiles[0];
                         _log.WriteLog($"Resolved rollback MSIx file for '{msix.Name}': {msix.Rollback.MSIxFile}", "PathResolution", Log.Severity.Info);
+
+                        if (msix.Rollback is MSIxExec rollbackExec)
+                        {
+                            using SuiteTools.MSIx rollbackMsixInfo = new(rollbackExec.MSIxFile!);
+                            rollbackExec.PackageFamilyName = rollbackMsixInfo.PackageFamilyName;
+                            rollbackExec.PackageFullName = rollbackMsixInfo.PackageFullName;
+                            _log.WriteLog($"Resolved rollback PackageFamilyName/PackageFullName for '{msix.Name}': {rollbackExec.PackageFamilyName} / {rollbackExec.PackageFullName}", "PathResolution", Log.Severity.Info);
+                        }
                     }
                 }
             }

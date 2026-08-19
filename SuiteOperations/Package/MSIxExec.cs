@@ -59,7 +59,9 @@ namespace SuiteOperations.Package
                 IsForceThisVersion = Rollback.IsForceThisVersion,
                 IsDeferInUse = Rollback.IsDeferInUse,
                 HasDependents = Rollback.HasDependents,
-                Dependents = Rollback.Dependents
+                Dependents = Rollback.Dependents,
+                PackageFamilyName = (Rollback as MSIxExec)?.PackageFamilyName ?? PackageFamilyName,
+                PackageFullName = (Rollback as MSIxExec)?.PackageFullName ?? PackageFullName
             };
             rollbackExec.ExecuteInstall();
             _log.WriteLog($"Rollback complete");

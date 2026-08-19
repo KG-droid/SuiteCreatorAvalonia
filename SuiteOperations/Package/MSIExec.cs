@@ -338,9 +338,9 @@ namespace SuiteOperations.Package
                 LegacyLongFilePath = Rollback.LegacyLongFilePath,
                 LogPath = Rollback.LogPath,
                 Properties = Rollback.Properties?.Select(p => p.Clone()).ToList(),
-                ProductCode = ProductCode,
-                UpgradeCode = UpgradeCode,
-                Architecture = Architecture
+                ProductCode = (Rollback as MSIExec)?.ProductCode ?? ProductCode,
+                UpgradeCode = (Rollback as MSIExec)?.UpgradeCode ?? UpgradeCode,
+                Architecture = (Rollback as MSIExec)?.Architecture ?? Architecture
             };
             action = WorstOf(action, rollbackExec.ExecuteInstall());
             _log.WriteLog("Rollback complete.");

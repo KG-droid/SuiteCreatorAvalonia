@@ -186,7 +186,7 @@ namespace SuiteExecutor
             {
                 SuiteAction.Deployment => true,
                 SuiteAction.Removal => !isRemovalType,
-                SuiteAction.Rollback => package is MSIExec or OtherExec,
+                SuiteAction.Rollback => package is MSIExec or MSIxExec or OtherExec,
                 _ => false
             };
 
@@ -207,12 +207,13 @@ namespace SuiteExecutor
                 SuiteAction.Rollback => package switch
                 {
                     MSIExec msi => msi.Rollback != null,
+                    MSIxExec msix => msix.Rollback != null,
                     OtherExec other => other.HasRollbackCommand,
                     _ => false
                 },
                 _ => false
             };
-            bool isDetected = IsPackageDetected(package);
+            bool isDetected = IsPackageDetected(package, useRollbackDetection: _action == SuiteAction.Rollback);
 
             if (isDetected == expectedDetected)
             {
@@ -315,9 +316,13 @@ namespace SuiteExecutor
                     RunWithEstimatedProgress(otherRollbackEstimate, stageStartPercent, stageEndPercent, statusText, () => otherResult = other.ExecuteRollback());
                     HandleActionType(otherResult, other.Name!, other.RestartCountdown);
                     break;
+                case MSIxExec msix:
+                    _log.WriteLog($"Rolling back MSIx package: {msix.Name}", "Execution", Log.Severity.Info);
+                    int msixRollbackEstimate = msix.EstimatedUninstallSeconds + (msix.Rollback?.EstimatedInstallSeconds ?? 0);
+                    RunWithEstimatedProgress(msixRollbackEstimate, stageStartPercent, stageEndPercent, statusText, () => msix.ExecuteRollback());
+                    break;
                 case MSIRemovalExec:
                 case MSIxRemovalExec:
-                case MSIxExec:
                 case OtherRemovalExec:
                     _log.WriteLog($"Skipping {package.GetType().Name} ({package.Name}) during rollback", "Execution", Log.Severity.Info);
                     break;

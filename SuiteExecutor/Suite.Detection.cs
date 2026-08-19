@@ -210,14 +210,15 @@ namespace SuiteExecutor
             return _suiteConfig.Packages.Where(pkg => IsPackageDetected(pkg)).ToList();
         }
 
-        private bool IsPackageDetected(PackageBase pkg)
+        private bool IsPackageDetected(PackageBase pkg, bool useRollbackDetection = false)
         {
             switch (pkg)
             {
                 case MSIExec msi:
                     {
-                        _log.WriteLog($"Checking detection for MSI Package: {pkg.Name}", "Startup", Log.Severity.Info);
-                        PackageExecDetectionResult result = msi.IsDetected();
+                        MSIExec detectionTarget = useRollbackDetection && msi.Rollback is MSIExec rollbackMsi ? rollbackMsi : msi;
+                        _log.WriteLog($"Checking {(useRollbackDetection ? "rollback " : string.Empty)}detection for MSI Package: {pkg.Name}", "Startup", Log.Severity.Info);
+                        PackageExecDetectionResult result = detectionTarget.IsDetected();
                         _log.WriteLog($"Detection result: {result.Result}, summary: {result.Summary}", "Startup", Log.Severity.Info);
                         return result.Result;
                     }
@@ -230,8 +231,9 @@ namespace SuiteExecutor
                     }
                 case MSIxExec msix:
                     {
-                        _log.WriteLog($"Checking detection for MSIx Package: {pkg.Name}", "Startup", Log.Severity.Info);
-                        PackageExecDetectionResult result = msix.IsDetected();
+                        MSIxExec detectionTarget = useRollbackDetection && msix.Rollback is MSIxExec rollbackMsix ? rollbackMsix : msix;
+                        _log.WriteLog($"Checking {(useRollbackDetection ? "rollback " : string.Empty)}detection for MSIx Package: {pkg.Name}", "Startup", Log.Severity.Info);
+                        PackageExecDetectionResult result = detectionTarget.IsDetected();
                         _log.WriteLog($"Detection result: {result.Result}, summary: {result.Summary}", "Startup", Log.Severity.Info);
                         return result.Result;
                     }
@@ -244,9 +246,12 @@ namespace SuiteExecutor
                     }
                 case OtherExec otherPkg:
                     {
-                        _log.WriteLog($"Checking detection for Other Package: {otherPkg.Name}", "Startup", Log.Severity.Info);
-                        RuleSet? matchingRuleSet = _suiteConfig.RuleSets.FirstOrDefault(rs => rs.Id == otherPkg.DetectionRuleSetId);
-                        if (matchingRuleSet == null) throw new Exception($"No matching RuleSet found for Package {otherPkg.Name} with DetectionRuleSetId {otherPkg.DetectionRuleSetId}");
+                        Guid? ruleSetId = useRollbackDetection && otherPkg.RollbackDetectionRuleSetId != null
+                            ? otherPkg.RollbackDetectionRuleSetId
+                            : otherPkg.DetectionRuleSetId;
+                        _log.WriteLog($"Checking {(useRollbackDetection ? "rollback " : string.Empty)}detection for Other Package: {otherPkg.Name}", "Startup", Log.Severity.Info);
+                        RuleSet? matchingRuleSet = _suiteConfig.RuleSets.FirstOrDefault(rs => rs.Id == ruleSetId);
+                        if (matchingRuleSet == null) throw new Exception($"No matching RuleSet found for Package {otherPkg.Name} with DetectionRuleSetId {ruleSetId}");
                         RuleResult ruleResult = matchingRuleSet.ParseRuleSet();
                         _log.WriteLog($"Detection result: {ruleResult.IsMet}, summary: {ruleResult.Summary}", "Startup", Log.Severity.Info);
                         return ruleResult.IsMet;
