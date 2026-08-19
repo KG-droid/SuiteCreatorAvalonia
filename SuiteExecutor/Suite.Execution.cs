@@ -33,15 +33,18 @@ namespace SuiteExecutor
             // package whose target was never detected) don't each claim an equal slice of the progress bar -
             // only stages that actually do something count towards the percentage, otherwise the bar looks
             // like it "jumps" past a chunk of the suite almost instantly.
-            List<(PackageBase? Package, bool ExecutePackage)> resolvedStages = new();
+            List<(PackageBase? Package, bool ExecutePackage, bool HasWork)> resolvedStages = new();
             foreach (Stage stage in stages)
             {
                 PackageBase? package = ResolvePackage(stage);
                 bool executePackage = package != null && ShouldPackageExecute(package);
-                resolvedStages.Add((package, executePackage));
+                bool hasWork = executePackage
+                    || (package != null && _action == SuiteAction.Removal)
+                    || StageHasApplicableEvent(allEvents, stage.Id);
+                resolvedStages.Add((package, executePackage, hasWork));
             }
 
-            int activeStageCount = resolvedStages.Count(s => s.Package == null || s.ExecutePackage || _action == SuiteAction.Removal);
+            int activeStageCount = resolvedStages.Count(s => s.HasWork);
             if (activeStageCount == 0) activeStageCount = 1;
 
             int activeIndex = 0;
@@ -50,7 +53,7 @@ namespace SuiteExecutor
                 Stage stage = stages[i];
                 _log.WriteLog($"--- Stage {i + 1}/{stages.Count}: {stage.Name} (Id: {stage.Id}) ---", "Execution", Log.Severity.Info);
 
-                (PackageBase? package, bool executePackage) = resolvedStages[i];
+                (PackageBase? package, bool executePackage, bool hasWork) = resolvedStages[i];
 
                 // During Deployment, a skipped package (e.g. already detected) means this stage never
                 // really happens, so its before/after events are skipped too. During Removal, the events
@@ -63,11 +66,17 @@ namespace SuiteExecutor
                     continue;
                 }
 
+                // A stage with no package and no events attached (e.g. an untouched Start/End stage) does
+                // nothing at all, so it must not consume a slice of the progress bar or move the indicator -
+                // only stages with actual work (hasWork) advance activeIndex/UpdateProgress.
                 double stageStartPercent = activeIndex / (double)activeStageCount * 100;
-                double stageEndPercent = (activeIndex + 1) / (double)activeStageCount * 100;
+                double stageEndPercent = hasWork ? (activeIndex + 1) / (double)activeStageCount * 100 : stageStartPercent;
                 string stageStatusText = !string.IsNullOrWhiteSpace(stage.Name) ? $"{_action}: {stage.Name}" : $"Suite {_action}: {_suiteConfig.BuildSettings.Name}";
-                UpdateProgress((int)Math.Round(stageStartPercent), stageStatusText);
-                activeIndex++;
+                if (hasWork)
+                {
+                    UpdateProgress((int)Math.Round(stageStartPercent), stageStatusText);
+                    activeIndex++;
+                }
 
                 RunEventsForStage(allEvents, stage.Id, before: true);
 
@@ -151,6 +160,26 @@ namespace SuiteExecutor
             if (_suiteConfig.ServiceClosureEvents != null) allEvents.AddRange(_suiteConfig.ServiceClosureEvents);
             if (_suiteConfig.ShortcutEvents != null) allEvents.AddRange(_suiteConfig.ShortcutEvents);
             return allEvents;
+        }
+
+        // Weight-check only - deliberately ignores each schedule's Condition (unlike RunEventsForStage) so
+        // this can be evaluated once up front without triggering rule-set side effects; a stage whose only
+        // schedule turns out condition-false at runtime is a rarer, smaller inaccuracy than the alternative
+        // of Start/End-style stages eating a full slice of the progress bar for doing nothing.
+        private bool StageHasApplicableEvent(List<EventCore> allEvents, Guid stageId)
+        {
+            foreach (EventCore evt in allEvents)
+            {
+                foreach (Schedule schedule in evt.Schedules)
+                {
+                    if (schedule.EventStageId != stageId)
+                        continue;
+
+                    if (IsScheduleApplicable(schedule, before: true) || IsScheduleApplicable(schedule, before: false))
+                        return true;
+                }
+            }
+            return false;
         }
 
         private void RunEventsForStage(List<EventCore> allEvents, Guid stageId, bool before)
