@@ -73,6 +73,7 @@ namespace SuiteCreatorAvalonia.Models.Common
             FailureRetry = false,
             RestartOnFailure = false,
             ReverseUninstall = false,
+            CreateUninstallMedia = true,
         };
         public Popup PopupSettings { get; set; } = new();
     }

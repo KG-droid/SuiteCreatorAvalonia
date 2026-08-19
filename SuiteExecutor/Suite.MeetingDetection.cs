@@ -38,7 +38,10 @@ namespace SuiteExecutor
                     case MeetingCheckExitType.NotInUse:
                         return false;
                     default:
-                        _log.WriteLog($"Microphone check returned an unexpected result (exit code: {result.ExitCode}, error: {result.ErrorMessage}), assuming not in use", "ExecPopup", Log.Severity.Warning);
+                        // ErrorMessage only covers launch failures (see StartProcessAsCurrentUser); the check
+                        // process's own exception, if any, comes back via StandardError instead.
+                        string failureDetail = !string.IsNullOrWhiteSpace(result.StandardError) ? result.StandardError : result.ErrorMessage;
+                        _log.WriteLog($"Microphone check returned an unexpected result (exit code: {result.ExitCode}, detail: {failureDetail}), assuming not in use", "ExecPopup", Log.Severity.Warning);
                         return false;
                 }
             }

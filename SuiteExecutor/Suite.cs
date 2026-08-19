@@ -201,7 +201,10 @@ namespace SuiteExecutor
                 // Post-execution: update suite detection registry and clean up any stale deferral
                 if (action == SuiteAction.Deployment)
                 {
-                    CreateUninstallMedia();
+                    if (_suiteConfig.BuildSettings.CreateUninstallMedia)
+                    {
+                        CreateUninstallMedia();
+                    }
                     WriteSuiteDetectionRegistry();
                 }
                 else if (action == SuiteAction.Removal || action == SuiteAction.Rollback)

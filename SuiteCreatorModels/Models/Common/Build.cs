@@ -15,6 +15,7 @@ namespace SuiteCreatorAvalonia.Models.Common
         public bool FailureRetry { get; set; }
         public bool RestartOnFailure { get; set; }
         public bool ReverseUninstall { get; set; }
+        public bool CreateUninstallMedia { get; set; } = true;
         public string? LogDir { get; set; }
 
         public Architecture Architecture = Architecture.x64;
@@ -35,6 +36,7 @@ namespace SuiteCreatorAvalonia.Models.Common
                 FailureRetry = FailureRetry,
                 RestartOnFailure = RestartOnFailure,
                 ReverseUninstall = ReverseUninstall,
+                CreateUninstallMedia = CreateUninstallMedia,
                 Architecture = Architecture,
                 Detection = Detection,
                 LogDir = LogDir
@@ -55,6 +57,7 @@ namespace SuiteCreatorAvalonia.Models.Common
             FailureRetry = updated.FailureRetry;
             RestartOnFailure = updated.RestartOnFailure;
             ReverseUninstall = updated.ReverseUninstall;
+            CreateUninstallMedia = updated.CreateUninstallMedia;
             Architecture = updated.Architecture;
             Detection = updated.Detection;
             LogDir = updated.LogDir;
