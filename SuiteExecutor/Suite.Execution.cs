@@ -29,18 +29,28 @@ namespace SuiteExecutor
                 _log.WriteLog($"Events have been reversed, so anything that was installing or placing something will now remove it, unless it was set to permanent", "Execution", Log.Severity.Info);
             }
 
+            // Resolve every stage's package and detection outcome up front so skipped stages (e.g. a removal
+            // package whose target was never detected) don't each claim an equal slice of the progress bar -
+            // only stages that actually do something count towards the percentage, otherwise the bar looks
+            // like it "jumps" past a chunk of the suite almost instantly.
+            List<(PackageBase? Package, bool ExecutePackage)> resolvedStages = new();
+            foreach (Stage stage in stages)
+            {
+                PackageBase? package = ResolvePackage(stage);
+                bool executePackage = package != null && ShouldPackageExecute(package);
+                resolvedStages.Add((package, executePackage));
+            }
+
+            int activeStageCount = resolvedStages.Count(s => s.Package == null || s.ExecutePackage || _action == SuiteAction.Removal);
+            if (activeStageCount == 0) activeStageCount = 1;
+
+            int activeIndex = 0;
             for (int i = 0; i < stages.Count; i++)
             {
                 Stage stage = stages[i];
                 _log.WriteLog($"--- Stage {i + 1}/{stages.Count}: {stage.Name} (Id: {stage.Id}) ---", "Execution", Log.Severity.Info);
 
-                double stageStartPercent = stages.Count > 0 ? i / (double)stages.Count * 100 : 0;
-                double stageEndPercent = stages.Count > 0 ? (i + 1) / (double)stages.Count * 100 : 100;
-                string stageStatusText = !string.IsNullOrWhiteSpace(stage.Name) ? $"{_action}: {stage.Name}" : $"Suite {_action}: {_suiteConfig.BuildSettings.Name}";
-                UpdateProgress((int)Math.Round(stageStartPercent), stageStatusText);
-
-                PackageBase? package = ResolvePackage(stage);
-                bool executePackage = package != null && ShouldPackageExecute(package);
+                (PackageBase? package, bool executePackage) = resolvedStages[i];
 
                 // During Deployment, a skipped package (e.g. already detected) means this stage never
                 // really happens, so its before/after events are skipped too. During Removal, the events
@@ -52,6 +62,12 @@ namespace SuiteExecutor
                 {
                     continue;
                 }
+
+                double stageStartPercent = activeIndex / (double)activeStageCount * 100;
+                double stageEndPercent = (activeIndex + 1) / (double)activeStageCount * 100;
+                string stageStatusText = !string.IsNullOrWhiteSpace(stage.Name) ? $"{_action}: {stage.Name}" : $"Suite {_action}: {_suiteConfig.BuildSettings.Name}";
+                UpdateProgress((int)Math.Round(stageStartPercent), stageStatusText);
+                activeIndex++;
 
                 RunEventsForStage(allEvents, stage.Id, before: true);
 
