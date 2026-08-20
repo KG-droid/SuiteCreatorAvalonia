@@ -113,6 +113,16 @@ namespace SuiteExecutor
                 }
                 CreateSuiteRunningRegistry();
 
+                // FailSafe: register the recovery task before the popup runs, not after — otherwise there's
+                // a window (the entire time the popup is up waiting for a response, or waiting out a
+                // meeting-pause recheck) with no recovery task at all, so a user who shuts down right then
+                // (deliberately, to dodge it, or not) abandons the run with nothing to resume it except the
+                // deployment tool's own next independent check-in. Every path that shouldn't keep this task
+                // (Defer/skip/ESP/locked/meeting-pause, and the top-level exception handler) already calls
+                // RemoveFailSafeTask()/CleanupBeforeUserSkipExit() on its way out, so creating it this early
+                // doesn't leak it on any of those paths.
+                CreateFailSafeTask();
+
                 // Run popup (If configured). A FailSafe recovery run fires unattended at boot/logon, so it must
                 // not prompt or allow deferral — it just runs the suite to finish the interrupted run.
                 if (_suiteConfig.PopupSettings.ShowPopupWarning && runMode != SuiteRunMode.FailSafe)
@@ -123,10 +133,6 @@ namespace SuiteExecutor
                 {
                     _log.WriteLog("FailSafe recovery run; skipping the popup and running the suite directly", "Startup", Log.Severity.Info);
                 }
-
-                // FailSafe: register a recovery task now that the popup (if any) has been handled, so the
-                // suite restarts at logon/startup if the device is interrupted partway through execution
-                CreateFailSafeTask();
 
                 // Show install progress popup (If configured)
                 StartProgressPopup();

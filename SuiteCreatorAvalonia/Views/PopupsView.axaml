@@ -173,7 +173,7 @@
 									<TextBlock
 										Grid.Row="2"
 										Grid.Column="3"
-										Text="Delays showing the popup while the user's microphone is in use (e.g. an active call/meeting), retrying later instead of interrupting them (Exits 1602 before it waits, so deployment tool isnt blocked)"
+										Text="Delays showing the popup while the user's microphone is in use (e.g. an active call/meeting). Exits immediately (1602) so the deployment tool isn't kept waiting, and rechecks every minute for up to 4 hours via its own scheduled task, rather than relying on the deployment tool's own re-check schedule."
 										TextWrapping="Wrap"
 										HorizontalAlignment="Left"
 										VerticalAlignment="Center"/>

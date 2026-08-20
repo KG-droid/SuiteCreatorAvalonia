@@ -101,8 +101,12 @@ namespace SuiteUserPopup
         {
             try
             {
-                bool inUse = MicrophoneActivityDetector.IsMicrophoneInUse();
-                AppLogService.Info($"Microphone activity check completed, in use: {inUse}.", "SuiteUserPopup");
+                bool inUse = MicrophoneActivityDetector.IsMicrophoneInUse(out string diagnostics);
+                AppLogService.Info($"Microphone activity check completed, in use: {inUse}. {diagnostics}", "SuiteUserPopup");
+                // SuiteExecutor doesn't read this process's own log file, only stdout/stderr and the exit
+                // code - write the diagnostics unconditionally (not just on failure) so it can tell a
+                // genuine "not in use" apart from "the check didn't see what was expected".
+                Console.WriteLine(diagnostics);
                 Environment.Exit(inUse ? 1 : 0);
             }
             catch (Exception ex)

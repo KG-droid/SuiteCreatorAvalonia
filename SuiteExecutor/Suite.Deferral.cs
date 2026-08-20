@@ -88,6 +88,15 @@ namespace SuiteExecutor
                     _log.WriteLog($"Cleaned up deferral scheduled task '{taskName}'", "Deferral", Log.Severity.Info);
                 }
 
+                // Also clear any pending meeting-recheck task and its wait-started timestamp (see
+                // Suite.MeetingDetection.cs) - this only normally happens once the mic check itself sees the
+                // mic free, but this catches it too in case PauseDuringMeeting was disabled between runs
+                // while a recheck was still pending. Clearing the timestamp matters even on its own: a stale
+                // one left behind would make the very next meeting-pause (e.g. after re-enabling the setting
+                // in a later build) look like it's already exceeded the max wait, skipping the pause entirely.
+                RemoveMeetingRecheckTaskIfExists();
+                RemoveMeetingWaitStartedRegistry();
+
                 // This runs only after a successful suite completion (i.e. we are not deferring). Retain the
                 // cache only when the build opts into KeepCache; otherwise remove it now.
                 if (_suiteConfig.BuildSettings.KeepCache)
