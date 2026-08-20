@@ -36,6 +36,7 @@ namespace SuiteExecutor
                     case MeetingCheckExitType.InUse:
                         return true;
                     case MeetingCheckExitType.NotInUse:
+                        _log.WriteLog("Microphone is not currently in use, proceeding with the popup", "ExecPopup", Log.Severity.Info);
                         return false;
                     default:
                         // ErrorMessage only covers launch failures (see StartProcessAsCurrentUser); the check
