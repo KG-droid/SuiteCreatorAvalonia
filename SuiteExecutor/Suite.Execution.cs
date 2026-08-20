@@ -53,7 +53,13 @@ namespace SuiteExecutor
                 Stage stage = stages[i];
                 _log.WriteLog($"--- Stage {i + 1}/{stages.Count}: {stage.Name} (Id: {stage.Id}) ---", "Execution", Log.Severity.Info);
 
-                (PackageBase? package, bool executePackage, bool hasWork) = resolvedStages[i];
+                (PackageBase? package, bool _, bool hasWork) = resolvedStages[i];
+
+                // executePackage was also estimated in the upfront pass (for progress-bar sizing), but an
+                // earlier stage's package (e.g. a regex removal) can change detection state for this one
+                // (e.g. an install of the same app) by the time we actually get here - re-check live rather
+                // than trusting the stale precomputed value, or the stage gets wrongly skipped.
+                bool executePackage = package != null && ShouldPackageExecute(package);
 
                 // During Deployment, a skipped package (e.g. already detected) means this stage never
                 // really happens, so its before/after events are skipped too. During Removal, the events
