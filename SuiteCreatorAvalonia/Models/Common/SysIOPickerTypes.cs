@@ -91,7 +91,7 @@ namespace SuiteCreatorAvalonia.Models.Common
         {
             new ("ImageIncGif")
                 {
-                    Patterns = new[] { "*.png", "*.jpeg", "*.bmp", "*.gif" },
+                    Patterns = new[] { "*.png", "*.jpeg", "*.jpg", "*.bmp", "*.gif" },
                 }
         };
 
