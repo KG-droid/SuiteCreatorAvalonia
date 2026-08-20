@@ -108,6 +108,10 @@ namespace SuiteUserPopup
             catch (Exception ex)
             {
                 AppLogService.Error($"Microphone activity check failed: {ex.Message}", "SuiteUserPopup");
+                // SuiteExecutor doesn't read this process's own log file - it only sees stdout/stderr and the
+                // exit code (see StartProcessAsCurrentUser), so the failure reason has to travel via stderr to
+                // actually show up in the caller's log instead of just exit code 2 with no explanation.
+                Console.Error.WriteLine(ex.ToString());
                 Environment.Exit(2);
             }
         }
