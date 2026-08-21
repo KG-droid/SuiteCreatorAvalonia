@@ -132,11 +132,6 @@ namespace SuiteExecutor
             WriteProgressStatus(100, statusText, isComplete: !isError, isError: isError);
         }
 
-        // CompleteProgressPopup only signals the popup to close by writing to the progress file — the popup
-        // notices asynchronously (its own poll interval, a completion linger, then shutdown) and exits on its
-        // own time, or is force-terminated once its waitTimeout elapses (see StartProgressPopup). Wait for
-        // that to actually happen before anything (e.g. CleanupDeferral) touches paths the popup still holds
-        // open, rather than racing a fixed delay.
         private void WaitForProgressPopupExit(TimeSpan timeout)
         {
             if (_progressPopupTask == null)
@@ -155,12 +150,6 @@ namespace SuiteExecutor
             }
         }
 
-        // Package installs/uninstalls run as a single blocking external process with no real progress
-        // callback available (see MSITools/OtherExecBase - everything shells out to msiexec.exe or a
-        // command line). estimatedSeconds is an admin-configured guess at how long that call will take;
-        // while it runs on the caller's thread, a background task interpolates progress across
-        // [startPercent, endPercent) so the bar isn't frozen for the whole stage. If no estimate is
-        // configured (0) or the popup isn't running, the action just runs with no ticking.
         private void RunWithEstimatedProgress(int estimatedSeconds, double startPercent, double endPercent, string? statusText, Action action)
         {
             if (estimatedSeconds <= 0 || !_progressPopupStarted)
