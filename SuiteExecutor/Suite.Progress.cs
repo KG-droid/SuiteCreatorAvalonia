@@ -84,7 +84,7 @@ namespace SuiteExecutor
                 {
                     try
                     {
-                        StartProcessAsCurrentUser(_progressPopupExe, progressArguments, _installedPopupDir, true, true, TimeSpan.FromSeconds(30), true);
+                        StartProcessAsCurrentUser(_progressPopupExe, progressArguments, _installedPopupDir, true, true, null, true);
                     }
                     catch (Exception ex)
                     {
