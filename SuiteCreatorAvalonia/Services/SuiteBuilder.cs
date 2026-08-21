@@ -1466,7 +1466,7 @@ namespace SuiteCreatorAvalonia.Services
         {
             var config = new PopConfigDto
             {
-                LogFilePath = Path.Combine(_appSettingsControl.GetLogLocation(), $"{suiteExecCfg.BuildSettings.Manufacturer}_{suiteExecCfg.BuildSettings.Name}_{suiteExecCfg.BuildSettings.SuiteVersion}_{suiteExecCfg.BuildSettings.Revision}.log"),
+                LogFilePath = Path.Combine(_appSettingsControl.GetLogLocation(), $"{suiteExecCfg.BuildSettings.Manufacturer}_{suiteExecCfg.BuildSettings.Name}_{suiteExecCfg.BuildSettings.SuiteVersion}_{suiteExecCfg.BuildSettings.Revision}_Suite.log"),
                 CompanyLogoBackground = popupSettings.BackgroundColor?.ToString(),
                 MainText = "The following apps will be closed before the upgrade. Please save any work required before you continue.",
                 IsClosuresAppsVisible = popupSettings.LinkToProcClosures,
