@@ -93,6 +93,12 @@ namespace SuiteCreatorAvalonia.ViewModels
         [ObservableProperty]
         private RestartBehavior _restartBehavior = RestartBehavior.Ignore;
 
+        [ObservableProperty]
+        private int _estimatedUninstallSeconds;
+
+        [ObservableProperty]
+        private bool _isProgressPopupEnabled;
+
         partial void OnSelectedRemoveTypeChanged(OtherRemovalType value)
         {
             switch (value)
@@ -282,6 +288,8 @@ namespace SuiteCreatorAvalonia.ViewModels
                     DetectionBuilder.LoadRuleSet(_suiteCoreManager.GetRuleSet(dectGuid));
                 SelectedRemoveType = otherCore.RemovalType;
                 RestartBehavior = otherCore.RestartBehavior;
+                EstimatedUninstallSeconds = otherCore.EstimatedUninstallSeconds;
+                IsProgressPopupEnabled = _suiteCoreManager.GetPopupSettings().ShowProgress;
                 RegexVendor = null;
                 RegexProductName = null;
                 RegexRemoveParams = null;
@@ -343,6 +351,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             otherCore.LegacyLongFilePath = LegacyLongFilePath;
             otherCore.RemovalType = SelectedRemoveType;
             otherCore.RestartBehavior = RestartBehavior;
+            otherCore.EstimatedUninstallSeconds = EstimatedUninstallSeconds;
             switch (SelectedRemoveType)
             {
                 case OtherRemovalType.MSI:

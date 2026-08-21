@@ -29,7 +29,7 @@
 			<!-- Common MSI Options -->
             <Grid
                 ColumnDefinitions="Auto,10,Auto,5,*"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                 Margin="0,10,0,0">
 
 				<!-- Package Name -->
@@ -139,6 +139,26 @@
 						Classes="IconButton"
 						Tag="TagText"/>
 				</Grid>
+
+					<!-- Estimated Uninstall Duration -->
+					<TextBlock
+						Grid.Row="5"
+						Grid.Column="0"
+						VerticalAlignment="Center"
+						IsVisible="{Binding IsProgressPopupEnabled}"
+						Text="Estimated Uninstall Duration (seconds):"/>
+					<NumericUpDown
+						Grid.Row="5"
+						Grid.Column="2"
+						Grid.ColumnSpan="3"
+						IsVisible="{Binding IsProgressPopupEnabled}"
+						Value="{Binding EstimatedUninstallSeconds}"
+						Minimum="0"
+						Maximum="86400"
+						FormatString="0"
+						HorizontalAlignment="Left"
+						Width="130"
+						ToolTip.Tip="Approximate time this uninstall takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
             </Grid>
 		</StackPanel>
 	</ScrollViewer>

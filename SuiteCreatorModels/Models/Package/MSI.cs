@@ -59,6 +59,8 @@ namespace SuiteCreatorAvalonia.Models.Package
         public List<MSIProperty>? Properties { get; set; }
         public bool RemoveOnSuiteRemoval { get; set; } = true;
         public MSI? Rollback { get; set; }
+        public int EstimatedInstallSeconds { get; set; }
+        public int EstimatedUninstallSeconds { get; set; }
 
         protected MSI(MSI source) : base()
         {
@@ -75,6 +77,8 @@ namespace SuiteCreatorAvalonia.Models.Package
             Properties = source.Properties != null ? source.Properties.Select(p => p.Clone()).ToList() : null;
             RemoveOnSuiteRemoval = source.RemoveOnSuiteRemoval;
             Rollback = source.Rollback?.Clone();
+            EstimatedInstallSeconds = source.EstimatedInstallSeconds;
+            EstimatedUninstallSeconds = source.EstimatedUninstallSeconds;
         }
 
         public MSI() : base() { }
@@ -101,6 +105,8 @@ namespace SuiteCreatorAvalonia.Models.Package
                 Properties = msi.Properties != null ? msi.Properties.Select(p => p.Clone()).ToList() : null;
                 RemoveOnSuiteRemoval = msi.RemoveOnSuiteRemoval;
                 Rollback = msi.Rollback?.Clone();
+                EstimatedInstallSeconds = msi.EstimatedInstallSeconds;
+                EstimatedUninstallSeconds = msi.EstimatedUninstallSeconds;
             }
         }
         public override string? Validate()

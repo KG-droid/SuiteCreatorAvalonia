@@ -77,6 +77,9 @@ namespace SuiteCreatorAvalonia.ViewModels
         public bool _isReverseUninstall = false;
 
         [ObservableProperty]
+        public bool _isCreateUninstallMedia = true;
+
+        [ObservableProperty]
         public string? _detection;
 
         partial void OnManufacturerChanged(string? value)
@@ -133,6 +136,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                 IsRetryOnFailure = buildSettings.FailureRetry;
                 IsRestartBeforeRetry = buildSettings.RestartOnFailure;
                 IsReverseUninstall = buildSettings.ReverseUninstall;
+                IsCreateUninstallMedia = buildSettings.CreateUninstallMedia;
                 Detection = buildSettings.Detection;
             }
             finally
@@ -158,6 +162,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                 FailureRetry = IsRetryOnFailure,
                 RestartOnFailure = IsRestartBeforeRetry,
                 ReverseUninstall = IsReverseUninstall,
+                CreateUninstallMedia = IsCreateUninstallMedia,
                 Detection = Detection
             };
             Version.TryParse(SuiteVersion, out var parsedVersion);

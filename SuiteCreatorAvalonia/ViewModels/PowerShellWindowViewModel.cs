@@ -9,6 +9,7 @@ using SuiteCreatorAvalonia.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
@@ -136,6 +137,27 @@ namespace SuiteCreatorAvalonia.ViewModels
         public async void UnlinkScript()
         {
             FilePath = null;
+        }
+
+        [RelayCommand]
+        public void EditScriptInIse()
+        {
+            if (string.IsNullOrWhiteSpace(FilePath))
+                return;
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "powershell_ise.exe",
+                    Arguments = $"\"{FilePath}\"",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                AppLog.Warning($"Failed to open linked script in PowerShell ISE: {FilePath}, error: {ex.Message}", "PowerShell");
+                ScriptOutput = $"Could not open PowerShell ISE: {ex.Message}";
+            }
         }
 
         [RelayCommand]

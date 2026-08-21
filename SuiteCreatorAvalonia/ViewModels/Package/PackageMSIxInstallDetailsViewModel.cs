@@ -86,6 +86,10 @@ namespace SuiteCreatorAvalonia.ViewModels
             MSIxDetailsSubView.Dependencies.Clear();
             MSIxDetailsSubView.DeferInUse = msixPackage.IsDeferInUse;
             MSIxDetailsSubView.RemoveOnSuiteRemoval = msixPackage.RemoveOnSuiteRemoval;
+            MSIxDetailsSubView.EstimatedInstallSeconds = msixPackage.EstimatedInstallSeconds;
+            MSIxDetailsSubView.EstimatedUninstallSeconds = msixPackage.EstimatedUninstallSeconds;
+            bool progressPopupEnabled = _suiteCoreManager.GetPopupSettings().ShowProgress;
+            MSIxDetailsSubView.IsProgressPopupEnabled = progressPopupEnabled;
             if (msixPackage.Dependents != null && msixPackage.Dependents.Count > 0)
                 MSIxDetailsSubView.Dependencies.AddRange(msixPackage.Dependents);
             if (msixPackage.Rollback is MSIxPkg rollbackPkg && !string.IsNullOrEmpty(rollbackPkg.MSIxPath))
@@ -100,6 +104,8 @@ namespace SuiteCreatorAvalonia.ViewModels
                 else
                     MSIxRollbackView.Dependencies.Clear();
                 MSIxRollbackView.DeferInUse = rollbackPkg.IsDeferInUse;
+                MSIxRollbackView.EstimatedInstallSeconds = rollbackPkg.EstimatedInstallSeconds;
+                MSIxRollbackView.IsProgressPopupEnabled = progressPopupEnabled;
             }
             else
             {
@@ -125,6 +131,8 @@ namespace SuiteCreatorAvalonia.ViewModels
             msixPackage.Dependents = MSIxDetailsSubView.Dependencies.ToList();
             msixPackage.IsDeferInUse = MSIxDetailsSubView.DeferInUse;
             msixPackage.RemoveOnSuiteRemoval = MSIxDetailsSubView.RemoveOnSuiteRemoval;
+            msixPackage.EstimatedInstallSeconds = MSIxDetailsSubView.EstimatedInstallSeconds;
+            msixPackage.EstimatedUninstallSeconds = MSIxDetailsSubView.EstimatedUninstallSeconds;
             if (AddRollBack)
             {
                 msixPackage.Rollback = new MSIxPkg
@@ -134,7 +142,8 @@ namespace SuiteCreatorAvalonia.ViewModels
                     IsForceThisVersion = MSIxRollbackView.IsForceThisVersion,
                     IsDeferInUse = MSIxRollbackView.DeferInUse,
                     HasDependents = MSIxRollbackView.HasDependencies,
-                    Dependents = MSIxRollbackView.Dependencies.ToList()
+                    Dependents = MSIxRollbackView.Dependencies.ToList(),
+                    EstimatedInstallSeconds = MSIxRollbackView.EstimatedInstallSeconds
                 };
             }
             _suiteCoreManager.UpdatePackage(msixPackage);

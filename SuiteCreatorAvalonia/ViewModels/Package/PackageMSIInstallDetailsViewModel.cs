@@ -95,6 +95,11 @@ namespace SuiteCreatorAvalonia.ViewModels
             MsiSubDetails.LegacyLongFilePath = msiPkg.LegacyLongFilePath;
             MsiSubDetails.RestartBehavior = msiPkg.RestartBehavior;
             MsiSubDetails.RemoveOnSuiteRemoval = msiPkg.RemoveOnSuiteRemoval;
+            MsiSubDetails.EstimatedInstallSeconds = msiPkg.EstimatedInstallSeconds;
+            MsiSubDetails.EstimatedUninstallSeconds = msiPkg.EstimatedUninstallSeconds;
+            bool progressPopupEnabled = _suiteCoreManager.GetPopupSettings().ShowProgress;
+            MsiSubDetails.IsProgressPopupEnabled = progressPopupEnabled;
+            Rollback.IsProgressPopupEnabled = progressPopupEnabled;
             // Update Properties in place
             MsiSubDetails.Properties.Clear();
             if (msiPkg.Properties != null)
@@ -114,6 +119,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                 Rollback.PatchFile = rollbackPkg.PatchPath;
                 Rollback.SecureTransforms = rollbackPkg.SecureTransforms;
                 Rollback.LegacyLongFilePath = rollbackPkg.LegacyLongFilePath;
+                Rollback.EstimatedInstallSeconds = rollbackPkg.EstimatedInstallSeconds;
                 // Update Rollback Properties in place
                 Rollback.Properties.Clear();
                 if (rollbackPkg.Properties != null)
@@ -143,6 +149,8 @@ namespace SuiteCreatorAvalonia.ViewModels
             msiPkg.RestartBehavior = MsiSubDetails.RestartBehavior;
             msiPkg.Properties = MsiSubDetails.Properties.ToList();
             msiPkg.RemoveOnSuiteRemoval = MsiSubDetails.RemoveOnSuiteRemoval;
+            msiPkg.EstimatedInstallSeconds = MsiSubDetails.EstimatedInstallSeconds;
+            msiPkg.EstimatedUninstallSeconds = MsiSubDetails.EstimatedUninstallSeconds;
             if (Rollback != null && msiPkg.Rollback is MSIPkg rollbackPkg)
             {
                 rollbackPkg.MSIPath = Rollback.MsiFilePath;
@@ -155,6 +163,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                 rollbackPkg.LegacyLongFilePath = Rollback.LegacyLongFilePath;
                 rollbackPkg.LogPath = Rollback.LogPath;
                 rollbackPkg.Properties = Rollback.Properties.ToList();
+                rollbackPkg.EstimatedInstallSeconds = Rollback.EstimatedInstallSeconds;
             }
             _suiteCoreManager.UpdatePackage(msiPkg);
         }

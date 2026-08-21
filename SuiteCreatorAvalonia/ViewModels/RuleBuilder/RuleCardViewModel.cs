@@ -644,6 +644,10 @@ namespace SuiteCreatorAvalonia.ViewModels.RuleBuilder
                 {
                     Hashtable msiProps = MSITools.GetMSIProperties(filePath);
                     Base = msiProps[codeType] as string;
+                    if (DetectionType == DetectionTypes.Version && msiProps["ProductVersion"] is string productVersion)
+                    {
+                        ComparatorValue = productVersion;
+                    }
                     MSITools.MSISummaryInfo sumInfo = MSITools.GetMSISummaryInfoFromMSI(filePath);
                     if (sumInfo.Template != null && sumInfo.Template.Contains("x64"))
                     {

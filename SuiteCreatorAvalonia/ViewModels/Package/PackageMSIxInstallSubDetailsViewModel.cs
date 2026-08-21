@@ -43,6 +43,15 @@ namespace SuiteCreatorAvalonia.ViewModels
         [ObservableProperty]
         private ObservableCollection<string> _selectedDependents = new();
 
+        [ObservableProperty]
+        private int _estimatedInstallSeconds;
+
+        [ObservableProperty]
+        private int _estimatedUninstallSeconds;
+
+        [ObservableProperty]
+        private bool _isProgressPopupEnabled;
+
         public PackageMSIxInstallSubDetailsViewModel() : this(new ViewFactory(type => { return (ViewModelBase)Activator.CreateInstance(type)!; }), new SuiteCoreManager())
         {
         }

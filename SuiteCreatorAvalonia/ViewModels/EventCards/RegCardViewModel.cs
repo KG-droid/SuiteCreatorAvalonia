@@ -157,7 +157,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
 
                 // Overwrite
                 ToggleButton continueOnNotFoundToggleButton = new ToggleButton();
-                continueOnNotFoundToggleButton.Bind(CheckBox.IsCheckedProperty, new Binding("ContinueOnNotFound"));
+                continueOnNotFoundToggleButton.Bind(CheckBox.IsCheckedProperty, new Binding("Overwrite"));
                 continueOnNotFoundToggleButton.Classes.Add("IconToggleButton");
                 continueOnNotFoundToggleButton.Tag = "AlphabeticalOff";
                 continueOnNotFoundToggleButton.Margin = new Avalonia.Thickness(0, 0, 10, 0);
@@ -267,6 +267,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 PropertyName = reg.PropertyName;
                 PropertyValue = reg.PropertyValue;
                 Overwrite = reg.Overwrite;
+                IsPermanent = reg.IsPermanent;
                 Schedules.Clear();
                 Schedules.AddRange(reg.Schedules);
                 // Ensure that the EventStage and Condition in each Schedule is the same instance as in SuiteStages/SuiteConditions for the ComboBox binding to work correctly.
@@ -288,6 +289,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 reg.PropertyName = PropertyName;
                 reg.PropertyValue = PropertyValue;
                 reg.Overwrite = Overwrite;
+                reg.IsPermanent = IsPermanent;
                 reg.Schedules = Schedules.ToList();
                 if (!Design.IsDesignMode)
                     _coreManager.UpdateRegistryEvent(reg);

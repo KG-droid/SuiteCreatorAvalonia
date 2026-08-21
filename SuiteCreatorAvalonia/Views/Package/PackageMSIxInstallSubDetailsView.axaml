@@ -42,7 +42,7 @@
 			
 			<Grid
 				ColumnDefinitions="Auto,10,Auto,5,*"
-				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
 				<!-- Remove product on suite removal -->
 				<TextBlock
@@ -188,6 +188,51 @@
 						Dependencies will not be installed, if the requirement on this main package isnt met.  <LineBreak />They will also use the force settings above as well
 					</TextBlock>
 				</Grid>
+
+				<!-- Estimated Durations -->
+				<TextBlock
+					Grid.Row="10"
+					Grid.Column="0"
+					VerticalAlignment="Center"
+					IsVisible="{Binding IsProgressPopupEnabled}"
+					Text="Estimated Duration (seconds):"/>
+				<StackPanel
+					Grid.Row="10"
+					Grid.Column="2"
+					Grid.ColumnSpan="3"
+					Orientation="Horizontal"
+					IsVisible="{Binding IsProgressPopupEnabled}"
+					Spacing="15">
+					<StackPanel
+						Orientation="Horizontal"
+						Spacing="5">
+						<TextBlock
+							VerticalAlignment="Center"
+							Text="Install:"/>
+						<NumericUpDown
+							Value="{Binding EstimatedInstallSeconds}"
+							Minimum="0"
+							Maximum="86400"
+							FormatString="0"
+							Width="130"
+							ToolTip.Tip="Approximate time this install takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
+					</StackPanel>
+					<StackPanel
+						Orientation="Horizontal"
+						Spacing="5"
+						IsVisible="{Binding !IsRollbackSection}">
+						<TextBlock
+							VerticalAlignment="Center"
+							Text="Uninstall:"/>
+						<NumericUpDown
+							Value="{Binding EstimatedUninstallSeconds}"
+							Minimum="0"
+							Maximum="86400"
+							FormatString="0"
+							Width="130"
+							ToolTip.Tip="Approximate time this uninstall takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
+					</StackPanel>
+				</StackPanel>
 			</Grid>
 		</StackPanel>
 	</ScrollViewer>	

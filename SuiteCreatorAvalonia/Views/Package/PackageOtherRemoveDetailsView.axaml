@@ -488,6 +488,24 @@
 							</StackPanel>
 						</Grid>
 					</Grid>
+
+					<!-- Estimated Uninstall Duration -->
+					<TextBlock
+						Grid.Row="6"
+						Grid.Column="0"
+						IsVisible="{Binding IsProgressPopupEnabled}"
+						Text="Estimated Uninstall Duration (seconds):"/>
+					<NumericUpDown
+						Grid.Row="6"
+						Grid.Column="2"
+						IsVisible="{Binding IsProgressPopupEnabled}"
+						Value="{Binding EstimatedUninstallSeconds}"
+						Minimum="0"
+						Maximum="86400"
+						FormatString="0"
+						HorizontalAlignment="Left"
+						Width="130"
+						ToolTip.Tip="Approximate time this uninstall takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
 				</StackPanel>
 			</ScrollViewer>
 		</TabItem>

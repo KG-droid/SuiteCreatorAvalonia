@@ -30,7 +30,7 @@ namespace SuiteExecutor
 
         private void PrepareLog()
         {
-            string logFileName = $"{_suiteConfig.BuildSettings.Manufacturer}_{_suiteConfig.BuildSettings.Name}_{_suiteConfig.BuildSettings.SuiteVersion}_{_suiteConfig.BuildSettings.Revision}.log";
+            string logFileName = $"{_suiteConfig.BuildSettings.Manufacturer}_{_suiteConfig.BuildSettings.Name}_{_suiteConfig.BuildSettings.SuiteVersion}_{_suiteConfig.BuildSettings.Revision}_Suite.log";
 
             // Establish a guaranteed fallback logger first so _log is never null even if the configured log
             // directory can't be created below. The Log constructor only stores the path (no I/O), so it

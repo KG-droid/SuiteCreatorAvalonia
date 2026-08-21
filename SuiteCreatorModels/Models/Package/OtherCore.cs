@@ -24,6 +24,7 @@ namespace SuiteCreatorAvalonia.Models.Package
         public string? RollbackPowerShellScriptArgs { get; set; }
         public string? RemovePowerShellScriptPath { get; set; }
         public string? RemovePowerShellScriptArgs { get; set; }
+        public int EstimatedUninstallSeconds { get; set; }
         public override string? Validate()
         {
             string? baseValidation = base.Validate();

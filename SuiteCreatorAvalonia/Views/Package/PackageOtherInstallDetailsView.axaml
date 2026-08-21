@@ -338,7 +338,7 @@
 							x:Name="RemoveRegex_Grid"
 							IsVisible="False"
 							Margin="0,0,0,10"
-							RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+							RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
 							ColumnDefinitions="Auto,*,Auto,*">
 							<TextBlock
 								Grid.Column="0"
@@ -386,24 +386,61 @@
 								PlaceholderText="No optional parameters provided to run with the matching product removals"
 								Grid.Column="1"
 								Grid.ColumnSpan="3"/>
+
+							<!-- Logging Options -->
+							<CheckBox
+								Grid.Row="2"
+								Grid.Column="0"
+								Margin="0,5,0,0"
+								Name="RegexLog_CheckBox"
+								Content="Create Log"
+								IsChecked="{Binding RegexIsCreateLog}"
+								ToolTip.Tip="Adds a /l*v [LogPath] switch to each matched product's uninstall, using a file name built from that product's Manufacturer, Name, Version and Architecture"/>
+							<TextBox
+								Grid.Row="2"
+								Grid.Column="1"
+								Grid.ColumnSpan="2"
+								Margin="0,5,0,0"
+								IsVisible="{Binding IsChecked, ElementName=RegexLog_CheckBox}"
+								Text="{Binding RegexLogDirectory}"
+								PlaceholderText="Log folder e.g. C:\Modern-Workplace-Logs"/>
+							<StackPanel
+								Grid.Row="2"
+								Grid.Column="3"
+								Margin="5,5,0,0"
+								Orientation="Horizontal"
+								HorizontalAlignment="Left"
+								IsVisible="{Binding IsChecked, ElementName=RegexLog_CheckBox}">
+								<Button
+									Classes="IconButton"
+									Tag="Autofix"
+									Command="{Binding GenerateRegexLogDirectoryCommand}"
+									ToolTip.Tip="Auto Generate the log folder from the settings"/>
+								<Button
+									Classes="IconButton"
+									Tag="FolderOpen"
+									Command="{Binding BrowseRegexLogDirectoryCommand}"
+									ToolTip.Tip="Browse for a log folder"/>
+							</StackPanel>
+
 							<TextBlock
 								Text=" Use Regex to find and remove products based on Manufacturer and Product Name"
 								FontStyle="Italic"
 								FontSize="{DynamicResource InfoFontSize}"
 								Grid.ColumnSpan="4"
-								Grid.Row="2"/>
+								Grid.Row="3"/>
 							<TextBlock
 								Text=" Uses the remove command on the uninstall reg key if present, otherwise the MSI GUID will be used"
 								FontStyle="Italic"
 								FontSize="{DynamicResource InfoFontSize}"
 								Grid.ColumnSpan="4"
-								Grid.Row="3"/>
+								Grid.Row="4"/>
 							<TextBlock
 								Text=" This feature will not work for non MSI installations, that don't list an uninstall command on the uninstall reg key"
 								FontStyle="Italic"
 								FontSize="{DynamicResource InfoFontSize}"
 								Grid.ColumnSpan="4"
-								Grid.Row="4"/>
+								Grid.Row="5"/>
 						</Grid>
 
 						<!--Remove CMD-->
@@ -428,13 +465,56 @@
 							SelectedItem="{Binding RestartBehavior}"
 							ItemsSource="{helpers:EnumValues {x:Type enums:RestartBehavior}}"/>
 
-						<!--Context-->
+						<!--Estimated Durations-->
 						<TextBlock
 							Grid.Row="1"
 							Grid.Column="0"
+							IsVisible="{Binding IsProgressPopupEnabled}"
+							Text="Estimated Duration (seconds):"/>
+						<StackPanel
+							Grid.Row="1"
+							Grid.Column="2"
+							Orientation="Horizontal"
+							IsVisible="{Binding IsProgressPopupEnabled}"
+							Spacing="15">
+							<StackPanel
+								Orientation="Horizontal"
+								Spacing="5">
+								<TextBlock
+									VerticalAlignment="Center"
+									Text="Install:"/>
+								<NumericUpDown
+									Value="{Binding EstimatedInstallSeconds}"
+									Minimum="0"
+									Maximum="86400"
+									FormatString="0"
+									Width="130"
+									ToolTip.Tip="Approximate time this install takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
+							</StackPanel>
+							<StackPanel
+								Orientation="Horizontal"
+								Spacing="5"
+								IsVisible="{Binding IsChecked, ElementName=RemoveOnSuiteRemoval_ToggleSwitch}">
+								<TextBlock
+									VerticalAlignment="Center"
+									Text="Uninstall:"/>
+								<NumericUpDown
+									Value="{Binding EstimatedUninstallSeconds}"
+									Minimum="0"
+									Maximum="86400"
+									FormatString="0"
+									Width="130"
+									ToolTip.Tip="Approximate time this uninstall takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
+							</StackPanel>
+						</StackPanel>
+
+						<!--Context-->
+						<TextBlock
+							Grid.Row="2"
+							Grid.Column="0"
 							Text="Context:"/>
 						<ToggleSwitch
-							Grid.Row="1"
+							Grid.Row="2"
 							Grid.Column="2"
 							IsChecked="{Binding IsUserContext}"
 							OnContent="User (Runs for each logged on user on the device)"
@@ -442,11 +522,11 @@
 
 						<!--Secure CMD-->
 						<TextBlock
-							Grid.Row="2"
+							Grid.Row="3"
 							Grid.Column="0"
 							Text="Secure CMD:"/>
 						<ToggleSwitch
-							Grid.Row="2"
+							Grid.Row="3"
 							Grid.Column="2"
 							IsChecked="{Binding IsSecureCMD}"
 							OnContent="Command lines will not be written to the suite log"
@@ -455,13 +535,13 @@
 						<!-- Legacy Long file path support -->
 						<TextBlock
 							Grid.Column="0"
-							Grid.Row="3"
+							Grid.Row="4"
 							VerticalAlignment="Center"
 							Text="Legacy File Path:"/>
 						<StackPanel
 							Orientation="Horizontal"
 							Grid.Column="2"
-							Grid.Row="3">
+							Grid.Row="4">
 							<ToggleSwitch
 								IsChecked="{Binding LegacyLongFilePath}"
 								VerticalAlignment="Center"
@@ -476,18 +556,18 @@
 
 						<!--Custom Exit Codes-->
 						<TextBlock
-							Grid.Row="4"
+							Grid.Row="5"
 							Grid.Column="0"
 							Text="Custom Exit Codes:"/>
 						<ToggleSwitch
 							Name="CustomExit_ToggleSwitch"
 							IsChecked="{Binding IsCustomExitCodes}"
-							Grid.Row="4"
+							Grid.Row="5"
 							Grid.Column="2"
 							OnContent=""
 							OffContent=""/>
 						<Grid
-							Grid.Row="5"
+							Grid.Row="6"
 							Grid.Column="0"
 							Grid.ColumnSpan="3"
 							IsVisible="{Binding IsChecked, ElementName='CustomExit_ToggleSwitch'}"
@@ -531,13 +611,13 @@
 						
 						<!--Rollback toggle-->
 						<TextBlock
-							Grid.Row="6"
+							Grid.Row="7"
 							Grid.Column="0"
 							Text="Add rollback:"/>
 						<ToggleSwitch
 							Name="Rollback_ToggleSwitch"
 							IsChecked="{Binding AddRollBack}"
-							Grid.Row="6"
+							Grid.Row="7"
 							Grid.Column="2"
 							OnContent=""
 							OffContent=""/>
@@ -548,7 +628,7 @@
 							Header="Rollback Details"
 							IsVisible="{Binding IsChecked, ElementName=Rollback_ToggleSwitch}"
 							HorizontalAlignment="Stretch"
-							Grid.Row="7"
+							Grid.Row="8"
 							Grid.Column="0"
 							Grid.ColumnSpan="3">
 							<StackPanel>

@@ -25,6 +25,15 @@ namespace SuiteUserPopup
                 ShowHelp();
             }
 
+            // A lightweight headless mode used by SuiteExecutor to probe "is the user in a call" before
+            // showing the real popup - never shows any UI, just reports via exit code and returns immediately.
+            if (args.Any(a => a.Equals("--CheckMeetingStatus", StringComparison.OrdinalIgnoreCase)))
+            {
+                AppLogService.Initialize(ResolveLogFilePath(null));
+                RunMeetingStatusCheck();
+                return;
+            }
+
             bool isBlockedNotice = args.Any(a => a.Equals("--Blocked", StringComparison.OrdinalIgnoreCase));
             string? blockedProcessName = TryGetArgValue(args, "--ProcessName") ?? TryGetArgValue(args, "-p");
             string? blockedExePath = ResolveBlockedExePath(args);
@@ -84,6 +93,31 @@ namespace SuiteUserPopup
 
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
+        }
+
+        // Exit codes: 0 = microphone not in use, 1 = microphone in use, 2 = check failed/inconclusive.
+        // The caller (SuiteExecutor) treats anything other than 1 as "not in use" and proceeds normally.
+        private static void RunMeetingStatusCheck()
+        {
+            try
+            {
+                bool inUse = MicrophoneActivityDetector.IsMicrophoneInUse(out string diagnostics);
+                AppLogService.Info($"Microphone activity check completed, in use: {inUse}. {diagnostics}", "SuiteUserPopup");
+                // SuiteExecutor doesn't read this process's own log file, only stdout/stderr and the exit
+                // code - write the diagnostics unconditionally (not just on failure) so it can tell a
+                // genuine "not in use" apart from "the check didn't see what was expected".
+                Console.WriteLine(diagnostics);
+                Environment.Exit(inUse ? 1 : 0);
+            }
+            catch (Exception ex)
+            {
+                AppLogService.Error($"Microphone activity check failed: {ex.Message}", "SuiteUserPopup");
+                // SuiteExecutor doesn't read this process's own log file - it only sees stdout/stderr and the
+                // exit code (see StartProcessAsCurrentUser), so the failure reason has to travel via stderr to
+                // actually show up in the caller's log instead of just exit code 2 with no explanation.
+                Console.Error.WriteLine(ex.ToString());
+                Environment.Exit(2);
+            }
         }
 
         private static string? ResolveConfigPath(string[] args)
@@ -249,6 +283,7 @@ namespace SuiteUserPopup
             Console.WriteLine("  --Blocked                                : Show a lightweight notice that a process was blocked, instead of the full popup");
             Console.WriteLine("  --ProcessName <name> or -p <name>       : Name of the blocked process, used with --Blocked");
             Console.WriteLine("  --SuiteId <id>                           : Suite's stable ID, tagged onto the window title so a later unblock can find and close it");
+            Console.WriteLine("  --CheckMeetingStatus                     : Headless check of whether the microphone is currently in use, no popup shown. Exit code 0 = not in use, 1 = in use, 2 = check failed");
             Console.WriteLine();
             Console.WriteLine("If no parameters are provided, the app will look for 'popconfig.json', 'CompanyLogo.png', and 'SuiteLogo.png' in the executable directory.");
             AppLogService.Info("Application help text displayed.", "SuiteUserPopup");

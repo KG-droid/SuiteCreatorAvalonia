@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Text.Json.Nodes;
+using System.Threading;
 using static SuiteTools.UserTools.ProcessExtensions;
 using Log = Logger.Log;
 
@@ -21,6 +23,19 @@ namespace SuiteExecutor
             if (IsDeviceInEsp())
             {
                 _log.WriteLog("Device is in ESP (Autopilot Enrollment Status Page / initial setup), skipping progress popup", "Progress", Log.Severity.Info);
+                return;
+            }
+
+            // The popup condition scripts are shared across both popup types, not just the warning popup -
+            // if the condition explicitly says not to show a popup, that applies to progress too.
+            if (_suiteConfig.PopupSettings.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.PopupSettings.GlobalPSCondition, "global popup condition"))
+            {
+                _log.WriteLog("Global popup condition was not met, skipping progress popup", "Progress", Log.Severity.Info);
+                return;
+            }
+            if (_suiteConfig.PopupSettings.HasPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.PopupSettings.PSCondition, "popup condition"))
+            {
+                _log.WriteLog("Popup condition was not met, skipping progress popup", "Progress", Log.Severity.Info);
                 return;
             }
 
@@ -50,13 +65,26 @@ namespace SuiteExecutor
                 WriteProgressStatus(0, $"Preparing {_suiteConfig.BuildSettings.Name}...", isComplete: false, isError: false);
 
                 string progressArguments = $"--SuiteLogo \"{suiteLogoPath}\" --ProgressFile \"{progressFilePath}\" --LogFile \"{_logPath}\" --ProgressColour \"{_suiteConfig.PopupSettings.BackgroundColor.Value}\"";
+
+                if (_suiteConfig.PopupSettings.LockdownEnabled)
+                {
+                    string? companyLogoPath = ResolveCompanyLogoPath(popupDir);
+                    int maxMinutes = _suiteConfig.PopupSettings.LockdownMaxMinutes > 0 ? _suiteConfig.PopupSettings.LockdownMaxMinutes : 30;
+
+                    progressArguments += $" --Lockdown --MaxMinutes \"{maxMinutes}\"";
+                    if (companyLogoPath != null)
+                        progressArguments += $" --CompanyLogo \"{companyLogoPath}\"";
+                    if (!string.IsNullOrWhiteSpace(_suiteConfig.PopupSettings.LockdownMessage))
+                        progressArguments += $" --LockdownMessage \"{EscapeArgument(_suiteConfig.PopupSettings.LockdownMessage)}\"";
+                }
+
                 _log.WriteLog($"Launching progress popup: \"{_progressPopupExe}\" {progressArguments}", "Progress", Log.Severity.Info);
 
                 _progressPopupTask = Task.Run(() =>
                 {
                     try
                     {
-                        StartProcessAsCurrentUser(_progressPopupExe, progressArguments, _installedPopupDir, true, true, TimeSpan.FromSeconds(30), true);
+                        StartProcessAsCurrentUser(_progressPopupExe, progressArguments, _installedPopupDir, true, true, null, true);
                     }
                     catch (Exception ex)
                     {
@@ -70,6 +98,21 @@ namespace SuiteExecutor
             {
                 _log.WriteLog($"Failed to start progress popup: {ex.Message}", "Progress", Log.Severity.Error);
             }
+        }
+
+        // Escapes a value for embedding inside a double-quoted Win32 command-line argument
+        // (CommandLineToArgvW rules: a literal quote must be backslash-escaped).
+        private static string EscapeArgument(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+        private static string? ResolveCompanyLogoPath(string popupDir)
+        {
+            foreach (string ext in new[] { ".png", ".gif" })
+            {
+                string candidate = Path.Combine(popupDir, $"CompanyLogo{ext}");
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+            return null;
         }
 
         private void UpdateProgress(int percentage, string? statusText)
@@ -89,11 +132,6 @@ namespace SuiteExecutor
             WriteProgressStatus(100, statusText, isComplete: !isError, isError: isError);
         }
 
-        // CompleteProgressPopup only signals the popup to close by writing to the progress file — the popup
-        // notices asynchronously (its own poll interval, a completion linger, then shutdown) and exits on its
-        // own time, or is force-terminated once its waitTimeout elapses (see StartProgressPopup). Wait for
-        // that to actually happen before anything (e.g. CleanupDeferral) touches paths the popup still holds
-        // open, rather than racing a fixed delay.
         private void WaitForProgressPopupExit(TimeSpan timeout)
         {
             if (_progressPopupTask == null)
@@ -109,6 +147,51 @@ namespace SuiteExecutor
             catch (Exception ex)
             {
                 _log.WriteLog($"Error waiting for progress popup to exit: {ex.Message}", "Progress", Log.Severity.Warning);
+            }
+        }
+
+        private void RunWithEstimatedProgress(int estimatedSeconds, double startPercent, double endPercent, string? statusText, Action action)
+        {
+            if (estimatedSeconds <= 0 || !_progressPopupStarted)
+            {
+                action();
+                return;
+            }
+
+            using CancellationTokenSource cts = new();
+            Task tickTask = Task.Run(() => TickEstimatedProgress(estimatedSeconds, startPercent, endPercent, statusText, cts.Token));
+            try
+            {
+                action();
+            }
+            finally
+            {
+                cts.Cancel();
+                try
+                {
+                    tickTask.Wait();
+                }
+                catch (Exception ex)
+                {
+                    _log.WriteLog($"Estimated progress ticking ended with error: {ex.Message}", "Progress", Log.Severity.Warning);
+                }
+            }
+        }
+
+        // Capped short of endPercent so an under-estimate doesn't leave the bar visually stalled at the
+        // window's ceiling before the process actually finishes - the next stage boundary (or the final
+        // completion write) snaps progress forward regardless of where ticking left off.
+        private void TickEstimatedProgress(int estimatedSeconds, double startPercent, double endPercent, string? statusText, CancellationToken token)
+        {
+            double cappedEnd = startPercent + (endPercent - startPercent) * 0.95;
+            Stopwatch sw = Stopwatch.StartNew();
+            while (!token.IsCancellationRequested)
+            {
+                double ratio = Math.Clamp(sw.Elapsed.TotalSeconds / estimatedSeconds, 0, 1);
+                double percent = startPercent + (cappedEnd - startPercent) * ratio;
+                UpdateProgress((int)Math.Round(percent), statusText);
+                if (token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(500)))
+                    break;
             }
         }
 

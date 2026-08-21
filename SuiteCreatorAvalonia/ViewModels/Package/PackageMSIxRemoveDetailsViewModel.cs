@@ -28,6 +28,12 @@ namespace SuiteCreatorAvalonia.ViewModels
         [ObservableProperty]
         private string _removalCode = string.Empty;
 
+        [ObservableProperty]
+        private int _estimatedUninstallSeconds;
+
+        [ObservableProperty]
+        private bool _isProgressPopupEnabled;
+
         partial void OnIsProductRemovalChanged(bool value)
         {
             if (!_isLoading)
@@ -53,6 +59,8 @@ namespace SuiteCreatorAvalonia.ViewModels
                 Name = msixPackage.Name;
                 IsProductRemoval = msixPackage.IsSpecificVersionRemoval;
                 RemovalCode = msixPackage.PFN ?? string.Empty;
+                EstimatedUninstallSeconds = msixPackage.EstimatedUninstallSeconds;
+                IsProgressPopupEnabled = _suiteCoreManager.GetPopupSettings().ShowProgress;
                 HasRequirements = msixPackage.RequirementRuleSetId is Guid;
                 RequirementRuleBuilder.Clear();
                 if (msixPackage.RequirementRuleSetId is Guid reqGuid)
@@ -70,6 +78,7 @@ namespace SuiteCreatorAvalonia.ViewModels
 
             msixPackage.IsSpecificVersionRemoval = IsProductRemoval;
             msixPackage.PFN = RemovalCode;
+            msixPackage.EstimatedUninstallSeconds = EstimatedUninstallSeconds;
 
             IEnumerable<RuleBase>? reqRules = RequirementRuleBuilder.Rules;
             if (reqRules != null && reqRules.Count() > 0)

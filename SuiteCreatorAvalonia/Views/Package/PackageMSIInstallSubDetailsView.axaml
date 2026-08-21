@@ -84,7 +84,7 @@
 
 			<Grid
 				ColumnDefinitions="Auto,Auto,Auto"
-				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
 				<!-- Context -->
 				<TextBlock
@@ -223,6 +223,51 @@
 					VerticalAlignment="Center"
 					SelectedItem="{Binding RestartBehavior}"
 					ItemsSource="{helpers:EnumValues {x:Type enums:RestartBehavior}}"/>
+
+				<!-- Estimated Durations -->
+				<TextBlock
+					Grid.Column="0"
+					Grid.Row="7"
+					VerticalAlignment="Center"
+					IsVisible="{Binding IsProgressPopupEnabled}"
+					Text="Estimated Duration (seconds):"/>
+				<StackPanel
+					Grid.Column="1"
+					Grid.ColumnSpan="2"
+					Grid.Row="7"
+					Orientation="Horizontal"
+					IsVisible="{Binding IsProgressPopupEnabled}"
+					Spacing="15">
+					<StackPanel
+						Orientation="Horizontal"
+						Spacing="5">
+						<TextBlock
+							VerticalAlignment="Center"
+							Text="Install:"/>
+						<NumericUpDown
+							Value="{Binding EstimatedInstallSeconds}"
+							Minimum="0"
+							Maximum="86400"
+							FormatString="0"
+							Width="130"
+							ToolTip.Tip="Approximate time this install takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
+					</StackPanel>
+					<StackPanel
+						Orientation="Horizontal"
+						Spacing="5"
+						IsVisible="{Binding !IsRollbackSection}">
+						<TextBlock
+							VerticalAlignment="Center"
+							Text="Uninstall:"/>
+						<NumericUpDown
+							Value="{Binding EstimatedUninstallSeconds}"
+							Minimum="0"
+							Maximum="86400"
+							FormatString="0"
+							Width="130"
+							ToolTip.Tip="Approximate time this uninstall takes, used to animate the progress bar while it runs. Leave at 0 to disable."/>
+					</StackPanel>
+				</StackPanel>
 			</Grid>
 
 			<!-- Log Options -->

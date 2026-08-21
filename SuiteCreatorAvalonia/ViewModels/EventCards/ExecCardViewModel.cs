@@ -265,7 +265,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             if (LinkedEvent is Executable exec)
             {
                 exec.Command = _cmdVM.VariablePath.ToList();
-                exec.WorkingDIR = WorkingDIR != null ? WorkingDIR.ToList() : null;
+                exec.WorkingDIR = _workingDirVM.HasCommand() ? _workingDirVM.VariablePath.ToList() : null;
                 exec.TreeNodes = FileTree.ToList();
                 exec.ContinueOnError = ContinueOnError;
                 exec.ContinueOnNotFound = ContinueOnNotFound;

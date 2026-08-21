@@ -28,6 +28,10 @@ namespace SuiteProgressPopup
             string? suiteLogoPath = ResolveLogoPath(args, "--SuiteLogo", "-sl", "SuiteLogo.png");
             string? progressFilePath = ResolveProgressFilePath(args);
             SolidColorBrush progressColourBrush = ResolveProgColourBrush(args);
+            bool isLockdown = HasFlag(args, "--Lockdown", "-lk");
+            string? companyLogoPath = TryGetArgValue(args, "--CompanyLogo") ?? TryGetArgValue(args, "-cl");
+            int lockdownMaxMinutes = ResolveLockdownMaxMinutes(args);
+            string? lockdownMessage = TryGetArgValue(args, "--LockdownMessage") ?? TryGetArgValue(args, "-lm");
 
             AppLogService.Initialize(logFilePath);
             AppLogService.Info("Application startup initiated.", "SuiteProgressPopup");
@@ -47,8 +51,8 @@ namespace SuiteProgressPopup
                 return;
             }
 
-            StartupOptions.Set(suiteLogoPath, progressFilePath, progressColourBrush);
-            AppLogService.Info("Startup options resolved successfully.", "SuiteProgressPopup");
+            StartupOptions.Set(suiteLogoPath, progressFilePath, progressColourBrush, isLockdown, companyLogoPath, lockdownMaxMinutes, lockdownMessage);
+            AppLogService.Info($"Startup options resolved successfully. Lockdown={isLockdown}", "SuiteProgressPopup");
 
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
@@ -102,6 +106,24 @@ namespace SuiteProgressPopup
             return DefaultLogPath;
         }
 
+        private static int ResolveLockdownMaxMinutes(string[] args)
+        {
+            string? fromArg = TryGetArgValue(args, "--MaxMinutes") ?? TryGetArgValue(args, "-mm");
+            if (!string.IsNullOrWhiteSpace(fromArg) && int.TryParse(fromArg, out int minutes) && minutes > 0)
+                return minutes;
+            return 30;
+        }
+
+        private static bool HasFlag(string[] args, string longKey, string shortKey)
+        {
+            foreach (string a in args)
+            {
+                if (a.Equals(longKey, StringComparison.OrdinalIgnoreCase) || a.Equals(shortKey, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
         private static string? TryGetArgValue(string[] args, string key)
         {
             for (int i = 0; i < args.Length; i++)
@@ -131,6 +153,10 @@ namespace SuiteProgressPopup
             Console.WriteLine("  --SuiteLogo <path> or -sl <path>        : Path to Suite logo PNG file");
             Console.WriteLine("  --ProgressFile <path> or -pf <path>     : Path to a progress JSON file this popup will poll for updates");
             Console.WriteLine("  --LogFile <path> or -l <path>          : Path to log file for this popup");
+            Console.WriteLine("  --Lockdown or -lk                       : Show a fullscreen, topmost lockdown popup instead of the small progress toast");
+            Console.WriteLine("  --CompanyLogo <path> or -cl <path>      : Path to a company logo image shown centered in lockdown mode");
+            Console.WriteLine("  --MaxMinutes <n> or -mm <n>              : Maximum minutes lockdown mode may run before it self-terminates (default 30)");
+            Console.WriteLine("  --LockdownMessage <text> or -lm <text>  : Message shown underneath the progress bar for the duration of lockdown mode");
             Console.WriteLine();
             Console.WriteLine("If no parameters are provided, the app will look for 'SuiteLogo.png' and 'progress.json' in the executable directory.");
             AppLogService.Info("Application help text displayed.", "SuiteProgressPopup");

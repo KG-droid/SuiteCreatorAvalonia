@@ -46,6 +46,15 @@ namespace SuiteCreatorAvalonia.Models.Common
             ModelType = typeof(Popup),
         };
 
+        public static EventTab ProcessClosures { get; set; } = new EventTab
+        {
+            Header = "ProcessClosures",
+            IconKind = MaterialIconKind.CloseBoxes,
+            IconColor = Brush.Parse("#c92506"),
+            ContentType = typeof(ProcClosuresViewModel),
+            ModelType = typeof(ProcessClosure),
+        };
+
         public static EventTab Certs { get; set; } = new EventTab
         {
             Header = "Certs",
@@ -89,15 +98,6 @@ namespace SuiteCreatorAvalonia.Models.Common
             IconColor = Brush.Parse("#c92506"),
             ContentType = typeof(ServClosuresViewModel),
             ModelType = typeof(ServiceClosure),
-        };
-
-        public static EventTab ProcessClosures { get; set; } = new EventTab
-        {
-            Header = "ProcessClosures",
-            IconKind = MaterialIconKind.CloseBoxes,
-            IconColor = Brush.Parse("#c92506"),
-            ContentType = typeof(ProcClosuresViewModel),
-            ModelType = typeof(ProcessClosure),
         };
 
         public static EventTab Shortcuts { get; set; } = new EventTab

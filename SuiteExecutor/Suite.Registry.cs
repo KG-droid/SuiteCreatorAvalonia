@@ -66,12 +66,14 @@ namespace SuiteExecutor
             }
         }
 
-        // Has dependency on CreateUninstallMedia() running first to ensure _uninstallMediaPath is set
+        // When BuildSettings.CreateUninstallMedia is enabled, has a dependency on CreateUninstallMedia()
+        // running first to ensure _uninstallMediaPath is set
         private void WriteSuiteDetectionRegistry()
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(_uninstallMediaPath)) throw new Exception("Uninstall media path is not set. Cannot write suite detection registry.");
+                bool createUninstallMedia = _suiteConfig.BuildSettings.CreateUninstallMedia;
+                if (createUninstallMedia && string.IsNullOrWhiteSpace(_uninstallMediaPath)) throw new Exception("Uninstall media path is not set. Cannot write suite detection registry.");
                 Guid upgradeCode = _suiteConfig.BuildSettings.UpgradeCode;
                 Version suiteVersion = _suiteConfig.BuildSettings.SuiteVersion;
                 string manufacturer = _suiteConfig.BuildSettings.Manufacturer ?? "Unknown";
@@ -89,8 +91,18 @@ namespace SuiteExecutor
                     key.SetValue("Version", suiteVersion?.ToString() ?? "0.0.0.0", RegistryValueKind.String);
                     key.SetValue("Publisher", manufacturer, RegistryValueKind.String);
                     key.SetValue("Revision", _suiteConfig.BuildSettings.Revision, RegistryValueKind.DWord);
-                    key.SetValue("UninstallString", @$"""C:\Program Files\SuiteExecutor\SuiteExecutor.exe"" remove --Config ""{_uninstallMediaPath}\SuiteConfig.scfg""");
-                    key.SetValue("DisplayIcon", @"C:\Program Files\SuiteExecutor\SuiteExecutor.exe", RegistryValueKind.String);
+                    if (createUninstallMedia)
+                    {
+                        key.SetValue("UninstallString", @$"""C:\Program Files\SuiteExecutor\SuiteExecutor.exe"" remove --Config ""{_uninstallMediaPath}\SuiteConfig.scfg""");
+                        key.SetValue("DisplayIcon", @"C:\Program Files\SuiteExecutor\SuiteExecutor.exe", RegistryValueKind.String);
+                    }
+                    else if (key.GetValue("UninstallString") != null || key.GetValue("DisplayIcon") != null)
+                    {
+                        // A prior build/run for this UpgradeCode may have left these behind; a build with
+                        // uninstall media disabled should not leave an uninstall command in ARP.
+                        key.DeleteValue("UninstallString", false);
+                        key.DeleteValue("DisplayIcon", false);
+                    }
                     _log.WriteLog($"Set suite detection registry: Version = {suiteVersion}, Revision = {_suiteConfig.BuildSettings.Revision}", "SuiteRegistry", Log.Severity.Info);
                 }
             }
@@ -164,6 +176,69 @@ namespace SuiteExecutor
             catch
             {
                 throw;
+            }
+        }
+
+        // Tracks when the current meeting-pause wait started (see Suite.MeetingDetection.cs), so a recheck
+        // run can tell how long it's been waiting even though each recheck is a fresh process with no
+        // in-memory state of its own - mirrors CreateSuitePopupInitialDateRegistry/GetSuitePopupInitialDateRegistry.
+        private void CreateMeetingWaitStartedRegistry()
+        {
+            try
+            {
+                using (RegistryKey? key = Registry.LocalMachine.CreateSubKey(_suiteRegistryPath))
+                {
+                    if (key == null)
+                    {
+                        _log.WriteLog($"Failed to create or open registry key: {_suiteRegistryPath}", "SuiteRegistry", Log.Severity.Error);
+                        return;
+                    }
+                    key.SetValue($"{_action}MeetingWaitStartedDate", DateTime.Now.ToString("o"), RegistryValueKind.String);
+                    _log.WriteLog($"Set {_action}MeetingWaitStartedDate in registry: {_suiteRegistryPath}", "SuiteRegistry", Log.Severity.Info);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"Failed to create meeting wait started registry: {ex.Message}", "SuiteRegistry", Log.Severity.Error);
+            }
+        }
+
+        private DateTime? GetMeetingWaitStartedRegistry()
+        {
+            try
+            {
+                using RegistryKey? key = Registry.LocalMachine.OpenSubKey(_suiteRegistryPath);
+                string? dateValue = key?.GetValue($"{_action}MeetingWaitStartedDate") as string;
+                if (string.IsNullOrWhiteSpace(dateValue))
+                {
+                    return null;
+                }
+                if (DateTime.TryParse(dateValue, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime startedDate))
+                {
+                    return startedDate;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"Failed to read meeting wait started registry: {ex.Message}", "SuiteRegistry", Log.Severity.Warning);
+                return null;
+            }
+        }
+
+        private void RemoveMeetingWaitStartedRegistry()
+        {
+            try
+            {
+                using RegistryKey? key = Registry.LocalMachine.OpenSubKey(_suiteRegistryPath, writable: true);
+                if (key?.GetValue($"{_action}MeetingWaitStartedDate") != null)
+                {
+                    key.DeleteValue($"{_action}MeetingWaitStartedDate", false);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"Failed to remove meeting wait started registry: {ex.Message}", "SuiteRegistry", Log.Severity.Warning);
             }
         }
     }

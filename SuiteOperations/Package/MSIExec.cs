@@ -307,15 +307,23 @@ namespace SuiteOperations.Package
             return result;
         }
 
-        public void ExecuteRollback()
+        private static ActionType WorstOf(ActionType a, ActionType b)
+        {
+            if (a == ActionType.Abort || b == ActionType.Abort) return ActionType.Abort;
+            if (a == ActionType.RestartImmediate || b == ActionType.RestartImmediate) return ActionType.RestartImmediate;
+            if (a == ActionType.RestartDelayed || b == ActionType.RestartDelayed) return ActionType.RestartDelayed;
+            return ActionType.Continue;
+        }
+
+        public ActionType ExecuteRollback()
         {
             _log.WriteLog($"Rolling back MSI package: {Name}");
             _log.WriteLog("Uninstalling current version as part of rollback.");
-            ExecuteUninstall();
+            ActionType action = ExecuteUninstall();
             if (Rollback == null)
             {
                 _log.WriteLog("No rollback version configured, uninstall only.");
-                return;
+                return action;
             }
             _log.WriteLog("Installing rollback version.");
             MSIExec rollbackExec = new(_log)
@@ -330,12 +338,13 @@ namespace SuiteOperations.Package
                 LegacyLongFilePath = Rollback.LegacyLongFilePath,
                 LogPath = Rollback.LogPath,
                 Properties = Rollback.Properties?.Select(p => p.Clone()).ToList(),
-                ProductCode = ProductCode,
-                UpgradeCode = UpgradeCode,
-                Architecture = Architecture
+                ProductCode = (Rollback as MSIExec)?.ProductCode ?? ProductCode,
+                UpgradeCode = (Rollback as MSIExec)?.UpgradeCode ?? UpgradeCode,
+                Architecture = (Rollback as MSIExec)?.Architecture ?? Architecture
             };
-            rollbackExec.ExecuteInstall();
+            action = WorstOf(action, rollbackExec.ExecuteInstall());
             _log.WriteLog("Rollback complete.");
+            return action;
         }
 
         public new void Validate()

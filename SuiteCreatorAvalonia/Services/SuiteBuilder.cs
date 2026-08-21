@@ -157,6 +157,8 @@ namespace SuiteCreatorAvalonia.Services
                             LegacyLongFilePath = msiPkg.LegacyLongFilePath,
                             LogPath = msiPkg.LogPath,
                             Properties = msiPkg.Properties?.Select(p => p.Clone()).ToList(),
+                            EstimatedInstallSeconds = msiPkg.EstimatedInstallSeconds,
+                            EstimatedUninstallSeconds = msiPkg.EstimatedUninstallSeconds,
                             Rollback = msiPkg.Rollback != null
                                 ? new MSIExec(log)
                                 {
@@ -169,7 +171,9 @@ namespace SuiteCreatorAvalonia.Services
                                     IsRemoveFamily = msiPkg.Rollback.IsRemoveFamily,
                                     LegacyLongFilePath = msiPkg.Rollback.LegacyLongFilePath,
                                     LogPath = msiPkg.Rollback.LogPath,
-                                    Properties = msiPkg.Rollback.Properties?.Select(p => p.Clone()).ToList()
+                                    Properties = msiPkg.Rollback.Properties?.Select(p => p.Clone()).ToList(),
+                                    EstimatedInstallSeconds = msiPkg.Rollback.EstimatedInstallSeconds,
+                                    EstimatedUninstallSeconds = msiPkg.Rollback.EstimatedUninstallSeconds
                                 }
                                 : null,
                             UpgradeCode = upgradeCode,
@@ -196,6 +200,8 @@ namespace SuiteCreatorAvalonia.Services
                             IsDeferInUse = msixPkg.IsDeferInUse,
                             HasDependents = msixPkg.HasDependents,
                             Dependents = msixPkg.Dependents != null ? new List<string>(msixPkg.Dependents) : null,
+                            EstimatedInstallSeconds = msixPkg.EstimatedInstallSeconds,
+                            EstimatedUninstallSeconds = msixPkg.EstimatedUninstallSeconds,
                             Rollback = !string.IsNullOrWhiteSpace(msixPkg.Rollback?.MSIxFile)
                                 ? new MSIxExec(log)
                                 {
@@ -207,7 +213,9 @@ namespace SuiteCreatorAvalonia.Services
                                     IsForceThisVersion = msixPkg.Rollback.IsForceThisVersion,
                                     IsDeferInUse = msixPkg.Rollback.IsDeferInUse,
                                     HasDependents = msixPkg.Rollback.HasDependents,
-                                    Dependents = msixPkg.Rollback.Dependents != null ? new List<string>(msixPkg.Rollback.Dependents) : null
+                                    Dependents = msixPkg.Rollback.Dependents != null ? new List<string>(msixPkg.Rollback.Dependents) : null,
+                                    EstimatedInstallSeconds = msixPkg.Rollback.EstimatedInstallSeconds,
+                                    EstimatedUninstallSeconds = msixPkg.Rollback.EstimatedUninstallSeconds
                                 }
                                 : null,
                             PackageFamilyName = packageFamilyName,
@@ -227,7 +235,10 @@ namespace SuiteCreatorAvalonia.Services
                             Context = msiRem.Context,
                             Architecture = msiRem.Architecture,
                             RestartBehavior = msiRem.RestartBehavior,
-                            Properties = msiRem.Properties?.Select(p => p.Clone()).ToList()
+                            Properties = msiRem.Properties?.Select(p => p.Clone()).ToList(),
+                            EstimatedUninstallSeconds = msiRem.EstimatedUninstallSeconds,
+                            RepairOldProductOnFailure = msiRem.RepairOldProductOnFailure,
+                            RepairMsiPath = string.IsNullOrWhiteSpace(msiRem.RepairMsiPath) ? null : Path.GetFileName(msiRem.RepairMsiPath)
                         });
                         break;
                     case MSIxRemoval msixRem:
@@ -237,7 +248,8 @@ namespace SuiteCreatorAvalonia.Services
                             Name = msixRem.Name,
                             RequirementRuleSetId = msixRem.RequirementRuleSetId,
                             IsSpecificVersionRemoval = msixRem.IsSpecificVersionRemoval,
-                            PFN = msixRem.PFN
+                            PFN = msixRem.PFN,
+                            EstimatedUninstallSeconds = msixRem.EstimatedUninstallSeconds
                         });
                         break;
                     case OtherPkg otherPkg:
@@ -254,10 +266,22 @@ namespace SuiteCreatorAvalonia.Services
                             SecureParams = otherPkg.SecureParams,
                             LegacyLongFilePath = otherPkg.LegacyLongFilePath,
                             RestartBehavior = otherPkg.RestartBehavior,
+                            RestartCountdown = otherPkg.RestartCountdown,
                             CustomExitCodes = otherPkg.CustomExitCodes,
                             ExitCodes = otherPkg.ExitCodes?.Select(e => e.Clone()).ToList(),
+                            InstallType = otherPkg.InstallType,
+                            PowerShellScriptPath = string.IsNullOrWhiteSpace(otherPkg.PowerShellScriptPath) ? null : Path.GetFileName(otherPkg.PowerShellScriptPath),
+                            PowerShellScriptArgs = otherPkg.PowerShellScriptArgs,
+                            RollbackInstallType = otherPkg.RollbackInstallType,
+                            RollbackPowerShellScriptPath = string.IsNullOrWhiteSpace(otherPkg.RollbackPowerShellScriptPath) ? null : Path.GetFileName(otherPkg.RollbackPowerShellScriptPath),
+                            RollbackPowerShellScriptArgs = otherPkg.RollbackPowerShellScriptArgs,
+                            RemovePowerShellScriptPath = string.IsNullOrWhiteSpace(otherPkg.RemovePowerShellScriptPath) ? null : Path.GetFileName(otherPkg.RemovePowerShellScriptPath),
+                            RemovePowerShellScriptArgs = otherPkg.RemovePowerShellScriptArgs,
                             InstallCommand = otherPkg.InstallCommand?.Select(c => c is FileVar fv ? new RelativeFileVar(Path.GetFileName(fv.Node.FullPath)) : c.Clone()).ToList(),
-                            RollbackCommand = otherPkg.RollbackCommand?.Select(c => c is FileVar fv ? new RelativeFileVar(Path.GetFileName(fv.Node.FullPath)) : c.Clone()).ToList()
+                            RollbackCommand = otherPkg.RollbackCommand?.Select(c => c is FileVar fv ? new RelativeFileVar(Path.GetFileName(fv.Node.FullPath)) : c.Clone()).ToList(),
+                            RemoveOnSuiteRemoval = otherPkg.RemoveOnSuiteRemoval,
+                            EstimatedInstallSeconds = otherPkg.EstimatedInstallSeconds,
+                            EstimatedUninstallSeconds = otherPkg.EstimatedUninstallSeconds
                         });
                         break;
                     case OtherRemovalPkg otherRemPkg:
@@ -271,9 +295,14 @@ namespace SuiteCreatorAvalonia.Services
                             Removal = ResolveRemovalFileVars(otherRemPkg.Removal),
                             Context = otherRemPkg.Context,
                             SecureParams = otherRemPkg.SecureParams,
+                            LegacyLongFilePath = otherRemPkg.LegacyLongFilePath,
                             RestartBehavior = otherRemPkg.RestartBehavior,
+                            RestartCountdown = otherRemPkg.RestartCountdown,
                             CustomExitCodes = otherRemPkg.CustomExitCodes,
-                            ExitCodes = otherRemPkg.ExitCodes?.Select(e => e.Clone()).ToList()
+                            ExitCodes = otherRemPkg.ExitCodes?.Select(e => e.Clone()).ToList(),
+                            PowerShellScriptPath = string.IsNullOrWhiteSpace(otherRemPkg.PowerShellScriptPath) ? null : Path.GetFileName(otherRemPkg.PowerShellScriptPath),
+                            PowerShellScriptArgs = otherRemPkg.PowerShellScriptArgs,
+                            EstimatedUninstallSeconds = otherRemPkg.EstimatedUninstallSeconds
                         });
                         break;
                     default:
@@ -586,10 +615,52 @@ namespace SuiteCreatorAvalonia.Services
                             {
                                 string pkgDir = Path.Combine(tempRoot, "Package", msiPkg.Id.ToString());
                                 CopyPackageFileWithProgress(msiPkg.MSIPath, pkgDir);
+                                if (!string.IsNullOrWhiteSpace(msiPkg.TransformsPath) && File.Exists(msiPkg.TransformsPath))
+                                    CopyPackageFileWithProgress(msiPkg.TransformsPath, pkgDir);
+                                if (!string.IsNullOrWhiteSpace(msiPkg.PatchPath) && File.Exists(msiPkg.PatchPath))
+                                    CopyPackageFileWithProgress(msiPkg.PatchPath, pkgDir);
+                                if (msiPkg.IncludeAdjacentFiles)
+                                {
+                                    string? msiSourceDir = Path.GetDirectoryName(msiPkg.MSIPath);
+                                    if (!string.IsNullOrWhiteSpace(msiSourceDir) && Directory.Exists(msiSourceDir))
+                                    {
+                                        HashSet<string> alreadyCopied = new(StringComparer.OrdinalIgnoreCase)
+                                        {
+                                            Path.GetFileName(msiPkg.MSIPath),
+                                            msiPkg.TransformsPath != null ? Path.GetFileName(msiPkg.TransformsPath) : string.Empty,
+                                            msiPkg.PatchPath != null ? Path.GetFileName(msiPkg.PatchPath) : string.Empty
+                                        };
+                                        foreach (string adjacentFile in Directory.GetFiles(msiSourceDir))
+                                        {
+                                            if (!alreadyCopied.Contains(Path.GetFileName(adjacentFile)))
+                                                CopyPackageFileWithProgress(adjacentFile, pkgDir);
+                                        }
+                                    }
+                                }
                             }
                             else
                             {
                                 throw new FileNotFoundException($"MSI file for package '{pkgBase.Name}' not found at path '{msiPkg.MSIPath}'");
+                            }
+                            if (msiPkg.Rollback is MSIPkg msiRollbackPkg && !string.IsNullOrWhiteSpace(msiRollbackPkg.MSIPath))
+                            {
+                                if (!File.Exists(msiRollbackPkg.MSIPath))
+                                    throw new FileNotFoundException($"Rollback MSI file for package '{pkgBase.Name}' not found at path '{msiRollbackPkg.MSIPath}'");
+                                string rollbackDir = Path.Combine(tempRoot, "Package", msiPkg.Id.ToString(), "Rollback");
+                                CopyPackageFileWithProgress(msiRollbackPkg.MSIPath, rollbackDir);
+                                if (!string.IsNullOrWhiteSpace(msiRollbackPkg.TransformsPath) && File.Exists(msiRollbackPkg.TransformsPath))
+                                    CopyPackageFileWithProgress(msiRollbackPkg.TransformsPath, rollbackDir);
+                                if (!string.IsNullOrWhiteSpace(msiRollbackPkg.PatchPath) && File.Exists(msiRollbackPkg.PatchPath))
+                                    CopyPackageFileWithProgress(msiRollbackPkg.PatchPath, rollbackDir);
+                            }
+                            break;
+                        case MSIRemoval msiRem:
+                            if (msiRem.RepairOldProductOnFailure && !string.IsNullOrWhiteSpace(msiRem.RepairMsiPath))
+                            {
+                                if (!File.Exists(msiRem.RepairMsiPath))
+                                    throw new FileNotFoundException($"Repair MSI file for package '{msiRem.Name}' not found at path '{msiRem.RepairMsiPath}'");
+                                string repairDir = Path.Combine(tempRoot, "Package", msiRem.Id.ToString(), "Repair");
+                                CopyPackageFileWithProgress(msiRem.RepairMsiPath, repairDir);
                             }
                             break;
                         case OtherPkg other:
@@ -617,6 +688,13 @@ namespace SuiteCreatorAvalonia.Services
                             else
                             {
                                 throw new FileNotFoundException($"MSIx file for package '{msix.Name}' not found at path '{msix.MSIxPath}'");
+                            }
+                            if (msix.Rollback is MSIxPkg msixRollbackPkg && !string.IsNullOrWhiteSpace(msixRollbackPkg.MSIxPath))
+                            {
+                                if (!File.Exists(msixRollbackPkg.MSIxPath))
+                                    throw new FileNotFoundException($"Rollback MSIx file for package '{msix.Name}' not found at path '{msixRollbackPkg.MSIxPath}'");
+                                string rollbackDir = Path.Combine(tempRoot, "Package", msix.Id.ToString(), "Rollback");
+                                CopyPackageFileWithProgress(msixRollbackPkg.MSIxPath, rollbackDir);
                             }
                             break;
                     }
@@ -735,18 +813,10 @@ namespace SuiteCreatorAvalonia.Services
                         ImageLoader.GetFromBase64(popupSettings.SuiteLogoBase64)?.Save(Path.Combine(popDIR, "SuiteLogo.png"));
                     }
 
-                    if (popupSettings.ShowPopupWarning || hasBlockingProcClosures)
+                    // Company Logo is shared by the warning popup and the progress popup's fullscreen lockdown
+                    // mode, so it needs writing whenever either might display it.
+                    if (popupSettings.ShowPopupWarning || hasBlockingProcClosures || (popupSettings.ShowProgress && popupSettings.LockdownEnabled))
                     {
-                        Report("Creating warning popup files");
-
-                        var popConfig = CreatePopConfig(popupSettings, suiteExecConfig);
-                        var popJsonPath = Path.Combine(popDIR, "popconfig.json");
-                        var popJson = JsonSerializer.Serialize(popConfig, new JsonSerializerOptions
-                        {
-                            WriteIndented = true,
-                        });
-                        File.WriteAllText(popJsonPath, popJson);
-                        // Company Logo
                         if (string.IsNullOrWhiteSpace(companyLogoBase64) || companyLogoBytes == null)
                         {
                             SaveAvaloniaAssetToFile(new Uri("avares://SuiteCreatorAvalonia/Assets/Images/SuiteCreatorLogoImage.png"), Path.Combine(popDIR, "CompanyLogo.png"));
@@ -758,6 +828,19 @@ namespace SuiteCreatorAvalonia.Services
                             Directory.CreateDirectory(Path.GetDirectoryName(logoDestPath)!);
                             File.WriteAllBytes(logoDestPath, companyLogoBytes);
                         }
+                    }
+
+                    if (popupSettings.ShowPopupWarning || hasBlockingProcClosures)
+                    {
+                        Report("Creating warning popup files");
+
+                        var popConfig = CreatePopConfig(popupSettings, suiteExecConfig);
+                        var popJsonPath = Path.Combine(popDIR, "popconfig.json");
+                        var popJson = JsonSerializer.Serialize(popConfig, new JsonSerializerOptions
+                        {
+                            WriteIndented = true,
+                        });
+                        File.WriteAllText(popJsonPath, popJson);
                         // Popup exec copy
                         var suiteUserPopPath = Path.Combine(AppContext.BaseDirectory, "SuiteExec", _suiteUserPopupName);
                         if (File.Exists(suiteUserPopPath))
@@ -1174,6 +1257,28 @@ namespace SuiteCreatorAvalonia.Services
                     ObjectForError = new Build()
                 });
             }
+            // Validate Rollback-only schedules (DuringRollbackBeforeStage/AfterStage) have a rollback to run for -
+            // those sequences only fire during a Rollback run (see Suite.Execution.cs IsScheduleApplicable), so
+            // scheduling an event on them is a no-op unless some package actually has a Rollback configured.
+            if (!_suiteCoreManager.GetPackages().Any(PackageHasRollbackConfigured))
+            {
+                foreach (EventCore evt in GetAllEventsForRollbackScheduleCheck())
+                {
+                    bool hasRollbackSchedule = evt.Schedules.Any(s =>
+                        s.StageSequence == SuiteCreatorAvalonia.Enums.Sequence.DuringRollbackBeforeStage ||
+                        s.StageSequence == SuiteCreatorAvalonia.Enums.Sequence.DuringRollbackAfterStage);
+
+                    if (hasRollbackSchedule)
+                    {
+                        validationErrors.Add(new SuiteValidationError
+                        {
+                            Message = $"A {evt.GetType().Name} event is scheduled to run during Rollback, but no package in the suite has a Rollback configured.",
+                            ObjectForError = evt
+                        });
+                    }
+                }
+            }
+
             if (validationErrors.Count > 0)
             {
                 _validationReport = validationErrors;
@@ -1186,6 +1291,37 @@ namespace SuiteCreatorAvalonia.Services
             }
         }
 
+        // Only MSI and Other packages can actually execute a Rollback (see Suite.Execution.Package.cs
+        // ExecutePackageRollback - MSIx packages are always skipped there, even if a Rollback is configured on one).
+        private static bool PackageHasRollbackConfigured(PackageBase pkg)
+        {
+            return pkg switch
+            {
+                MSIPkg msi => msi.Rollback != null,
+                OtherPkg other => other.RollbackInstallType == OtherInstallType.PowerShell
+                    ? !string.IsNullOrWhiteSpace(other.RollbackPowerShellScriptPath)
+                    : other.RollbackCommand != null && other.RollbackCommand.Any(c => !string.IsNullOrWhiteSpace(c?.GetValue())),
+                _ => false
+            };
+        }
+
+        private List<EventCore> GetAllEventsForRollbackScheduleCheck()
+        {
+            List<EventCore> allEvents = new();
+            allEvents.AddRange(_suiteCoreManager.GetCertEvents());
+            allEvents.AddRange(_suiteCoreManager.GetDriverEvents());
+            allEvents.AddRange(_suiteCoreManager.GetProcessClosureEvents());
+            allEvents.AddRange(_suiteCoreManager.GetEnvironmentEvents());
+            allEvents.AddRange(_suiteCoreManager.GetExecutableEvents());
+            allEvents.AddRange(_suiteCoreManager.GetExtensionEvents());
+            allEvents.AddRange(_suiteCoreManager.GetFileEvents());
+            allEvents.AddRange(_suiteCoreManager.GetPowerShellEvents());
+            allEvents.AddRange(_suiteCoreManager.GetRegistryEvents());
+            allEvents.AddRange(_suiteCoreManager.GetServiceClosureEvents());
+            allEvents.AddRange(_suiteCoreManager.GetShortcutEvents());
+            return allEvents;
+        }
+
         private static long GetPackagesTotalBytes(List<PackageBase> packages)
         {
             long total = 0;
@@ -1195,6 +1331,40 @@ namespace SuiteCreatorAvalonia.Services
                 {
                     case MSIPkg msiPkg when !string.IsNullOrWhiteSpace(msiPkg.MSIPath) && File.Exists(msiPkg.MSIPath):
                         total += new FileInfo(msiPkg.MSIPath).Length;
+                        if (!string.IsNullOrWhiteSpace(msiPkg.TransformsPath) && File.Exists(msiPkg.TransformsPath))
+                            total += new FileInfo(msiPkg.TransformsPath).Length;
+                        if (!string.IsNullOrWhiteSpace(msiPkg.PatchPath) && File.Exists(msiPkg.PatchPath))
+                            total += new FileInfo(msiPkg.PatchPath).Length;
+                        if (msiPkg.Rollback is MSIPkg msiRollbackPkg)
+                        {
+                            if (!string.IsNullOrWhiteSpace(msiRollbackPkg.MSIPath) && File.Exists(msiRollbackPkg.MSIPath))
+                                total += new FileInfo(msiRollbackPkg.MSIPath).Length;
+                            if (!string.IsNullOrWhiteSpace(msiRollbackPkg.TransformsPath) && File.Exists(msiRollbackPkg.TransformsPath))
+                                total += new FileInfo(msiRollbackPkg.TransformsPath).Length;
+                            if (!string.IsNullOrWhiteSpace(msiRollbackPkg.PatchPath) && File.Exists(msiRollbackPkg.PatchPath))
+                                total += new FileInfo(msiRollbackPkg.PatchPath).Length;
+                        }
+                        if (msiPkg.IncludeAdjacentFiles)
+                        {
+                            string? msiSourceDir = Path.GetDirectoryName(msiPkg.MSIPath);
+                            if (!string.IsNullOrWhiteSpace(msiSourceDir) && Directory.Exists(msiSourceDir))
+                            {
+                                HashSet<string> alreadyCounted = new(StringComparer.OrdinalIgnoreCase)
+                                {
+                                    Path.GetFileName(msiPkg.MSIPath),
+                                    msiPkg.TransformsPath != null ? Path.GetFileName(msiPkg.TransformsPath) : string.Empty,
+                                    msiPkg.PatchPath != null ? Path.GetFileName(msiPkg.PatchPath) : string.Empty
+                                };
+                                foreach (string adjacentFile in Directory.GetFiles(msiSourceDir))
+                                {
+                                    if (!alreadyCounted.Contains(Path.GetFileName(adjacentFile)))
+                                        total += new FileInfo(adjacentFile).Length;
+                                }
+                            }
+                        }
+                        break;
+                    case MSIRemoval msiRem when msiRem.RepairOldProductOnFailure && !string.IsNullOrWhiteSpace(msiRem.RepairMsiPath) && File.Exists(msiRem.RepairMsiPath):
+                        total += new FileInfo(msiRem.RepairMsiPath).Length;
                         break;
                     case OtherPkg other:
                         total += GetFileSystemNodesTotalBytes(other.Files?.FirstOrDefault()?.SubNodes);
@@ -1204,6 +1374,8 @@ namespace SuiteCreatorAvalonia.Services
                         break;
                     case MSIxPkg msix when !string.IsNullOrWhiteSpace(msix.MSIxPath) && File.Exists(msix.MSIxPath):
                         total += new FileInfo(msix.MSIxPath).Length;
+                        if (msix.Rollback is MSIxPkg msixRollbackPkg && !string.IsNullOrWhiteSpace(msixRollbackPkg.MSIxPath) && File.Exists(msixRollbackPkg.MSIxPath))
+                            total += new FileInfo(msixRollbackPkg.MSIxPath).Length;
                         break;
                 }
             }
@@ -1294,7 +1466,7 @@ namespace SuiteCreatorAvalonia.Services
         {
             var config = new PopConfigDto
             {
-                LogFilePath = Path.Combine(_appSettingsControl.GetLogLocation(), $"{suiteExecCfg.BuildSettings.Manufacturer}_{suiteExecCfg.BuildSettings.Name}_{suiteExecCfg.BuildSettings.SuiteVersion}_{suiteExecCfg.BuildSettings.Revision}.log"),
+                LogFilePath = Path.Combine(_appSettingsControl.GetLogLocation(), $"{suiteExecCfg.BuildSettings.Manufacturer}_{suiteExecCfg.BuildSettings.Name}_{suiteExecCfg.BuildSettings.SuiteVersion}_{suiteExecCfg.BuildSettings.Revision}_Suite.log"),
                 CompanyLogoBackground = popupSettings.BackgroundColor?.ToString(),
                 MainText = "The following apps will be closed before the upgrade. Please save any work required before you continue.",
                 IsClosuresAppsVisible = popupSettings.LinkToProcClosures,

@@ -30,6 +30,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                 PowerShellScriptPath = PowerShellScriptPath,
                 PowerShellScriptArgs = PowerShellScriptArgs,
                 LegacyLongFilePath = LegacyLongFilePath,
+                EstimatedUninstallSeconds = EstimatedUninstallSeconds,
             };
         }
 
@@ -54,6 +55,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                 PowerShellScriptPath = other.PowerShellScriptPath;
                 PowerShellScriptArgs = other.PowerShellScriptArgs;
                 LegacyLongFilePath = other.LegacyLongFilePath;
+                EstimatedUninstallSeconds = other.EstimatedUninstallSeconds;
             }
         }
 

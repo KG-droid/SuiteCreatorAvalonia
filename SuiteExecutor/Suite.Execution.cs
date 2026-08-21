@@ -29,15 +29,36 @@ namespace SuiteExecutor
                 _log.WriteLog($"Events have been reversed, so anything that was installing or placing something will now remove it, unless it was set to permanent", "Execution", Log.Severity.Info);
             }
 
+            // Resolve every stage's package and detection outcome up front so skipped stages (e.g. a removal
+            // package whose target was never detected) don't each claim an equal slice of the progress bar -
+            // only stages that actually do something count towards the percentage, otherwise the bar looks
+            // like it "jumps" past a chunk of the suite almost instantly.
+            List<(PackageBase? Package, bool ExecutePackage, bool HasWork)> resolvedStages = new();
+            foreach (Stage stage in stages)
+            {
+                PackageBase? package = ResolvePackage(stage);
+                bool executePackage = package != null && ShouldPackageExecute(package);
+                bool hasWork = executePackage
+                    || (package != null && _action == SuiteAction.Removal)
+                    || StageHasApplicableEvent(allEvents, stage.Id);
+                resolvedStages.Add((package, executePackage, hasWork));
+            }
+
+            int activeStageCount = resolvedStages.Count(s => s.HasWork);
+            if (activeStageCount == 0) activeStageCount = 1;
+
+            int activeIndex = 0;
             for (int i = 0; i < stages.Count; i++)
             {
                 Stage stage = stages[i];
                 _log.WriteLog($"--- Stage {i + 1}/{stages.Count}: {stage.Name} (Id: {stage.Id}) ---", "Execution", Log.Severity.Info);
 
-                int stagePercentage = stages.Count > 0 ? (int)Math.Round(i / (double)stages.Count * 100) : 0;
-                UpdateProgress(stagePercentage, !string.IsNullOrWhiteSpace(stage.Name) ? $"{_action}: {stage.Name}" : $"Suite {_action}: {_suiteConfig.BuildSettings.Name}");
+                (PackageBase? package, bool _, bool hasWork) = resolvedStages[i];
 
-                PackageBase? package = ResolvePackage(stage);
+                // executePackage was also estimated in the upfront pass (for progress-bar sizing), but an
+                // earlier stage's package (e.g. a regex removal) can change detection state for this one
+                // (e.g. an install of the same app) by the time we actually get here - re-check live rather
+                // than trusting the stale precomputed value, or the stage gets wrongly skipped.
                 bool executePackage = package != null && ShouldPackageExecute(package);
 
                 // During Deployment, a skipped package (e.g. already detected) means this stage never
@@ -51,11 +72,23 @@ namespace SuiteExecutor
                     continue;
                 }
 
+                // A stage with no package and no events attached (e.g. an untouched Start/End stage) does
+                // nothing at all, so it must not consume a slice of the progress bar or move the indicator -
+                // only stages with actual work (hasWork) advance activeIndex/UpdateProgress.
+                double stageStartPercent = activeIndex / (double)activeStageCount * 100;
+                double stageEndPercent = hasWork ? (activeIndex + 1) / (double)activeStageCount * 100 : stageStartPercent;
+                string stageStatusText = !string.IsNullOrWhiteSpace(stage.Name) ? $"{_action}: {stage.Name}" : $"Suite {_action}: {_suiteConfig.BuildSettings.Name}";
+                if (hasWork)
+                {
+                    UpdateProgress((int)Math.Round(stageStartPercent), stageStatusText);
+                    activeIndex++;
+                }
+
                 RunEventsForStage(allEvents, stage.Id, before: true);
 
                 if (executePackage)
                 {
-                    ExecutePackage(package!);
+                    ExecutePackage(package!, stageStartPercent, stageEndPercent, stageStatusText);
                 }
 
                 RunEventsForStage(allEvents, stage.Id, before: false);
@@ -135,6 +168,26 @@ namespace SuiteExecutor
             return allEvents;
         }
 
+        // Weight-check only - deliberately ignores each schedule's Condition (unlike RunEventsForStage) so
+        // this can be evaluated once up front without triggering rule-set side effects; a stage whose only
+        // schedule turns out condition-false at runtime is a rarer, smaller inaccuracy than the alternative
+        // of Start/End-style stages eating a full slice of the progress bar for doing nothing.
+        private bool StageHasApplicableEvent(List<EventCore> allEvents, Guid stageId)
+        {
+            foreach (EventCore evt in allEvents)
+            {
+                foreach (Schedule schedule in evt.Schedules)
+                {
+                    if (schedule.EventStageId != stageId)
+                        continue;
+
+                    if (IsScheduleApplicable(schedule, before: true) || IsScheduleApplicable(schedule, before: false))
+                        return true;
+                }
+            }
+            return false;
+        }
+
         private void RunEventsForStage(List<EventCore> allEvents, Guid stageId, bool before)
         {
             foreach (EventCore evt in allEvents)
@@ -182,6 +235,14 @@ namespace SuiteExecutor
                     if (seq == Sequence.DuringRemoveBeforeStage)
                         return true;
                 }
+
+                // Dedicated Rollback hooks, e.g. to restore detection for the package a rollback reinstalls -
+                // these only fire during Rollback, not a plain Removal.
+                if (_action == SuiteAction.Rollback)
+                {
+                    if (seq == Sequence.DuringRollbackBeforeStage)
+                        return true;
+                }
             }
             else
             {
@@ -197,6 +258,12 @@ namespace SuiteExecutor
                 if (_action == SuiteAction.Removal || _action == SuiteAction.Rollback)
                 {
                     if (seq == Sequence.DuringRemoveAfterStage)
+                        return true;
+                }
+
+                if (_action == SuiteAction.Rollback)
+                {
+                    if (seq == Sequence.DuringRollbackAfterStage)
                         return true;
                 }
             }

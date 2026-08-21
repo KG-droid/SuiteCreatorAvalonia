@@ -20,6 +20,7 @@ namespace SuiteCreatorAvalonia.Models.Package
         public List<MSIProperty>? Properties { get; set; }
         public bool RepairOldProductOnFailure { get; set; }
         public string? RepairMsiPath { get; set; }
+        public int EstimatedUninstallSeconds { get; set; }
 
         public override MSIRemoval Clone()
         {
@@ -37,7 +38,8 @@ namespace SuiteCreatorAvalonia.Models.Package
                 RestartBehavior = RestartBehavior,
                 Properties = Properties != null ? Properties.Select(p => p.Clone()).ToList() : null,
                 RepairOldProductOnFailure = RepairOldProductOnFailure,
-                RepairMsiPath = RepairMsiPath
+                RepairMsiPath = RepairMsiPath,
+                EstimatedUninstallSeconds = EstimatedUninstallSeconds
             };
         }
 
@@ -59,6 +61,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                 Properties = msirem.Properties != null ? msirem.Properties.Select(p => p.Clone()).ToList() : null;
                 RepairOldProductOnFailure = msirem.RepairOldProductOnFailure;
                 RepairMsiPath = msirem.RepairMsiPath;
+                EstimatedUninstallSeconds = msirem.EstimatedUninstallSeconds;
             }
         }
 

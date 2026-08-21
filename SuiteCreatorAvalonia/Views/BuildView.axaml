@@ -35,7 +35,7 @@
 			<Grid 
 				Margin="0,0,25,0"
 				ColumnDefinitions="Auto,*"
-				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 				<TextBlock
 					Text="Manufacturer:"
 					Classes="FieldName"
@@ -316,18 +316,45 @@
 						Foreground="#FF898989"
 						VerticalAlignment="Center"/>
 				</Grid>
+				<TextBlock
+					Text="Create Uninstall Media:"
+					Classes="FieldName"
+					Grid.Row="14"
+					Margin="0,0,10,0"
+					HorizontalAlignment="Left"
+					VerticalAlignment="Center"/>
+				<Grid
+					Grid.Row="14"
+					Grid.Column="1"
+					Margin="0,2.5,0,2.5"
+					ColumnDefinitions="Auto,*">
+					<CheckBox
+						services:Help.Title="Create uninstall media"
+						services:Help.Text="Stores an uninstall copy of the suite on the device and registers an UninstallString in Add/Remove Programs, so the suite can be removed later. Disable this for products where you do not want removal media or an uninstall command left behind, such as a product protected by a removal password."
+						services:Help.Order="3"
+						IsChecked="{Binding IsCreateUninstallMedia}"
+						Grid.Column="0"
+						HorizontalAlignment="Left"/>
+					<TextBlock
+						TextWrapping="Wrap"
+						Text="Stores uninstall media on the device and registers an uninstall command in Add/Remove Programs. Disable for products that should not be uninstallable this way, like ones with a removal password."
+						Grid.Column="1"
+						Background="{x:Null}"
+						Foreground="#FF898989"
+						VerticalAlignment="Center"/>
+				</Grid>
 				<StackPanel
 					Margin="0,20,0,0"
 					VerticalAlignment="Center"
 					HorizontalAlignment="Center"
-					Grid.Row="16"
+					Grid.Row="17"
 					Grid.ColumnSpan="2">
 					<Button
 						CornerRadius="8"
 						Name="SuiteBuild_Button"
 						services:Help.Title="Build the suite"
 						services:Help.Text="Validates your whole configuration and builds the suite into a single executable. Any validation problems appear in a panel at the bottom of the window with links to fix them; on success you get the build folder and the detection rule to copy into your deployment tool."
-						services:Help.Order="3"
+						services:Help.Order="4"
 						Command="{Binding BuildSuiteCommand}"
 						Foreground="#FF32A000"
 						Focusable="False"

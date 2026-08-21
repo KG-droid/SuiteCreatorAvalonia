@@ -20,6 +20,7 @@ namespace SuiteCreatorAvalonia.Models.Common
         public bool ShowProgress { get; set; }
         public bool ShowPopupWarning { get; set; }
         public bool LinkToProcClosures { get; set; }
+        public bool PauseDuringMeeting { get; set; } = true;
         public bool HasPSCondition { get; set; }
         public string? PSCondition { get; set; }
         public bool HasGlobalPSCondition { get; set; }
@@ -41,6 +42,9 @@ namespace SuiteCreatorAvalonia.Models.Common
         public string? SuiteLogoBase64 { get; set; }
         public MimeType? CompanyLogoType { get; set; }
         public Color? BackgroundColor { get; set; }
+        public bool LockdownEnabled { get; set; }
+        public int LockdownMaxMinutes { get; set; } = 30;
+        public string? LockdownMessage { get; set; } = "Please do not turn off your computer.";
 
         public Popup Clone()
         {
@@ -49,6 +53,7 @@ namespace SuiteCreatorAvalonia.Models.Common
                 ShowProgress = ShowProgress,
                 ShowPopupWarning = ShowPopupWarning,
                 LinkToProcClosures = LinkToProcClosures,
+                PauseDuringMeeting = PauseDuringMeeting,
                 HasPSCondition = HasPSCondition,
                 PSCondition = PSCondition,
                 HasGlobalPSCondition = HasGlobalPSCondition,
@@ -69,7 +74,10 @@ namespace SuiteCreatorAvalonia.Models.Common
                 UninstAction = UninstAction,
                 CompanyLogoType = CompanyLogoType,
                 BackgroundColor = BackgroundColor,
-                SuiteLogoBase64 = SuiteLogoBase64
+                SuiteLogoBase64 = SuiteLogoBase64,
+                LockdownEnabled = LockdownEnabled,
+                LockdownMaxMinutes = LockdownMaxMinutes,
+                LockdownMessage = LockdownMessage
             };
         }
 
@@ -80,6 +88,7 @@ namespace SuiteCreatorAvalonia.Models.Common
             ShowProgress = other.ShowProgress;
             ShowPopupWarning = other.ShowPopupWarning;
             LinkToProcClosures = other.LinkToProcClosures;
+            PauseDuringMeeting = other.PauseDuringMeeting;
             HasPSCondition = other.HasPSCondition;
             PSCondition = other.PSCondition;
             HasGlobalPSCondition = other.HasGlobalPSCondition;
@@ -101,6 +110,9 @@ namespace SuiteCreatorAvalonia.Models.Common
             CompanyLogoType = other.CompanyLogoType;
             BackgroundColor = other.BackgroundColor;
             SuiteLogoBase64 = other.SuiteLogoBase64;
+            LockdownEnabled = other.LockdownEnabled;
+            LockdownMaxMinutes = other.LockdownMaxMinutes;
+            LockdownMessage = other.LockdownMessage;
         }
     }
 }

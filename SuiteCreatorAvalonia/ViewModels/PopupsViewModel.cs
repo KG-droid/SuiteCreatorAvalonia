@@ -39,7 +39,19 @@ namespace SuiteCreatorAvalonia.ViewModels
         private bool _showPopupPreview = true;
 
         [ObservableProperty]
+        private bool _lockdownEnabled = false;
+
+        [ObservableProperty]
+        private int? _lockdownMaxMinutes = 30;
+
+        [ObservableProperty]
+        private string _lockdownMessage = "Please do not turn off your computer.";
+
+        [ObservableProperty]
         private bool _linkToProcClosures = true;
+
+        [ObservableProperty]
+        private bool _pauseDuringMeeting = true;
 
         [ObservableProperty]
         private TextDocument _pSCondition = new();
@@ -133,6 +145,15 @@ namespace SuiteCreatorAvalonia.ViewModels
 
         [ObservableProperty]
         private SuiteAction _showSampleFor = SuiteAction.Deployment;
+
+        partial void OnShowProgressChanged(bool value)
+        {
+            // Only surface this the moment an admin actually flips it on (not while settings are
+            // still being loaded from disk) - it's a one-time pointer to the per-package Estimated
+            // Duration fields that only become visible once this toggle is enabled.
+            if (_isLoading || !value) return;
+            _ = this.ShowDialogAsync(new ProgressTimingInfoViewModel());
+        }
 
         partial void OnHasInstallPopupChanged(bool value)
         {
@@ -255,6 +276,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             ShowProgress = popSettings.ShowProgress;
             ShowPopupWarning = popSettings.ShowPopupWarning;
             LinkToProcClosures = popSettings.LinkToProcClosures;
+            PauseDuringMeeting = popSettings.PauseDuringMeeting;
             // Decode PSCondition from Base64 if possible, else fallback to plain text
             string? psConditionRaw = popSettings.PSCondition;
             if (!string.IsNullOrEmpty(psConditionRaw))
@@ -295,6 +317,9 @@ namespace SuiteCreatorAvalonia.ViewModels
                 SetDefaultSuiteLogo();
             else
                 SuiteLogo = ImageLoader.GetFromBase64(popSettings.SuiteLogoBase64);
+            LockdownEnabled = popSettings.LockdownEnabled;
+            LockdownMaxMinutes = popSettings.LockdownMaxMinutes > 0 ? popSettings.LockdownMaxMinutes : 30;
+            LockdownMessage = string.IsNullOrWhiteSpace(popSettings.LockdownMessage) ? "Please do not turn off your computer." : popSettings.LockdownMessage;
             _isLoading = false;
         }
 
@@ -313,6 +338,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                 ShowProgress = ShowProgress,
                 ShowPopupWarning = ShowPopupWarning,
                 LinkToProcClosures = LinkToProcClosures,
+                PauseDuringMeeting = PauseDuringMeeting,
                 PSCondition = psConditionBase64,
                 InstallTxt = InstallTxt.Text,
                 UninstallTxt = UninstallTxt.Text,
@@ -330,6 +356,9 @@ namespace SuiteCreatorAvalonia.ViewModels
                 UninstAction = UninstAction,
                 HasPSCondition = HasPopupCondition,
                 SuiteLogoBase64 = SuiteLogoBase64, // Saving takes too long if we dont cache this base64
+                LockdownEnabled = LockdownEnabled,
+                LockdownMaxMinutes = LockdownMaxMinutes != null ? (int)LockdownMaxMinutes : 30,
+                LockdownMessage = LockdownMessage,
             };
             _suiteCoreManager.UpdatePopupSettings(popSettings);
         }

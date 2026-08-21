@@ -8,37 +8,31 @@ using DrawingColor = System.Drawing.Color;
 
 namespace SuiteProgressPopup.Helpers
 {
-    // Decides whether a logo needs a contrasting outline against a given background, and
-    // generates an outline that hugs the logo's actual (alpha-based) silhouette rather than
-    // drawing a rectangular badge behind it.
+    // Decides whether a logo needs a contrast treatment against a given background, and generates
+    // a soft ambient glow behind it (like the halo around the Windows Update spinner) rather than
+    // a hard-edged outline ring.
     internal static class LogoContrastHelper
     {
         // Below this WCAG-style contrast ratio (1 = identical, 21 = black/white), the logo
         // is considered too close to the background colour to read clearly on its own.
         private const double LowContrastThreshold = 2.5;
 
-        private const int OutlineThicknessPx = 8;
+        private const int GlowRadiusPx = 28;
+        private const byte GlowMaxAlpha = 220;
         private const int WorkingMaxDimension = 96;
         private const int OpaqueAlphaThreshold = 64;
 
-        public static bool NeedsOutline(string logoFilePath, Color backgroundColour)
+        public static bool NeedsGlow(string logoFilePath, Color backgroundColour)
         {
             Color? logoColour = ComputeAverageColour(logoFilePath);
             return logoColour is null || GetContrastRatio(logoColour.Value, backgroundColour) < LowContrastThreshold;
         }
 
-        // Picks black or white, whichever reads clearly against the given background.
-        public static Color GetReadableForeground(Color background)
-        {
-            double luminance = (0.299 * background.R + 0.587 * background.G + 0.114 * background.B) / 255.0;
-            return luminance > 0.5 ? Colors.Black : Colors.White;
-        }
-
-        // Returns the logo with a contrasting outline baked in around its silhouette, on a
-        // canvas padded by the outline thickness. The padding guarantees there's always room
-        // to draw the ring even when the source logo is a fully opaque shape (e.g. a plain
-        // rectangle) with no transparent margin of its own to draw into.
-        public static AvaloniaBitmap? CreateLogoWithOutline(string logoFilePath, Color outlineColour)
+        // Returns the logo with a soft ambient glow baked in behind its silhouette, on a canvas
+        // padded by the glow radius. The padding guarantees there's always room to draw the glow
+        // even when the source logo is a fully opaque shape (e.g. a plain rectangle) with no
+        // transparent margin of its own to draw into.
+        public static AvaloniaBitmap? CreateLogoWithGlow(string logoFilePath, Color glowColour)
         {
             if (!File.Exists(logoFilePath))
                 return null;
@@ -67,34 +61,37 @@ namespace SuiteProgressPopup.Helpers
                     }
                 }
 
-                int paddedW = workW + OutlineThicknessPx * 2;
-                int paddedH = workH + OutlineThicknessPx * 2;
+                int paddedW = workW + GlowRadiusPx * 2;
+                int paddedH = workH + GlowRadiusPx * 2;
 
                 using DrawingBitmap composite = new DrawingBitmap(paddedW, paddedH, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
-                for (int py = -OutlineThicknessPx; py < workH + OutlineThicknessPx; py++)
+                for (int py = -GlowRadiusPx; py < workH + GlowRadiusPx; py++)
                 {
-                    for (int px = -OutlineThicknessPx; px < workW + OutlineThicknessPx; px++)
+                    for (int px = -GlowRadiusPx; px < workW + GlowRadiusPx; px++)
                     {
                         if (IsOpaque(opaque, workW, workH, px, py))
                             continue;
 
                         double nearestDistance = FindNearestOpaqueDistance(opaque, workW, workH, px, py);
-                        if (nearestDistance > OutlineThicknessPx)
+                        if (nearestDistance > GlowRadiusPx)
                             continue;
 
-                        byte alpha = (byte)Math.Clamp((1.0 - nearestDistance / OutlineThicknessPx) * 255, 0, 255);
-                        composite.SetPixel(px + OutlineThicknessPx, py + OutlineThicknessPx,
-                            DrawingColor.FromArgb(alpha, outlineColour.R, outlineColour.G, outlineColour.B));
+                        // Quadratic ease-out falloff reads as a soft ambient glow rather than the
+                        // hard, evenly-graded ring a linear falloff would give.
+                        double t = 1.0 - nearestDistance / GlowRadiusPx;
+                        byte alpha = (byte)Math.Clamp(GlowMaxAlpha * t * t, 0, 255);
+                        composite.SetPixel(px + GlowRadiusPx, py + GlowRadiusPx,
+                            DrawingColor.FromArgb(alpha, glowColour.R, glowColour.G, glowColour.B));
                     }
                 }
 
                 // Draw the real logo on top, centred within the padded canvas, so it covers
-                // the part of the ring directly beneath it and only the surrounding edge shows.
+                // the part of the glow directly beneath it and only the surrounding halo shows.
                 using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(composite))
                 {
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                    g.DrawImage(resized, OutlineThicknessPx, OutlineThicknessPx, workW, workH);
+                    g.DrawImage(resized, GlowRadiusPx, GlowRadiusPx, workW, workH);
                 }
 
                 using MemoryStream ms = new MemoryStream();
@@ -104,7 +101,7 @@ namespace SuiteProgressPopup.Helpers
             }
             catch (Exception ex)
             {
-                AppLogService.Warning($"Failed to generate logo outline: {ex.Message}", nameof(LogoContrastHelper));
+                AppLogService.Warning($"Failed to generate logo glow: {ex.Message}", nameof(LogoContrastHelper));
                 return null;
             }
         }
@@ -115,9 +112,9 @@ namespace SuiteProgressPopup.Helpers
         private static double FindNearestOpaqueDistance(bool[,] opaque, int width, int height, int x, int y)
         {
             double nearest = double.MaxValue;
-            for (int dy = -OutlineThicknessPx; dy <= OutlineThicknessPx; dy++)
+            for (int dy = -GlowRadiusPx; dy <= GlowRadiusPx; dy++)
             {
-                for (int dx = -OutlineThicknessPx; dx <= OutlineThicknessPx; dx++)
+                for (int dx = -GlowRadiusPx; dx <= GlowRadiusPx; dx++)
                 {
                     if (!IsOpaque(opaque, width, height, x + dx, y + dy))
                         continue;

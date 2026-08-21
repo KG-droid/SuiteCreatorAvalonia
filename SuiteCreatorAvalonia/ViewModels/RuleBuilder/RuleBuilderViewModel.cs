@@ -76,12 +76,16 @@ namespace SuiteCreatorAvalonia.ViewModels.RuleBuilder
                 var groupCloseChilds = Rules.Where(c => c.Type == RuleType.GroupClose);
                 if (groupOpenChilds.Count() == groupCloseChilds.Count())
                 {
-                    AddItem(new Rule { Type = RuleType.GroupOpen });
+                    AddItem(new RuleOperator { Type = RuleType.GroupOpen });
                 }
                 else
                 {
-                    AddItem(new Rule { Type = RuleType.GroupClose });
+                    AddItem(new RuleOperator { Type = RuleType.GroupClose });
                 }
+            }
+            else if (ruleType == "OR")
+            {
+                AddItem(new RuleOperator { Type = RuleType.OR });
             }
             else
             {

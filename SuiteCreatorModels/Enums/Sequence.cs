@@ -6,6 +6,8 @@
         DuringInstallAfterStage,
         DuringRemoveBeforeStage,
         DuringRemoveAfterStage,
+        DuringRollbackBeforeStage,
+        DuringRollbackAfterStage,
         AlwaysBeforeStage,
         AlwaysAfterStage,
     }

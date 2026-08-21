@@ -1420,6 +1420,7 @@ namespace SuiteCreatorAvalonia.Services
                 FailureRetry = false,
                 RestartOnFailure = false,
                 ReverseUninstall = false,
+                CreateUninstallMedia = true,
             };
             _suiteConfig.PopupSettings = new Popup
             {

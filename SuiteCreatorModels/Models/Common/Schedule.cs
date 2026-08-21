@@ -14,6 +14,8 @@ namespace SuiteCreatorAvalonia.Models.Common
             Sequence.DuringInstallAfterStage,
             Sequence.DuringRemoveBeforeStage,
             Sequence.DuringRemoveAfterStage,
+            Sequence.DuringRollbackBeforeStage,
+            Sequence.DuringRollbackAfterStage,
             Sequence.AlwaysBeforeStage,
             Sequence.AlwaysAfterStage,
         };
@@ -22,6 +24,7 @@ namespace SuiteCreatorAvalonia.Models.Common
         {
             Sequence.DuringInstallAfterStage,
             Sequence.DuringRemoveAfterStage,
+            Sequence.DuringRollbackAfterStage,
             Sequence.AlwaysAfterStage,
         };
 
@@ -29,6 +32,7 @@ namespace SuiteCreatorAvalonia.Models.Common
         {
             Sequence.DuringInstallBeforeStage,
             Sequence.DuringRemoveBeforeStage,
+            Sequence.DuringRollbackBeforeStage,
             Sequence.AlwaysBeforeStage,
         };
 
