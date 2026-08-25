@@ -494,7 +494,7 @@ namespace SuiteCreatorAvalonia.Services
                     Action = cert.Action,
                     Store = cert.Store,
                     FilePath = cert.FilePath,
-                    Thumbprint = cert.Thumbprint,
+                    Thumbprint = cert.Action == CertAction.Remove ? cert.Thumbprint : null,
                     Password = cert.Password,
                     IsPermanent = cert.IsPermanent,
                     Schedules = cert.Schedules?.Select(s => s.Clone()).ToList() ?? new List<Schedule>()
