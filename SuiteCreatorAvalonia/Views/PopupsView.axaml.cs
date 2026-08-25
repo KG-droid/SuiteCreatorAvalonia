@@ -191,6 +191,14 @@ public partial class PopupsView : UserControl
         }
     }
 
+    private void LockdownTestErrorPopup_Closed(object? sender, EventArgs e)
+    {
+        if (DataContext is PopupsViewModel vm)
+        {
+            vm.LockdownTestError = null;
+        }
+    }
+
     private PropertyChangedEventHandler PopupsView_PropertyChanged(PopupSampleWindowViewModel popupSampleWindowViewModel, PopupSampleWindow samplePopupWindow)
     {
         return (sender, args) =>

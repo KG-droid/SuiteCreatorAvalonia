@@ -1,5 +1,6 @@
 ﻿using Avalonia.Labs.Gif;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
@@ -14,8 +15,11 @@ using SuiteCreatorAvalonia.Tools;
 using SuiteCreatorAvalonia.Views;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SuiteCreatorAvalonia.ViewModels
@@ -46,6 +50,9 @@ namespace SuiteCreatorAvalonia.ViewModels
 
         [ObservableProperty]
         private string _lockdownMessage = "Please do not turn off your computer.";
+
+        [ObservableProperty]
+        private string? _lockdownTestError = null;
 
         [ObservableProperty]
         private bool _linkToProcClosures = true;
@@ -267,6 +274,106 @@ namespace SuiteCreatorAvalonia.ViewModels
         private async Task ShowPopupConditionExamples()
         {
             await this.ShowDialogAsync(new PopupConditionExamplesViewModel());
+        }
+
+        [RelayCommand]
+        private void TestLockdownPopup()
+        {
+            LockdownTestError = null;
+            try
+            {
+                string exeDir = Path.Combine(AppContext.BaseDirectory, "SuiteExec");
+                string exePath = Path.Combine(exeDir, "SuiteProgressPopup.exe");
+                if (!File.Exists(exePath))
+                {
+                    LockdownTestError = "SuiteProgressPopup.exe wasn't found in the published SuiteExec folder - publish the app first.";
+                    AppLog.Warning($"Lockdown test could not find: {exePath}", "Popups");
+                    return;
+                }
+
+                string testDir = Path.Combine(Path.GetTempPath(), "SuiteCreatorLockdownTest");
+                Directory.CreateDirectory(testDir);
+                string progressFilePath = Path.Combine(testDir, "progress.json");
+                string logFilePath = Path.Combine(testDir, "SuiteProgressPopup.log");
+                string suiteLogoPath = Path.Combine(testDir, "SuiteLogo.png");
+                string companyLogoPath = Path.Combine(testDir, "CompanyLogo.png");
+
+                // SuiteLogo.png is deliberately excluded from the popup's own publish output
+                // (SuiteProgressPopup.csproj: CopyToPublishDirectory=Never) - a real suite run always
+                // supplies --SuiteLogo itself, so write out the currently configured logo for the test.
+                if (SuiteLogo is not null)
+                    SuiteLogo.Save(suiteLogoPath);
+
+                // Lockdown also centers a company logo - the real build falls back to this same bundled
+                // sample image when no company logo has been configured (see SuiteBuilder.cs), so reuse
+                // it here too rather than leaving lockdown's centerpiece empty for the demo.
+                SaveAvaloniaAssetToFile(new Uri("avares://SuiteCreatorAvalonia/Assets/Images/SuiteCreatorLogoImage.png"), companyLogoPath);
+
+                WriteLockdownTestProgress(progressFilePath, 0, "Preparing example package...", isComplete: false);
+
+                string arguments = $"--SuiteLogo \"{suiteLogoPath}\" --CompanyLogo \"{companyLogoPath}\" --ProgressFile \"{progressFilePath}\" --LogFile \"{logFilePath}\" --Lockdown --MaxMinutes \"1\" --LockdownMessage \"{EscapeArgument(LockdownMessage)}\"";
+
+                Process.Start(new ProcessStartInfo(exePath, arguments)
+                {
+                    WorkingDirectory = exeDir,
+                    UseShellExecute = false
+                });
+
+                _ = Task.Run(() => RunLockdownTestProgressSequence(progressFilePath));
+            }
+            catch (Exception ex)
+            {
+                LockdownTestError = $"Failed to launch the lockdown test: {ex.Message}";
+                AppLog.Error("Failed to launch lockdown popup test", ex, "Popups");
+            }
+        }
+
+        // Drives ~10 seconds of example progress against progress.json so the fullscreen
+        // lockdown window has something to poll and animate without a real suite running -
+        // mirrors how SuiteExecutor writes progress in Suite.Progress.cs.
+        private static void RunLockdownTestProgressSequence(string progressFilePath)
+        {
+            (int Percent, string Status)[] steps =
+            {
+                (15, "Preparing example package..."),
+                (35, "Installing example package 1 of 2..."),
+                (60, "Installing example package 2 of 2..."),
+                (85, "Applying configuration..."),
+            };
+
+            foreach (var step in steps)
+            {
+                Thread.Sleep(2000);
+                WriteLockdownTestProgress(progressFilePath, step.Percent, step.Status, isComplete: false);
+            }
+
+            Thread.Sleep(2000);
+            WriteLockdownTestProgress(progressFilePath, 100, "Example complete", isComplete: true);
+        }
+
+        private static void WriteLockdownTestProgress(string progressFilePath, int percentage, string statusText, bool isComplete)
+        {
+            JsonObject json = new JsonObject
+            {
+                ["Percentage"] = Math.Clamp(percentage, 0, 100),
+                ["StatusText"] = statusText,
+                ["ProductName"] = "Lockdown Test",
+                ["IsComplete"] = isComplete,
+                ["IsError"] = false
+            };
+
+            File.WriteAllText(progressFilePath, json.ToJsonString());
+        }
+
+        // Escapes a value for embedding inside a double-quoted Win32 command-line argument
+        // (CommandLineToArgvW rules: a literal quote must be backslash-escaped).
+        private static string EscapeArgument(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+        private static void SaveAvaloniaAssetToFile(Uri assetUri, string destinationPath)
+        {
+            using Stream assets = AssetLoader.Open(assetUri);
+            using FileStream output = File.Create(destinationPath);
+            assets.CopyTo(output);
         }
 
         private void LoadPopupSettings()
