@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Avalonia.Media;
+using Newtonsoft.Json;
 using SuiteCreatorAvalonia.Converters;
 using SuiteCreatorAvalonia.Models.Common;
 using SuiteCreatorAvalonia.Models.Package;
@@ -36,6 +37,12 @@ namespace SuiteOperations
         // project's own editable popup settings, and this is a machine-level override, not project data.
         public bool HasGlobalPSCondition { get; set; }
         public string? GlobalPSCondition { get; set; }
+
+        // Same story as above: an admin-controlled setting from AppSettings.json (see
+        // AppSettingsControl.GetCompanyLogoBackgroundColor), baked in at build time so the progress
+        // popup can use it without needing that file - not project data, so it lives here rather than
+        // on Popup, which is also the project's own editable popup settings.
+        public Color CompanyLogoBackgroundColor { get; set; } = Color.Parse("#497cab");
 
         public void ToJson(string saveFilePath)
         {

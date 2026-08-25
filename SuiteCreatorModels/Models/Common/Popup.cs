@@ -1,5 +1,4 @@
-﻿using Avalonia.Media;
-using Material.Icons;
+﻿using Material.Icons;
 
 namespace SuiteCreatorAvalonia.Models.Common
 {
@@ -39,7 +38,6 @@ namespace SuiteCreatorAvalonia.Models.Common
         public string? UninstAction { get; set; }
         public string? SuiteLogoBase64 { get; set; }
         public MimeType? CompanyLogoType { get; set; }
-        public Color? BackgroundColor { get; set; }
         public bool LockdownEnabled { get; set; }
         public int LockdownMaxMinutes { get; set; } = 30;
         public string? LockdownMessage { get; set; } = "Please do not turn off your computer.";
@@ -69,7 +67,6 @@ namespace SuiteCreatorAvalonia.Models.Common
                 InstAction = InstAction,
                 UninstAction = UninstAction,
                 CompanyLogoType = CompanyLogoType,
-                BackgroundColor = BackgroundColor,
                 SuiteLogoBase64 = SuiteLogoBase64,
                 LockdownEnabled = LockdownEnabled,
                 LockdownMaxMinutes = LockdownMaxMinutes,
@@ -102,7 +99,6 @@ namespace SuiteCreatorAvalonia.Models.Common
             InstAction = other.InstAction;
             UninstAction = other.UninstAction;
             CompanyLogoType = other.CompanyLogoType;
-            BackgroundColor = other.BackgroundColor;
             SuiteLogoBase64 = other.SuiteLogoBase64;
             LockdownEnabled = other.LockdownEnabled;
             LockdownMaxMinutes = other.LockdownMaxMinutes;

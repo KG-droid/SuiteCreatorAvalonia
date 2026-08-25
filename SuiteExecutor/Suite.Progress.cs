@@ -64,7 +64,7 @@ namespace SuiteExecutor
                 _progressFilePath = progressFilePath;
                 WriteProgressStatus(0, $"Preparing {_suiteConfig.BuildSettings.Name}...", isComplete: false, isError: false);
 
-                string progressArguments = $"--SuiteLogo \"{suiteLogoPath}\" --ProgressFile \"{progressFilePath}\" --LogFile \"{_logPath}\" --ProgressColour \"{_suiteConfig.PopupSettings.BackgroundColor.Value}\"";
+                string progressArguments = $"--SuiteLogo \"{suiteLogoPath}\" --ProgressFile \"{progressFilePath}\" --LogFile \"{_logPath}\" --ProgressColour \"{_suiteConfig.CompanyLogoBackgroundColor}\"";
 
                 if (_suiteConfig.PopupSettings.LockdownEnabled)
                 {
