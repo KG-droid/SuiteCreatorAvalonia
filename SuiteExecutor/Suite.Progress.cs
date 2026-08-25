@@ -28,7 +28,7 @@ namespace SuiteExecutor
 
             // The popup condition scripts are shared across both popup types, not just the warning popup -
             // if the condition explicitly says not to show a popup, that applies to progress too.
-            if (_suiteConfig.PopupSettings.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.PopupSettings.GlobalPSCondition, "global popup condition"))
+            if (_suiteConfig.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.GlobalPSCondition, "global popup condition"))
             {
                 _log.WriteLog("Global popup condition was not met, skipping progress popup", "Progress", Log.Severity.Info);
                 return;

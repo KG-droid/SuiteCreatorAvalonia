@@ -447,14 +447,13 @@ namespace SuiteCreatorAvalonia.Services
             }).ToList();
             suiteExecConfig.Stages = _suiteCoreManager.GetStages()?.ToList();
             suiteExecConfig.BuildSettings = _suiteCoreManager.GetBuildSettings();
-            Popup popupSettingsConfig = _suiteCoreManager.GetPopupSettings();
+            suiteExecConfig.PopupSettings = _suiteCoreManager.GetPopupSettings();
             string? globalCondition = _appSettingsControl.GetGlobalPopupCondition();
             if (!string.IsNullOrWhiteSpace(globalCondition))
             {
-                popupSettingsConfig.HasGlobalPSCondition = true;
-                popupSettingsConfig.GlobalPSCondition = globalCondition;
+                suiteExecConfig.HasGlobalPSCondition = true;
+                suiteExecConfig.GlobalPSCondition = globalCondition;
             }
-            suiteExecConfig.PopupSettings = popupSettingsConfig;
             return suiteExecConfig;
         }
 

@@ -453,14 +453,14 @@
     "LogDir": null,
     "Detection": null
   },
+  "HasGlobalPSCondition": true,
+  "GlobalPSCondition": "V3JpdGUtSG9zdCAkVHJ1ZQ==",
   "PopupSettings": {
     "ShowProgress": false,
     "ShowPopupWarning": true,
     "LinkToProcClosures": true,
     "HasPSCondition": true,
     "PSCondition": "V3JpdGUtT3V0cHV0ICR0cnVl",
-    "HasGlobalPSCondition": true,
-    "GlobalPSCondition": "V3JpdGUtSG9zdCAkVHJ1ZQ==",
     "HasInstallTxt": true,
     "InstallTxt": "The below apps will be closed before \nthe upgrade. Please save any work required \nbefore continuing.",
     "HasUninstallTxt": true,

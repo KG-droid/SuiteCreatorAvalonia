@@ -30,6 +30,13 @@ namespace SuiteOperations
         public Build BuildSettings { get; set; } = new();
         public Popup PopupSettings { get; set; } = new();
 
+        // Baked in at build time from the admin's install-level AppSettings.json (see
+        // SuiteBuilder.BuildSuiteExecConfig) so the built exe can evaluate it without needing
+        // access to that file at runtime. Deliberately not part of Popup - that class is also the
+        // project's own editable popup settings, and this is a machine-level override, not project data.
+        public bool HasGlobalPSCondition { get; set; }
+        public string? GlobalPSCondition { get; set; }
+
         public void ToJson(string saveFilePath)
         {
             if (string.IsNullOrWhiteSpace(saveFilePath))

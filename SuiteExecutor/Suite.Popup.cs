@@ -299,7 +299,7 @@ namespace SuiteExecutor
                     return;
                 }
             }
-            if (_suiteConfig.PopupSettings.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.PopupSettings.GlobalPSCondition, "global popup condition"))
+            if (_suiteConfig.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.GlobalPSCondition, "global popup condition"))
             {
                 return;
             }

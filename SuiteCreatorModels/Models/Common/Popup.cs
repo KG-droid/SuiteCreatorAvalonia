@@ -23,8 +23,6 @@ namespace SuiteCreatorAvalonia.Models.Common
         public bool PauseDuringMeeting { get; set; } = true;
         public bool HasPSCondition { get; set; }
         public string? PSCondition { get; set; }
-        public bool HasGlobalPSCondition { get; set; }
-        public string? GlobalPSCondition { get; set; }
         public bool HasInstallTxt { get; set; }
         public string? InstallTxt { get; set; }
         public bool HasUninstallTxt { get; set; }
@@ -56,8 +54,6 @@ namespace SuiteCreatorAvalonia.Models.Common
                 PauseDuringMeeting = PauseDuringMeeting,
                 HasPSCondition = HasPSCondition,
                 PSCondition = PSCondition,
-                HasGlobalPSCondition = HasGlobalPSCondition,
-                GlobalPSCondition = GlobalPSCondition,
                 HasInstallTxt = HasInstallTxt,
                 InstallTxt = InstallTxt,
                 HasUninstallTxt = HasUninstallTxt,
@@ -91,8 +87,6 @@ namespace SuiteCreatorAvalonia.Models.Common
             PauseDuringMeeting = other.PauseDuringMeeting;
             HasPSCondition = other.HasPSCondition;
             PSCondition = other.PSCondition;
-            HasGlobalPSCondition = other.HasGlobalPSCondition;
-            GlobalPSCondition = other.GlobalPSCondition;
             HasInstallTxt = other.HasInstallTxt;
             InstallTxt = other.InstallTxt;
             HasUninstallTxt = other.HasUninstallTxt;
