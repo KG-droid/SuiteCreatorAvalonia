@@ -26,9 +26,9 @@
 		<SuiteProgressPopupPublishDir>..\SuiteProgressPopup\bin\publish\win-x64\$(TargetFramework)\</SuiteProgressPopupPublishDir>
 		<SuiteExecutorPublishDir>..\SuiteExecutor\bin\publish\win-x64\$(TargetFramework)\</SuiteExecutorPublishDir>
 		<SuiteExecRuntimeIdentifier>win-x64</SuiteExecRuntimeIdentifier>
-		<Version>1.0.18</Version>
-		<AssemblyVersion>1.0.18</AssemblyVersion>
-		<FileVersion>1.0.18</FileVersion>
+		<Version>1.0.19</Version>
+		<AssemblyVersion>1.0.19</AssemblyVersion>
+		<FileVersion>1.0.19</FileVersion>
 	</PropertyGroup>
 		
 	<ItemGroup>
