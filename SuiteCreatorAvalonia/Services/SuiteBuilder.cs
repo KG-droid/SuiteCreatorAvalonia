@@ -79,8 +79,7 @@ namespace SuiteCreatorAvalonia.Services
             List<PowerShell> powerShellEvents = _suiteCoreManager.GetPowerShellEvents().ToList();
             List<Registry> registryEvents = _suiteCoreManager.GetRegistryEvents().ToList();
             Popup popupSettings = _suiteCoreManager.GetPopupSettings();
-            popupSettings.BackgroundColor = _appSettingsControl.GetCompanyLogoBackgroundColor();
-            suiteExecConfig.PopupSettings.BackgroundColor = popupSettings.BackgroundColor;
+            suiteExecConfig.CompanyLogoBackgroundColor = _appSettingsControl.GetCompanyLogoBackgroundColor();
             string? companyLogoBase64 = _appSettingsControl.GetCompanyLogoBase64();
             // Extract logo bytes on the UI thread to avoid cross-thread access violations inside Task.Run
             byte[]? companyLogoBytes = null;
@@ -447,14 +446,13 @@ namespace SuiteCreatorAvalonia.Services
             }).ToList();
             suiteExecConfig.Stages = _suiteCoreManager.GetStages()?.ToList();
             suiteExecConfig.BuildSettings = _suiteCoreManager.GetBuildSettings();
-            Popup popupSettingsConfig = _suiteCoreManager.GetPopupSettings();
+            suiteExecConfig.PopupSettings = _suiteCoreManager.GetPopupSettings();
             string? globalCondition = _appSettingsControl.GetGlobalPopupCondition();
             if (!string.IsNullOrWhiteSpace(globalCondition))
             {
-                popupSettingsConfig.HasGlobalPSCondition = true;
-                popupSettingsConfig.GlobalPSCondition = globalCondition;
+                suiteExecConfig.HasGlobalPSCondition = true;
+                suiteExecConfig.GlobalPSCondition = globalCondition;
             }
-            suiteExecConfig.PopupSettings = popupSettingsConfig;
             return suiteExecConfig;
         }
 
@@ -1467,7 +1465,7 @@ namespace SuiteCreatorAvalonia.Services
             var config = new PopConfigDto
             {
                 LogFilePath = Path.Combine(_appSettingsControl.GetLogLocation(), $"{suiteExecCfg.BuildSettings.Manufacturer}_{suiteExecCfg.BuildSettings.Name}_{suiteExecCfg.BuildSettings.SuiteVersion}_{suiteExecCfg.BuildSettings.Revision}_Suite.log"),
-                CompanyLogoBackground = popupSettings.BackgroundColor?.ToString(),
+                CompanyLogoBackground = suiteExecCfg.CompanyLogoBackgroundColor.ToString(),
                 MainText = "The following apps will be closed before the upgrade. Please save any work required before you continue.",
                 IsClosuresAppsVisible = popupSettings.LinkToProcClosures,
                 ClosureApps = popupSettings.LinkToProcClosures

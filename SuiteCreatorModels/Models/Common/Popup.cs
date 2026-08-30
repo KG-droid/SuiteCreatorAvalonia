@@ -1,5 +1,4 @@
-﻿using Avalonia.Media;
-using Material.Icons;
+﻿using Material.Icons;
 
 namespace SuiteCreatorAvalonia.Models.Common
 {
@@ -23,8 +22,6 @@ namespace SuiteCreatorAvalonia.Models.Common
         public bool PauseDuringMeeting { get; set; } = true;
         public bool HasPSCondition { get; set; }
         public string? PSCondition { get; set; }
-        public bool HasGlobalPSCondition { get; set; }
-        public string? GlobalPSCondition { get; set; }
         public bool HasInstallTxt { get; set; }
         public string? InstallTxt { get; set; }
         public bool HasUninstallTxt { get; set; }
@@ -41,7 +38,6 @@ namespace SuiteCreatorAvalonia.Models.Common
         public string? UninstAction { get; set; }
         public string? SuiteLogoBase64 { get; set; }
         public MimeType? CompanyLogoType { get; set; }
-        public Color? BackgroundColor { get; set; }
         public bool LockdownEnabled { get; set; }
         public int LockdownMaxMinutes { get; set; } = 30;
         public string? LockdownMessage { get; set; } = "Please do not turn off your computer.";
@@ -56,8 +52,6 @@ namespace SuiteCreatorAvalonia.Models.Common
                 PauseDuringMeeting = PauseDuringMeeting,
                 HasPSCondition = HasPSCondition,
                 PSCondition = PSCondition,
-                HasGlobalPSCondition = HasGlobalPSCondition,
-                GlobalPSCondition = GlobalPSCondition,
                 HasInstallTxt = HasInstallTxt,
                 InstallTxt = InstallTxt,
                 HasUninstallTxt = HasUninstallTxt,
@@ -73,7 +67,6 @@ namespace SuiteCreatorAvalonia.Models.Common
                 InstAction = InstAction,
                 UninstAction = UninstAction,
                 CompanyLogoType = CompanyLogoType,
-                BackgroundColor = BackgroundColor,
                 SuiteLogoBase64 = SuiteLogoBase64,
                 LockdownEnabled = LockdownEnabled,
                 LockdownMaxMinutes = LockdownMaxMinutes,
@@ -91,8 +84,6 @@ namespace SuiteCreatorAvalonia.Models.Common
             PauseDuringMeeting = other.PauseDuringMeeting;
             HasPSCondition = other.HasPSCondition;
             PSCondition = other.PSCondition;
-            HasGlobalPSCondition = other.HasGlobalPSCondition;
-            GlobalPSCondition = other.GlobalPSCondition;
             HasInstallTxt = other.HasInstallTxt;
             InstallTxt = other.InstallTxt;
             HasUninstallTxt = other.HasUninstallTxt;
@@ -108,7 +99,6 @@ namespace SuiteCreatorAvalonia.Models.Common
             InstAction = other.InstAction;
             UninstAction = other.UninstAction;
             CompanyLogoType = other.CompanyLogoType;
-            BackgroundColor = other.BackgroundColor;
             SuiteLogoBase64 = other.SuiteLogoBase64;
             LockdownEnabled = other.LockdownEnabled;
             LockdownMaxMinutes = other.LockdownMaxMinutes;

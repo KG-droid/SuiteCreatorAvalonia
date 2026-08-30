@@ -218,7 +218,9 @@ namespace SuiteCreatorAvalonia.Services
                             LogPath = msiExec.LogPath,
                             RestartBehavior = msiExec.RestartBehavior,
                             Properties = msiExec.Properties?.Select(p => p.Clone()).ToList(),
-                            Rollback = msiExec.Rollback?.Clone(),
+                            RemoveOnSuiteRemoval = msiExec.RemoveOnSuiteRemoval,
+                            EstimatedInstallSeconds = msiExec.EstimatedInstallSeconds,
+                            EstimatedUninstallSeconds = msiExec.EstimatedUninstallSeconds,
                         };
                         string msiDir = GetPkgDir(msiExec.Id);
                         if (Directory.Exists(msiDir))
@@ -226,6 +228,35 @@ namespace SuiteCreatorAvalonia.Services
                             msiPkg.MSIPath = Directory.GetFiles(msiDir, "*.msi").FirstOrDefault() ?? string.Empty;
                             msiPkg.TransformsPath = Directory.GetFiles(msiDir, "*.mst").FirstOrDefault();
                             msiPkg.PatchPath = Directory.GetFiles(msiDir, "*.msp").FirstOrDefault();
+                        }
+                        if (msiExec.Rollback != null)
+                        {
+                            // Rollback is only ever built/serialized as a plain MSI (see SuiteBuilder), so its
+                            // own MSIPath/TransformsPath/PatchPath must be recovered from the Rollback subfolder
+                            // rather than from the deserialized object, which never carries file paths.
+                            MSIPkg rollbackPkg = new MSIPkg
+                            {
+                                Id = msiExec.Rollback.Id,
+                                Name = msiExec.Rollback.Name,
+                                RequirementRuleSetId = msiExec.Rollback.RequirementRuleSetId,
+                                SecureTransforms = msiExec.Rollback.SecureTransforms,
+                                Context = msiExec.Rollback.Context,
+                                IsCreateLog = msiExec.Rollback.IsCreateLog,
+                                IsRemoveFamily = msiExec.Rollback.IsRemoveFamily,
+                                LegacyLongFilePath = msiExec.Rollback.LegacyLongFilePath,
+                                LogPath = msiExec.Rollback.LogPath,
+                                Properties = msiExec.Rollback.Properties?.Select(p => p.Clone()).ToList(),
+                                EstimatedInstallSeconds = msiExec.Rollback.EstimatedInstallSeconds,
+                                EstimatedUninstallSeconds = msiExec.Rollback.EstimatedUninstallSeconds,
+                            };
+                            string rollbackDir = Path.Combine(msiDir, "Rollback");
+                            if (Directory.Exists(rollbackDir))
+                            {
+                                rollbackPkg.MSIPath = Directory.GetFiles(rollbackDir, "*.msi").FirstOrDefault();
+                                rollbackPkg.TransformsPath = Directory.GetFiles(rollbackDir, "*.mst").FirstOrDefault();
+                                rollbackPkg.PatchPath = Directory.GetFiles(rollbackDir, "*.msp").FirstOrDefault();
+                            }
+                            msiPkg.Rollback = rollbackPkg;
                         }
                         newConfig.Packages.Add(msiPkg);
                         break;
@@ -245,7 +276,17 @@ namespace SuiteCreatorAvalonia.Services
                             Context = msiRemExec.Context,
                             RestartBehavior = msiRemExec.RestartBehavior,
                             Properties = msiRemExec.Properties?.Select(p => p.Clone()).ToList(),
+                            RepairOldProductOnFailure = msiRemExec.RepairOldProductOnFailure,
+                            EstimatedUninstallSeconds = msiRemExec.EstimatedUninstallSeconds,
                         };
+                        if (msiRemExec.RepairOldProductOnFailure)
+                        {
+                            string repairDir = Path.Combine(GetPkgDir(msiRemExec.Id), "Repair");
+                            if (Directory.Exists(repairDir))
+                            {
+                                msiRem.RepairMsiPath = Directory.GetFiles(repairDir, "*.msi").FirstOrDefault();
+                            }
+                        }
                         newConfig.Packages.Add(msiRem);
                         break;
                     }
@@ -261,7 +302,8 @@ namespace SuiteCreatorAvalonia.Services
                             IsDeferInUse = msixExec.IsDeferInUse,
                             HasDependents = msixExec.HasDependents,
                             Dependents = msixExec.Dependents != null ? new List<string>(msixExec.Dependents) : null,
-                            Rollback = msixExec.Rollback?.Clone(),
+                            EstimatedInstallSeconds = msixExec.EstimatedInstallSeconds,
+                            EstimatedUninstallSeconds = msixExec.EstimatedUninstallSeconds,
                         };
                         string msixDir = GetPkgDir(msixExec.Id);
                         if (Directory.Exists(msixDir))
@@ -269,6 +311,32 @@ namespace SuiteCreatorAvalonia.Services
                             string? msixFile = Directory.GetFiles(msixDir, "*.msix").FirstOrDefault()
                                            ?? Directory.GetFiles(msixDir, "*.msixbundle").FirstOrDefault();
                             if (msixFile != null) msixPkg.MSIxPath = msixFile;
+                        }
+                        if (msixExec.Rollback != null)
+                        {
+                            // As with MSI, the rollback file lives in a Rollback subfolder and isn't captured
+                            // on the deserialized Rollback object itself.
+                            MSIxPkg rollbackPkg = new MSIxPkg
+                            {
+                                Id = msixExec.Rollback.Id,
+                                Name = msixExec.Rollback.Name,
+                                RequirementRuleSetId = msixExec.Rollback.RequirementRuleSetId,
+                                IsForceCloseFamily = msixExec.Rollback.IsForceCloseFamily,
+                                IsForceThisVersion = msixExec.Rollback.IsForceThisVersion,
+                                IsDeferInUse = msixExec.Rollback.IsDeferInUse,
+                                HasDependents = msixExec.Rollback.HasDependents,
+                                Dependents = msixExec.Rollback.Dependents != null ? new List<string>(msixExec.Rollback.Dependents) : null,
+                                EstimatedInstallSeconds = msixExec.Rollback.EstimatedInstallSeconds,
+                                EstimatedUninstallSeconds = msixExec.Rollback.EstimatedUninstallSeconds,
+                            };
+                            string rollbackDir = Path.Combine(msixDir, "Rollback");
+                            if (Directory.Exists(rollbackDir))
+                            {
+                                string? rollbackMsixFile = Directory.GetFiles(rollbackDir, "*.msix").FirstOrDefault()
+                                                       ?? Directory.GetFiles(rollbackDir, "*.msixbundle").FirstOrDefault();
+                                if (rollbackMsixFile != null) rollbackPkg.MSIxPath = rollbackMsixFile;
+                            }
+                            msixPkg.Rollback = rollbackPkg;
                         }
                         newConfig.Packages.Add(msixPkg);
                         break;
@@ -282,6 +350,7 @@ namespace SuiteCreatorAvalonia.Services
                             RequirementRuleSetId = msixRemExec.RequirementRuleSetId,
                             IsSpecificVersionRemoval = msixRemExec.IsSpecificVersionRemoval,
                             PFN = msixRemExec.PFN,
+                            EstimatedUninstallSeconds = msixRemExec.EstimatedUninstallSeconds,
                         };
                         newConfig.Packages.Add(msixRem);
                         break;
@@ -295,16 +364,29 @@ namespace SuiteCreatorAvalonia.Services
                             Name = otherExec.Name,
                             RequirementRuleSetId = otherExec.RequirementRuleSetId,
                             DetectionRuleSetId = otherExec.DetectionRuleSetId,
+                            RollbackDetectionRuleSetId = otherExec.RollbackDetectionRuleSetId,
                             RemovalType = otherExec.RemovalType,
                             Removal = otherExec.Removal?.Clone(),
                             Context = otherExec.Context,
                             SecureParams = otherExec.SecureParams,
                             LegacyLongFilePath = otherExec.LegacyLongFilePath,
                             RestartBehavior = otherExec.RestartBehavior,
+                            RestartCountdown = otherExec.RestartCountdown,
                             CustomExitCodes = otherExec.CustomExitCodes,
                             ExitCodes = otherExec.ExitCodes?.Select(e => e.Clone()).ToList(),
+                            InstallType = otherExec.InstallType,
+                            PowerShellScriptPath = ResolvePackageFilePath(otherExec.PowerShellScriptPath, otherDir),
+                            PowerShellScriptArgs = otherExec.PowerShellScriptArgs,
+                            RollbackInstallType = otherExec.RollbackInstallType,
+                            RollbackPowerShellScriptPath = ResolvePackageFilePath(otherExec.RollbackPowerShellScriptPath, otherDir),
+                            RollbackPowerShellScriptArgs = otherExec.RollbackPowerShellScriptArgs,
+                            RemovePowerShellScriptPath = ResolvePackageFilePath(otherExec.RemovePowerShellScriptPath, otherDir),
+                            RemovePowerShellScriptArgs = otherExec.RemovePowerShellScriptArgs,
                             InstallCommand = ResolveRelativeFileVars(otherExec.InstallCommand?.Select(c => c.Clone()).ToList(), otherDir),
                             RollbackCommand = ResolveRelativeFileVars(otherExec.RollbackCommand?.Select(c => c.Clone()).ToList(), otherDir),
+                            RemoveOnSuiteRemoval = otherExec.RemoveOnSuiteRemoval,
+                            EstimatedInstallSeconds = otherExec.EstimatedInstallSeconds,
+                            EstimatedUninstallSeconds = otherExec.EstimatedUninstallSeconds,
                         };
                         if (Directory.Exists(otherDir))
                         {
@@ -318,6 +400,7 @@ namespace SuiteCreatorAvalonia.Services
                     }
                     case OtherRemovalExec otherRemExec:
                     {
+                        string otherRemDir = GetPkgDir(otherRemExec.Id);
                         OtherRemovalPkg otherRemPkg = new OtherRemovalPkg
                         {
                             Id = otherRemExec.Id,
@@ -328,11 +411,16 @@ namespace SuiteCreatorAvalonia.Services
                             Removal = otherRemExec.Removal?.Clone(),
                             Context = otherRemExec.Context,
                             SecureParams = otherRemExec.SecureParams,
+                            LegacyLongFilePath = otherRemExec.LegacyLongFilePath,
                             RestartBehavior = otherRemExec.RestartBehavior,
+                            RestartCountdown = otherRemExec.RestartCountdown,
                             CustomExitCodes = otherRemExec.CustomExitCodes,
                             ExitCodes = otherRemExec.ExitCodes?.Select(e => e.Clone()).ToList(),
+                            InstallType = otherRemExec.InstallType,
+                            PowerShellScriptPath = ResolvePackageFilePath(otherRemExec.PowerShellScriptPath, otherRemDir),
+                            PowerShellScriptArgs = otherRemExec.PowerShellScriptArgs,
+                            EstimatedUninstallSeconds = otherRemExec.EstimatedUninstallSeconds,
                         };
-                        string otherRemDir = GetPkgDir(otherRemExec.Id);
                         if (Directory.Exists(otherRemDir))
                         {
                             FileSystemNode packageRoot = new FileSystemNode("PackageRoot", new ObservableCollection<FileSystemNode>());
@@ -372,6 +460,13 @@ namespace SuiteCreatorAvalonia.Services
             return null;
         }
 
+        // OtherExec/OtherRemovalExec only serialize the PowerShell script's file name (see SuiteBuilder),
+        // since the script itself is deployed at the root of the package's own extracted folder.
+        private static string? ResolvePackageFilePath(string? fileName, string baseDir)
+        {
+            return string.IsNullOrWhiteSpace(fileName) ? null : Path.Combine(baseDir, fileName);
+        }
+
         private static List<VariableText>? ResolveRelativeFileVars(List<VariableText>? command, string baseDir)
         {
             if (command == null) return null;
@@ -399,7 +494,7 @@ namespace SuiteCreatorAvalonia.Services
                     Action = cert.Action,
                     Store = cert.Store,
                     FilePath = cert.FilePath,
-                    Thumbprint = cert.Thumbprint,
+                    Thumbprint = cert.Action == CertAction.Remove ? cert.Thumbprint : null,
                     Password = cert.Password,
                     IsPermanent = cert.IsPermanent,
                     Schedules = cert.Schedules?.Select(s => s.Clone()).ToList() ?? new List<Schedule>()

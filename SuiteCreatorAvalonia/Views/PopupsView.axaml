@@ -555,7 +555,7 @@
 										HorizontalAlignment="Left"
 										VerticalAlignment="Center"/>
 									<TextBlock
-										Text="Makes the progress popup cover the whole screen and stay on top for the duration of the suite, discouraging the user from using the computer while it runs."
+										Text="Makes the progress popup cover the whole screen and stay on top for the duration of the suite, discouraging the user from using the computer while it runs. It is Alt+F4 killable, and doesnt re-open though, to avoid excessive blocking, which might cause false AV positives."
 										TextWrapping="Wrap"
 										Grid.Column="4"
 										HorizontalAlignment="Left"
@@ -600,15 +600,51 @@
 										HorizontalAlignment="Left"
 										VerticalAlignment="Top"
 										Margin="0,7,0,0"/>
-									<TextBox
-										Text="{Binding LockdownMessage}"
+									<StackPanel
 										Grid.Column="2"
 										Grid.Row="2"
-										Width="220"
-										AcceptsReturn="True"
-										TextWrapping="Wrap"
-										MinHeight="60"
-										VerticalAlignment="Top"/>
+										Spacing="8"
+										HorizontalAlignment="Left">
+										<TextBox
+											Text="{Binding LockdownMessage}"
+											Width="220"
+											AcceptsReturn="True"
+											TextWrapping="Wrap"
+											MinHeight="60"
+											VerticalAlignment="Top"/>
+										<Button
+											Name="TestLockdown_Button"
+											Content="Test Full Screen Lockdown"
+											HorizontalAlignment="Left"
+											Command="{Binding TestLockdownPopupCommand}"
+											ToolTip.Tip="Runs the progres popup in fullscreen lockdown mode with a 10 second example progress"/>
+										<Popup
+											IsOpen="{Binding LockdownTestError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+											IsLightDismissEnabled="True"
+											Placement="RightEdgeAlignedTop"
+											PlacementTarget="{Binding ElementName=TestLockdown_Button}"
+											Closed="LockdownTestErrorPopup_Closed">
+											<Border
+												Background="Red"
+												Padding="12,10,15,10"
+												CornerRadius="23"
+												MaxWidth="300">
+												<StackPanel
+													Orientation="Horizontal"
+													Spacing="5">
+													<mi:MaterialIcon
+														Kind="AlertCircle"
+														Foreground="White"
+														Width="24"
+														Height="24"/>
+													<TextBlock
+														Foreground="White"
+														TextWrapping="Wrap"
+														Text="{Binding LockdownTestError}"/>
+												</StackPanel>
+											</Border>
+										</Popup>
+									</StackPanel>
 									<TextBlock
 										Text="Shown underneath the progress bar for the whole duration of the lockdown, e.g. to warn the user not to turn off their computer or to give them a support contact."
 										TextWrapping="Wrap"

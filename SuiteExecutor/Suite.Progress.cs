@@ -28,7 +28,7 @@ namespace SuiteExecutor
 
             // The popup condition scripts are shared across both popup types, not just the warning popup -
             // if the condition explicitly says not to show a popup, that applies to progress too.
-            if (_suiteConfig.PopupSettings.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.PopupSettings.GlobalPSCondition, "global popup condition"))
+            if (_suiteConfig.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.GlobalPSCondition, "global popup condition"))
             {
                 _log.WriteLog("Global popup condition was not met, skipping progress popup", "Progress", Log.Severity.Info);
                 return;
@@ -64,7 +64,7 @@ namespace SuiteExecutor
                 _progressFilePath = progressFilePath;
                 WriteProgressStatus(0, $"Preparing {_suiteConfig.BuildSettings.Name}...", isComplete: false, isError: false);
 
-                string progressArguments = $"--SuiteLogo \"{suiteLogoPath}\" --ProgressFile \"{progressFilePath}\" --LogFile \"{_logPath}\" --ProgressColour \"{_suiteConfig.PopupSettings.BackgroundColor.Value}\"";
+                string progressArguments = $"--SuiteLogo \"{suiteLogoPath}\" --ProgressFile \"{progressFilePath}\" --LogFile \"{_logPath}\" --ProgressColour \"{_suiteConfig.CompanyLogoBackgroundColor}\"";
 
                 if (_suiteConfig.PopupSettings.LockdownEnabled)
                 {
