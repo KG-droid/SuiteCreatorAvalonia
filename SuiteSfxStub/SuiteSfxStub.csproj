@@ -12,9 +12,9 @@
 		<Platforms>AnyCPU;x64</Platforms>
 		<SupportedOSPlatformVersion>10.0.22000.0</SupportedOSPlatformVersion>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Version>1.0.1</Version>
-        <AssemblyVersion>1.0.1</AssemblyVersion>
-        <FileVersion>1.0.1</FileVersion>
+        <Version>1.0.2</Version>
+        <AssemblyVersion>1.0.2</AssemblyVersion>
+        <FileVersion>1.0.2</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
