@@ -11,7 +11,7 @@ namespace SuiteExecutor
         private static readonly string _progressPopupExe = Path.Combine(_installedPopupDir, "SuiteProgressPopup.exe");
         private string? _progressFilePath;
         private bool _progressPopupStarted = false;
-        private Task? _progressPopupTask;
+        private string _progressLaunchArguments = string.Empty;
 
         // UpdateProgress is called synchronously from the main package-installation thread on every stage
         // transition (see Suite.Execution.cs), so it must never block that thread on disk I/O - a slow disk,
@@ -22,6 +22,22 @@ namespace SuiteExecutor
         private readonly object _progressUpdateLock = new object();
         private (int Percentage, string? StatusText)? _pendingProgressUpdate;
         private Task? _progressDrainTask;
+
+        // Watchdog: separate from the update-drain queue above on purpose - it has to keep checking on a
+        // timer even while no progress updates are flowing (e.g. a single slow package install stage), which
+        // the drain queue alone would never wake up for. _progressProcessLock is the single point of
+        // serialization between this background watchdog and the main thread's own teardown
+        // (WaitForProgressPopupExit/SignalProgressShutdown): whichever side is actively killing/relaunching
+        // the tracked process holds the lock for that whole operation, and _progressShuttingDown - checked
+        // inside the lock at every decision point - is what stops the watchdog from ever spawning a new
+        // popup after the main thread has decided the suite is done, no matter what it's in the middle of.
+        private static readonly TimeSpan _progressWatchdogPollInterval = TimeSpan.FromSeconds(5);
+        private const int _progressUnresponsiveThreshold = 3; // consecutive failed polls before acting
+        private readonly object _progressProcessLock = new object();
+        private Process? _progressProcess;
+        private bool _progressShuttingDown;
+        private CancellationTokenSource? _progressWatchdogCts;
+        private Task? _progressWatchdogTask;
 
         private void StartProgressPopup()
         {
@@ -88,25 +104,46 @@ namespace SuiteExecutor
                         progressArguments += $" --LockdownMessage \"{EscapeArgument(_suiteConfig.PopupSettings.LockdownMessage)}\"";
                 }
 
+                _progressLaunchArguments = progressArguments;
                 _log.WriteLog($"Launching progress popup: \"{_progressPopupExe}\" {progressArguments}", "Progress", Log.Severity.Info);
 
-                _progressPopupTask = Task.Run(() =>
+                Process? initialProcess = LaunchProgressPopupProcess();
+                if (initialProcess == null)
                 {
-                    try
-                    {
-                        StartProcessAsCurrentUser(_progressPopupExe, progressArguments, _installedPopupDir, true, true, null, true);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.WriteLog($"Progress popup process ended with error: {ex.Message}", "Progress", Log.Severity.Warning);
-                    }
-                });
+                    _log.WriteLog("Failed to launch the progress popup.", "Progress", Log.Severity.Warning);
+                    return;
+                }
+
+                _progressProcess = initialProcess;
+                _progressWatchdogCts = new CancellationTokenSource();
+                _progressWatchdogTask = Task.Run(() => RunProgressWatchdogAsync(_progressWatchdogCts.Token));
 
                 _progressPopupStarted = true;
             }
             catch (Exception ex)
             {
                 _log.WriteLog($"Failed to start progress popup: {ex.Message}", "Progress", Log.Severity.Error);
+            }
+        }
+
+        // Fire-and-forget launch (wait:false) so the caller gets the PID back immediately instead of blocking
+        // until the popup exits - StartProcessAsCurrentUser still ties the process to SuiteExecutor's own
+        // lifetime via a Job Object (killWithParent:true), so it's cleaned up even if this process is killed
+        // outright before ever reaching its own teardown code.
+        private Process? LaunchProgressPopupProcess()
+        {
+            ImpersonatedProcessResult? result = StartProcessAsCurrentUser(_progressPopupExe, _progressLaunchArguments, _installedPopupDir, true, false, null, true);
+            if (result == null || result.ProcessId <= 0)
+                return null;
+
+            try
+            {
+                return Process.GetProcessById(result.ProcessId);
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"Failed to attach to launched progress popup process (PID {result.ProcessId}): {ex.Message}", "Progress", Log.Severity.Warning);
+                return null;
             }
         }
 
@@ -165,11 +202,18 @@ namespace SuiteExecutor
             if (!_progressPopupStarted)
                 return;
 
+            // Signal shutdown BEFORE writing the final status: the watchdog must not relaunch the popup
+            // from this point on under any circumstances, including a kill-and-relaunch it's already in the
+            // middle of. This is the only call to CompleteProgressPopup on the failure path (Suite.cs's
+            // catch block goes straight from here to Environment.Exit, never through
+            // WaitForProgressPopupExit), so this is the sole place both paths are guaranteed to pass through.
+            SignalProgressShutdown();
+
             string statusText = isError ? "Suite failed" : "Suite complete";
             WriteProgressStatusSync(100, statusText, isComplete: !isError, isError: isError);
         }
 
-        // Used only for the initial "Preparing..." write and this final complete/error write - both need to
+        // Used only for the initial "Preparing..." write and the final complete/error write - both need to
         // reliably land on disk before returning (unlike UpdateProgress's frequent, best-effort ticks), and
         // in particular the final write must not be overtaken by a still-draining earlier UpdateProgress
         // call landing after it. Clears anything queued and waits for any in-flight drain to finish first,
@@ -189,21 +233,177 @@ namespace SuiteExecutor
             WriteProgressStatus(percentage, statusText, isComplete, isError);
         }
 
+        // Marks the popup's lifetime as over: the watchdog checks this (inside _progressProcessLock) before
+        // ever killing-and-relaunching, and bails out instead if it's set - including immediately after
+        // relaunching, in case shutdown was signalled mid-relaunch. Safe to call multiple times.
+        private void SignalProgressShutdown()
+        {
+            lock (_progressProcessLock)
+            {
+                _progressShuttingDown = true;
+            }
+            try { _progressWatchdogCts?.Cancel(); } catch { }
+        }
+
         private void WaitForProgressPopupExit(TimeSpan timeout)
         {
-            if (_progressPopupTask == null)
+            if (!_progressPopupStarted)
                 return;
+
+            // CompleteProgressPopup already called SignalProgressShutdown, so the watchdog will not relaunch
+            // from here on - it's now safe to wait for (and, if necessary, force) the exit of whatever's
+            // currently tracked without racing a fresh relaunch back into existence.
+            Process? current;
+            lock (_progressProcessLock)
+            {
+                current = _progressProcess;
+            }
+
+            if (current != null)
+            {
+                try
+                {
+                    if (!current.HasExited && !current.WaitForExit((int)Math.Max(0, timeout.TotalMilliseconds)))
+                    {
+                        _log.WriteLog($"Progress popup did not exit within {timeout}; forcing it closed.", "Progress", Log.Severity.Warning);
+                        try { current.Kill(entireProcessTree: true); }
+                        catch (Exception ex) { _log.WriteLog($"Failed to force-close the progress popup: {ex.Message}", "Progress", Log.Severity.Warning); }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.WriteLog($"Error waiting for progress popup to exit: {ex.Message}", "Progress", Log.Severity.Warning);
+                }
+                finally
+                {
+                    try { current.Dispose(); } catch { }
+                }
+            }
+
+            // Give the watchdog loop a brief moment to notice cancellation and actually stop, so nothing is
+            // left touching _progressProcess after this returns.
+            try { _progressWatchdogTask?.Wait(TimeSpan.FromSeconds(2)); }
+            catch (Exception ex) { _log.WriteLog($"Error waiting for progress watchdog to stop: {ex.Message}", "Progress", Log.Severity.Warning); }
+        }
+
+        private async Task RunProgressWatchdogAsync(CancellationToken token)
+        {
+            int unresponsiveStreak = 0;
+            while (!token.IsCancellationRequested)
+            {
+                try { await Task.Delay(_progressWatchdogPollInterval, token); }
+                catch (OperationCanceledException) { break; }
+                if (token.IsCancellationRequested)
+                    break;
+
+                Process? current;
+                lock (_progressProcessLock)
+                {
+                    if (_progressShuttingDown)
+                        break;
+                    current = _progressProcess;
+                }
+                if (current == null)
+                    continue;
+
+                bool exited;
+                bool responding;
+                try
+                {
+                    current.Refresh();
+                    exited = current.HasExited;
+                    responding = exited || current.Responding;
+                }
+                catch (InvalidOperationException)
+                {
+                    // The Process object is no longer valid for querying - treat as gone.
+                    exited = true;
+                    responding = false;
+                }
+                catch (Exception ex)
+                {
+                    _log.WriteLog($"Progress popup watchdog check failed: {ex.Message}", "Progress", Log.Severity.Warning);
+                    continue; // Inconclusive - don't act on this poll.
+                }
+
+                if (exited)
+                {
+                    _log.WriteLog("Progress popup process has exited unexpectedly; relaunching.", "Progress", Log.Severity.Warning);
+                    unresponsiveStreak = 0;
+                    RestartProgressPopupProcess(token);
+                    continue;
+                }
+
+                if (responding)
+                {
+                    unresponsiveStreak = 0;
+                    continue;
+                }
+
+                unresponsiveStreak++;
+                _log.WriteLog($"Progress popup appears unresponsive ({unresponsiveStreak}/{_progressUnresponsiveThreshold})", "Progress", Log.Severity.Warning);
+                if (unresponsiveStreak < _progressUnresponsiveThreshold)
+                    continue;
+
+                unresponsiveStreak = 0;
+                _log.WriteLog("Progress popup unresponsive for too long; killing and relaunching.", "Progress", Log.Severity.Warning);
+                RestartProgressPopupProcess(token);
+            }
+        }
+
+        // Kills whatever's currently tracked and relaunches it, but only if the suite hasn't finished in the
+        // meantime - checked before the kill, and again (still holding the lock across the relaunch itself)
+        // right before handing the new process over to _progressProcess, so a shutdown signalled mid-restart
+        // can never result in a fresh popup being left behind after the main thread thinks it's done.
+        private void RestartProgressPopupProcess(CancellationToken token)
+        {
+            Process? staleProcess;
+            lock (_progressProcessLock)
+            {
+                if (_progressShuttingDown || token.IsCancellationRequested)
+                    return;
+                staleProcess = _progressProcess;
+                _progressProcess = null; // Claimed - the main thread's own teardown won't also act on it now.
+            }
 
             try
             {
-                if (!_progressPopupTask.Wait(timeout))
-                {
-                    _log.WriteLog($"Progress popup did not exit within {timeout}; proceeding anyway", "Progress", Log.Severity.Warning);
-                }
+                if (staleProcess != null && !staleProcess.HasExited)
+                    staleProcess.Kill(entireProcessTree: true);
             }
             catch (Exception ex)
             {
-                _log.WriteLog($"Error waiting for progress popup to exit: {ex.Message}", "Progress", Log.Severity.Warning);
+                _log.WriteLog($"Failed to kill unresponsive progress popup: {ex.Message}", "Progress", Log.Severity.Warning);
+            }
+            finally
+            {
+                try { staleProcess?.Dispose(); } catch { }
+            }
+
+            lock (_progressProcessLock)
+            {
+                if (_progressShuttingDown || token.IsCancellationRequested)
+                    return; // The suite finished while the old process was being killed - don't spawn a new one.
+
+                Process? relaunched = LaunchProgressPopupProcess();
+                if (relaunched == null)
+                {
+                    _log.WriteLog("Failed to relaunch progress popup after it became unresponsive.", "Progress", Log.Severity.Warning);
+                    return;
+                }
+
+                // Re-check once more before publishing it: LaunchProgressPopupProcess (impersonation +
+                // CreateProcessAsUser) can take a moment, during which the main thread could have finished -
+                // but the lock has been held for the whole call, so nothing else could have raced this.
+                if (_progressShuttingDown || token.IsCancellationRequested)
+                {
+                    try { relaunched.Kill(entireProcessTree: true); } catch { }
+                    try { relaunched.Dispose(); } catch { }
+                    return;
+                }
+
+                _progressProcess = relaunched;
+                _log.WriteLog("Progress popup relaunched after becoming unresponsive.", "Progress", Log.Severity.Info);
             }
         }
 
