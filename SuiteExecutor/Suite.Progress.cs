@@ -13,6 +13,16 @@ namespace SuiteExecutor
         private bool _progressPopupStarted = false;
         private Task? _progressPopupTask;
 
+        // UpdateProgress is called synchronously from the main package-installation thread on every stage
+        // transition (see Suite.Execution.cs), so it must never block that thread on disk I/O - a slow disk,
+        // AV real-time scan, or transient contention with the popup's own read would otherwise stall the
+        // actual install. These fields back a small coalescing queue: the caller just stashes the latest
+        // percentage/text and returns immediately; at most one background Task drains it, always writing
+        // only the newest value (intermediate ticks are cheap to drop - a progress bar just catches up).
+        private readonly object _progressUpdateLock = new object();
+        private (int Percentage, string? StatusText)? _pendingProgressUpdate;
+        private Task? _progressDrainTask;
+
         private void StartProgressPopup()
         {
             if (!_suiteConfig.PopupSettings.ShowProgress)
@@ -62,7 +72,7 @@ namespace SuiteExecutor
                 }
 
                 _progressFilePath = progressFilePath;
-                WriteProgressStatus(0, $"Preparing {_suiteConfig.BuildSettings.Name}...", isComplete: false, isError: false);
+                WriteProgressStatusSync(0, $"Preparing {_suiteConfig.BuildSettings.Name}...", isComplete: false, isError: false);
 
                 string progressArguments = $"--SuiteLogo \"{suiteLogoPath}\" --ProgressFile \"{progressFilePath}\" --LogFile \"{_logPath}\" --ProgressColour \"{_suiteConfig.CompanyLogoBackgroundColor}\"";
 
@@ -115,12 +125,39 @@ namespace SuiteExecutor
             return null;
         }
 
+        // Non-blocking: stashes the latest value and returns immediately. At most one drain Task is ever
+        // running - if one is already in flight, this just updates what it'll pick up next, rather than
+        // spawning another. See the field comments above for why this needs to not block the caller.
         private void UpdateProgress(int percentage, string? statusText)
         {
             if (!_progressPopupStarted)
                 return;
 
-            WriteProgressStatus(percentage, statusText, isComplete: false, isError: false);
+            lock (_progressUpdateLock)
+            {
+                _pendingProgressUpdate = (percentage, statusText);
+                if (_progressDrainTask != null && !_progressDrainTask.IsCompleted)
+                    return;
+
+                _progressDrainTask = Task.Run(DrainPendingProgressUpdates);
+            }
+        }
+
+        private void DrainPendingProgressUpdates()
+        {
+            while (true)
+            {
+                (int Percentage, string? StatusText) update;
+                lock (_progressUpdateLock)
+                {
+                    if (_pendingProgressUpdate == null)
+                        return;
+                    update = _pendingProgressUpdate.Value;
+                    _pendingProgressUpdate = null;
+                }
+
+                WriteProgressStatus(update.Percentage, update.StatusText, isComplete: false, isError: false);
+            }
         }
 
         private void CompleteProgressPopup(bool isError)
@@ -129,7 +166,27 @@ namespace SuiteExecutor
                 return;
 
             string statusText = isError ? "Suite failed" : "Suite complete";
-            WriteProgressStatus(100, statusText, isComplete: !isError, isError: isError);
+            WriteProgressStatusSync(100, statusText, isComplete: !isError, isError: isError);
+        }
+
+        // Used only for the initial "Preparing..." write and this final complete/error write - both need to
+        // reliably land on disk before returning (unlike UpdateProgress's frequent, best-effort ticks), and
+        // in particular the final write must not be overtaken by a still-draining earlier UpdateProgress
+        // call landing after it. Clears anything queued and waits for any in-flight drain to finish first,
+        // so this write is guaranteed to be the last one on disk.
+        private void WriteProgressStatusSync(int percentage, string? statusText, bool isComplete, bool isError)
+        {
+            Task? drainTask;
+            lock (_progressUpdateLock)
+            {
+                _pendingProgressUpdate = null;
+                drainTask = _progressDrainTask;
+            }
+
+            try { drainTask?.Wait(); }
+            catch (Exception ex) { _log.WriteLog($"Error waiting for pending progress update to drain: {ex.Message}", "Progress", Log.Severity.Warning); }
+
+            WriteProgressStatus(percentage, statusText, isComplete, isError);
         }
 
         private void WaitForProgressPopupExit(TimeSpan timeout)
