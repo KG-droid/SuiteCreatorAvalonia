@@ -15,6 +15,8 @@ namespace SuiteExecutor
         private const string _suiteCacheRoot = @"C:\Windows\SuiteInstallerCache";
         private const string _deferralTaskPrefix = "SuiteReminder_";
 
+        private string GetDeferralTaskName() => _deferralTaskPrefix + _suiteConfig.BuildSettings.UpgradeCode.ToString();
+
         private bool IsDeferralActive()
         {
             string upgradeCode = _suiteConfig.BuildSettings.UpgradeCode.ToString();
@@ -87,6 +89,11 @@ namespace SuiteExecutor
                     DeleteScheduledTask(taskName);
                     _log.WriteLog($"Cleaned up deferral scheduled task '{taskName}'", "Deferral", Log.Severity.Info);
                 }
+
+                // The "Run now" tray icon (see Suite.TrayReminder.cs) has nothing left to do once the
+                // deferral it was watching is resolved — remove its logon-trigger task so it doesn't keep
+                // reappearing at future logons for a suite run that's already finished.
+                RemoveTrayReminderTask();
 
                 // Also clear any pending meeting-recheck task and its wait-started timestamp (see
                 // Suite.MeetingDetection.cs) - this only normally happens once the mic check itself sees the
