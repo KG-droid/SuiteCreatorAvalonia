@@ -366,6 +366,10 @@ namespace SuiteExecutor
                             {
                                 _log.WriteLog($"User deferred suite execution to {reminderTime}", "ExecPopup", Log.Severity.Info);
                                 ScheduleReminder(reminderTime);
+                                // Let the user trigger the reminder early from a tray icon instead of being
+                                // stuck waiting out however late a time they picked, in case they change
+                                // their mind. Best-effort on top of the deferral above — see Suite.TrayReminder.cs.
+                                EnableTrayRunNow(suiteLogoPath);
                                 // Remove the FailSafe recovery task so its boot/logon trigger can't pre-empt the
                                 // reminder we just scheduled. (Removes SuiteFailSafe_*, not the SuiteReminder_* task.)
                                 CleanupBeforeUserSkipExit();

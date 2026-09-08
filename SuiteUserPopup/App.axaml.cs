@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using SuiteUserPopup.Models.Config;
@@ -26,30 +27,46 @@ public partial class App : Application
         ApplyConfigFromJson();
     }
 
+    // Held for the process lifetime so the tray icon and its poll timer aren't garbage collected out from
+    // under their event handlers.
+    private TrayReminderService? _trayReminderService;
+
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             StartupOptions options = StartupOptions.Current;
-            PopupWindowViewModel viewModel = new PopupWindowViewModel(
-                options.CompanyLogoPath,
-                options.SuiteLogoPath,
-                options.IsBlockedNotice,
-                options.BlockedProcessName,
-                options.BlockedExePath);
-            PopupWindow popWindow = new PopupWindow
+
+            if (options.IsTrayMode)
             {
-                DataContext = viewModel,
-                // Centre on screen for a blocked-process notice so it can't be missed; the usual
-                // warning/progress popups stay pinned to the corner like a toast.
-                CenterOnScreen = options.IsBlockedNotice
-            };
+                // No window at all — closing the tray icon (or the reminder task disappearing) is the only
+                // way this process ends, so it must not tie its lifetime to a window that's never created.
+                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                _trayReminderService = new TrayReminderService(desktop, options.TrayReminderTaskName!, options.TraySuiteName, options.SuiteLogoPath);
+                AppLogService.Info("Tray reminder icon created successfully.", nameof(App));
+            }
+            else
+            {
+                PopupWindowViewModel viewModel = new PopupWindowViewModel(
+                    options.CompanyLogoPath,
+                    options.SuiteLogoPath,
+                    options.IsBlockedNotice,
+                    options.BlockedProcessName,
+                    options.BlockedExePath);
+                PopupWindow popWindow = new PopupWindow
+                {
+                    DataContext = viewModel,
+                    // Centre on screen for a blocked-process notice so it can't be missed; the usual
+                    // warning/progress popups stay pinned to the corner like a toast.
+                    CenterOnScreen = options.IsBlockedNotice
+                };
 
-            if (options.IsBlockedNotice && !string.IsNullOrWhiteSpace(options.BlockedSuiteId))
-                popWindow.Title = BlockedNoticeTitlePrefix + options.BlockedSuiteId;
+                if (options.IsBlockedNotice && !string.IsNullOrWhiteSpace(options.BlockedSuiteId))
+                    popWindow.Title = BlockedNoticeTitlePrefix + options.BlockedSuiteId;
 
-            desktop.MainWindow = popWindow;
-            AppLogService.Info("Main window created successfully.", nameof(App));
+                desktop.MainWindow = popWindow;
+                AppLogService.Info("Main window created successfully.", nameof(App));
+            }
         }
 
         base.OnFrameworkInitializationCompleted();

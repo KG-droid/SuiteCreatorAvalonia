@@ -19,6 +19,12 @@ internal static class Program
     // standard user cannot write to or pre-create. %windir% denies non-admins write access by default.
     private static readonly string _cacheRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SuiteInstallerCache");
 
+    // Must match SuiteExecutor's Suite.FailSafe.cs (_failSafeTaskPrefix) — SuiteExecutor registers this task,
+    // keyed by the same UpgradeCode, pointing back at this cache dir, whenever it wants a boot/logon recovery
+    // run to resume an interrupted deployment from what's extracted here.
+    private static readonly string _schTasksPath = Path.Combine(Environment.SystemDirectory, "schtasks.exe");
+    private const string _failSafeTaskPrefix = "SuiteFailSafe_";
+
     private static int _suiteExecExitCode = 0;
 
     public static int Main(string[] args)
@@ -50,6 +56,7 @@ internal static class Program
         }
 
         string? extractRoot = null;
+        string? suiteGUID = null;
         bool keepCache = false;
         try
         {
@@ -61,7 +68,7 @@ internal static class Program
                 using BoundedStream payloadStream = new BoundedStream(exeFs, zipStart, zipLength);
                 using ZipArchive archive = new ZipArchive(payloadStream, ZipArchiveMode.Read, leaveOpen: true);
 
-                ReadBuildSettingsFromArchive(archive, out string? suiteGUID, out keepCache, out Version? incomingVersion, out int incomingRevision);
+                ReadBuildSettingsFromArchive(archive, out suiteGUID, out keepCache, out Version? incomingVersion, out int incomingRevision);
                 if (string.IsNullOrWhiteSpace(suiteGUID))
                 {
                     throw new InvalidDataException("UpgradeCode is missing in BuildSettings. Cannot determine the cache location.");
@@ -222,7 +229,22 @@ internal static class Program
             // Exit code 1602 means the run deferred or was skipped by the user; keep the extracted cache so the
             // scheduled deferral reminder can re-run the suite from it, even when KeepCache is off.
             bool suiteDeferred = _suiteExecExitCode == 1602;
-            if (!keepCache && !suiteDeferred && !string.IsNullOrWhiteSpace(extractRoot))
+
+            // SuiteExecutor registers a FailSafe recovery task (pointing back at this same cache dir) before
+            // it does any real work, and relies on the cache surviving until that task runs — regardless of
+            // how this run ends. That covers both a deliberate restart-retry (exit 1641, not 1602) and the
+            // child process being killed outright mid-deployment (some other exit code entirely, since a
+            // forced kill was never going to hand back 1602). Only exit code alone can't distinguish those
+            // cases from a genuine unrecoverable failure, where SuiteExecutor already removed its own task —
+            // so check whether the task is still actually registered instead of guessing from the exit code.
+            bool failSafeRecoveryPending = !string.IsNullOrWhiteSpace(suiteGUID) &&
+                DoesFailSafeTaskExist(_failSafeTaskPrefix + suiteGUID);
+
+            if (failSafeRecoveryPending)
+            {
+                Console.WriteLine($"FailSafe recovery task is pending for this suite — retaining cached installer directory '{extractRoot}'.");
+            }
+            else if (!keepCache && !suiteDeferred && !string.IsNullOrWhiteSpace(extractRoot))
             {
                 for (int attempt = 1; attempt <= maxRetries; attempt++)
                 {
@@ -245,6 +267,32 @@ internal static class Program
                     }
                 }
             }
+        }
+    }
+
+    private static bool DoesFailSafeTaskExist(string taskName)
+    {
+        try
+        {
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = _schTasksPath,
+                Arguments = $"/Query /TN \"{taskName}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using Process? process = Process.Start(psi);
+            if (process == null) return false;
+
+            process.WaitForExit();
+            return process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
         }
     }
 

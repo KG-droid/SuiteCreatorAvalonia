@@ -374,6 +374,12 @@ namespace SuiteTools
                 public string? ErrorMessage { get; set; }
                 public string? UserSid { get; set; }
                 public string? UserName { get; set; }
+
+                // The launched process's PID, populated as soon as it starts (regardless of wait/wait:false).
+                // Lets a caller that fired the process off without waiting (wait:false) still reattach to it
+                // afterwards - e.g. via Process.GetProcessById - to monitor or terminate it later. 0 if the
+                // process never actually started.
+                public int ProcessId { get; set; }
             }
 
             // Duplicates the session's user token, launches exePath under it via CreateProcessAsUser, and
@@ -513,7 +519,8 @@ namespace SuiteTools
                                 {
                                     ExitCode = -1,
                                     UserName = session.UserName,
-                                    UserSid = session.UserSid?.ToString()
+                                    UserSid = session.UserSid?.ToString(),
+                                    ProcessId = pi.dwProcessId
                                 };
                             }
 
@@ -576,7 +583,8 @@ namespace SuiteTools
                                     UserName = session.UserName,
                                     UserSid = session.UserSid?.ToString(),
                                     StandardOutput = stdOut,
-                                    StandardError = stdErr
+                                    StandardError = stdErr,
+                                    ProcessId = pi.dwProcessId
                                 };
                             }
                             finally
@@ -666,6 +674,7 @@ namespace SuiteTools
                 {
                     proc.StartInfo = psi;
                     proc.Start();
+                    int processId = proc.Id;
                     if (killWithParent.HasValue && killWithParent.Value)
                     {
                         EnsureProcessDiesWithParent(proc.Handle);
@@ -704,6 +713,7 @@ namespace SuiteTools
                     result.StandardError = stdErr;
                     result.UserName = userName;
                     result.UserSid = userSid;
+                    result.ProcessId = processId;
                     return result;
                 }
             }
