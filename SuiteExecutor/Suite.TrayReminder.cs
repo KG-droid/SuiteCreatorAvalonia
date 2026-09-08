@@ -200,6 +200,34 @@ namespace SuiteExecutor
             _log.WriteLog("TrayReminder: Launched tray icon for the current session.", "TrayReminder", Log.Severity.Info);
         }
 
+        // Called from a Normal run that finds a still-legit deferral pending (see Suite.cs) - the deployment
+        // tool (e.g. Intune) keeps retrying the SFX while deferred, so each of those retries is a good chance
+        // to bring the tray icon back if it isn't currently running (closed by the user, Explorer restarted,
+        // a prior relaunch failed, etc.), rather than leaving the user with no "run now" option until their
+        // next logon or the scheduled reminder time.
+        private void EnsureTrayReminderRunning()
+        {
+            if (string.IsNullOrWhiteSpace(_userPopExe) || !File.Exists(_userPopExe))
+                return;
+
+            string popupProcessName = Path.GetFileNameWithoutExtension(_userPopExe);
+            Process[] runningPopups = Process.GetProcessesByName(popupProcessName);
+            try
+            {
+                if (runningPopups.Length > 0)
+                    return;
+            }
+            finally
+            {
+                foreach (Process p in runningPopups) p.Dispose();
+            }
+
+            _log.WriteLog("TrayReminder: tray icon isn't currently running for an active deferral — relaunching it.", "TrayReminder", Log.Severity.Info);
+            string reminderTaskName = GetDeferralTaskName();
+            string suiteLogoPath = Path.Combine(_suiteRootDir, "Popup", "SuiteLogo.png");
+            LaunchTrayReminderNow(reminderTaskName, suiteLogoPath);
+        }
+
         private void RemoveTrayReminderTask()
         {
             string taskName = GetTrayReminderTaskName();
