@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Threading;
+using System.Xml;
 using Log = Logger.Log;
 
 namespace SuiteExecutor
@@ -27,6 +28,18 @@ namespace SuiteExecutor
             bool taskExists = DoesScheduledTaskExist(taskName);
             if (!taskExists)
             {
+                return false;
+            }
+
+            // The task exists, but if its trigger time has already passed, it should have fired by now and
+            // either hasn't (e.g. the machine was off, the boot trigger didn't catch it) or is in some other
+            // stuck state - either way, waiting on it further just blocks the suite forever. Treat it as
+            // expired: drop the task and run normally rather than deferring again.
+            DateTime? triggerTime = GetScheduledTaskTriggerTime(taskName);
+            if (triggerTime.HasValue && triggerTime.Value <= DateTime.Now)
+            {
+                _log.WriteLog($"Deferral reminder task '{taskName}' was due at {triggerTime.Value} and has passed without running — treating deferral as expired", "Deferral", Log.Severity.Warning);
+                DeleteScheduledTask(taskName);
                 return false;
             }
 
@@ -311,6 +324,52 @@ namespace SuiteExecutor
             catch
             {
                 return false;
+            }
+        }
+
+        // Reads back the TimeTrigger StartBoundary we wrote in CreateReminderScheduledTask, so the deferral
+        // check can tell whether the task's trigger time has already passed. Returns null if the task can't
+        // be queried or the XML doesn't contain the expected trigger (deferral check then falls back to the
+        // existence-only behavior).
+        private DateTime? GetScheduledTaskTriggerTime(string taskName)
+        {
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = SystemPaths.SchTasks,
+                    Arguments = $"/Query /TN \"{taskName}\" /XML",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using Process? process = Process.Start(psi);
+                if (process == null) return null;
+
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+                if (process.ExitCode != 0) return null;
+
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(output);
+                XmlNamespaceManager ns = new XmlNamespaceManager(doc.NameTable);
+                ns.AddNamespace("t", "http://schemas.microsoft.com/windows/2004/02/mit/task");
+
+                XmlNode? startBoundaryNode = doc.SelectSingleNode("//t:Triggers/t:TimeTrigger/t:StartBoundary", ns);
+                if (startBoundaryNode == null || string.IsNullOrWhiteSpace(startBoundaryNode.InnerText))
+                    return null;
+
+                if (DateTime.TryParse(startBoundaryNode.InnerText, out DateTime triggerTime))
+                    return triggerTime;
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"Failed to read trigger time for scheduled task '{taskName}': {ex.Message}", "Deferral", Log.Severity.Warning);
+                return null;
             }
         }
 
