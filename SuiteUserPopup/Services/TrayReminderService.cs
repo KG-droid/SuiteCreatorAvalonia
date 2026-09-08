@@ -72,6 +72,9 @@ namespace SuiteUserPopup.Services
                 Menu = menu,
                 IsVisible = true
             };
+            // Menu covers the right-click context menu on Windows; Clicked is the left-click/primary
+            // activation, so wire it to the same "run now" handler as the menu item.
+            _trayIcon.Clicked += OnRunNowClicked;
 
             TrayIcon.SetIcons(Application.Current!, new TrayIcons { _trayIcon });
         }
