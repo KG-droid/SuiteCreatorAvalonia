@@ -82,9 +82,26 @@ namespace SuiteExecutor
                 if (runMode != SuiteRunMode.Normal)
                 {
                     _log.WriteLog($"Run mode is {runMode}; skipping the active-deferral check", "Startup", Log.Severity.Info);
+
+                    if (runMode == SuiteRunMode.Reminder && IsCachedInstallerMissing())
+                    {
+                        // The reminder fired but the cached installer it depends on is gone, so it can never
+                        // succeed. Don't attempt it and don't leave the task to keep retrying (and failing) on
+                        // every subsequent boot - clean up the deferral bookkeeping and exit as if there were
+                        // nothing to do.
+                        _log.WriteLog("Deferral reminder fired but its cached installer is missing — cleaning up and exiting without running", "Startup", Log.Severity.Warning);
+                        CleanupDeferral();
+                        return;
+                    }
                 }
                 else if (IsDeferralActive())
                 {
+                    // The deployment tool (e.g. Intune) keeps retrying while deferred, so use this retry as a
+                    // chance to bring the "run now" tray icon back if it isn't currently there. Best-effort,
+                    // like the rest of Suite.TrayReminder.cs - must never block the deferral exit below.
+                    try { EnsureTrayReminderRunning(); }
+                    catch (Exception ex) { _log.WriteLog($"TrayReminder: Failed to ensure tray icon is running: {ex.Message}", "TrayReminder", Log.Severity.Warning); }
+
                     // Exit 1602 (user deferred), not 0, so the SFX preserves the cached installer the pending reminder needs.
                     _log.WriteLog("An active deferral exists for this suite, exiting so the scheduled reminder can handle it", "Startup", Log.Severity.Info);
                     Environment.Exit(1602);
@@ -239,6 +256,17 @@ namespace SuiteExecutor
                 // FailSafe: the suite failed outright (not a deliberate restart-retry), so the recovery task
                 // must not be left behind — it would otherwise keep re-running a suite that's given up.
                 RemoveFailSafeTask();
+
+                // A reminder run fires once against a fixed cached installer - if it fails (e.g. individual
+                // package files were removed from the cache without the whole folder disappearing, which the
+                // upfront IsCachedInstallerMissing check above wouldn't catch), a retry against that same
+                // cache won't succeed differently. Clean up the deferral task so it doesn't keep retrying on
+                // every subsequent boot until its 7-day expiry.
+                if (runMode == SuiteRunMode.Reminder)
+                {
+                    try { CleanupDeferral(); }
+                    catch (Exception cleanupEx) { _log.WriteLog($"Failed to clean up deferral after reminder failure: {cleanupEx.Message}", "Deferral", Log.Severity.Warning); }
+                }
 
                 // A package operation can request a specific, meaningful exit code (e.g. 1618 - another
                 // install was still in progress after exhausting retries) rather than the generic failure

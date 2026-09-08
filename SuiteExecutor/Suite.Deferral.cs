@@ -59,6 +59,16 @@ namespace SuiteExecutor
             return false;
         }
 
+        // A Reminder run skips IsDeferralActive() entirely (see Suite.cs), so it needs its own check for the
+        // one thing that would make it unrunnable: the cached installer it depends on is gone (e.g. removed
+        // by AV/disk cleanup between the deferral and the reminder firing).
+        private bool IsCachedInstallerMissing()
+        {
+            string upgradeCode = _suiteConfig.BuildSettings.UpgradeCode.ToString();
+            string cachedSfxDir = Path.Combine(_suiteCacheRoot, upgradeCode);
+            return !Directory.Exists(cachedSfxDir);
+        }
+
         private void ScheduleReminder(TimeOnly reminderTime)
         {
             string upgradeCode = _suiteConfig.BuildSettings.UpgradeCode.ToString();
@@ -225,6 +235,12 @@ namespace SuiteExecutor
                 ? string.Empty
                 : $@" --Config ""{System.Security.SecurityElement.Escape(_suiteConfigPath)}""";
 
+            // Pass the task's own name back to the reminder run so it can delete this task itself if the
+            // cached config it needs turns out to be gone (see Program.cs) — mirrors CreateRecoveryTask's
+            // --failsafe-task handling, otherwise a run that can't find its config never reaches
+            // Suite.Execute's own cleanup, and the task is left to retry forever on every subsequent boot.
+            string escapedTaskName = System.Security.SecurityElement.Escape(taskName);
+
             string taskXml = $@"<?xml version=""1.0"" encoding=""UTF-16""?>
 <Task version=""1.2"" xmlns=""http://schemas.microsoft.com/windows/2004/02/mit/task"">
   <RegistrationInfo>
@@ -267,7 +283,7 @@ namespace SuiteExecutor
   <Actions Context=""Author"">
     <Exec>
       <Command>""{commandPath}""</Command>
-      <Arguments>{actionArg}{configArg} --reminder</Arguments>
+      <Arguments>{actionArg}{configArg} --reminder --reminder-task ""{escapedTaskName}""</Arguments>
     </Exec>
   </Actions>
 </Task>";
