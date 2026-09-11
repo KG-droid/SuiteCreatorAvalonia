@@ -24,10 +24,17 @@ namespace SuiteOperations.Package
             _log = log;
         }
 
+        private static ActionType GetDefaultActionType(int exitCode) => exitCode switch
+        {
+            3010 => ActionType.RestartDelayed,
+            1641 => ActionType.RestartImmediate,
+            _ => ActionType.Continue
+        };
+
         private ActionType ApplyRestartBehavior(int exitCode)
         {
-            bool restartRequested = exitCode == 3010;
-            ActionType baseAction = restartRequested ? ActionType.RestartImmediate : ActionType.Continue;
+            ActionType baseAction = GetDefaultActionType(exitCode);
+            bool restartRequested = baseAction != ActionType.Continue;
             return RestartBehavior switch
             {
                 RestartBehaviorEnum.AlwaysImmediate => ActionType.RestartImmediate,

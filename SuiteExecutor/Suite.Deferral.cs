@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Threading;
+using System.Xml;
 using Log = Logger.Log;
 
 namespace SuiteExecutor
@@ -14,6 +15,8 @@ namespace SuiteExecutor
         // suite here and retains it (on KeepCache or when a run defers), and the deferral reminder re-runs from it.
         private const string _suiteCacheRoot = @"C:\Windows\SuiteInstallerCache";
         private const string _deferralTaskPrefix = "SuiteReminder_";
+
+        private string GetDeferralTaskName() => _deferralTaskPrefix + _suiteConfig.BuildSettings.UpgradeCode.ToString();
 
         private bool IsDeferralActive()
         {
@@ -30,6 +33,18 @@ namespace SuiteExecutor
                 return false;
             }
 
+            // The task exists, but if its trigger time has already passed, it should have fired by now and
+            // either hasn't (e.g. the machine was off, the boot trigger didn't catch it) or is in some other
+            // stuck state - either way, waiting on it further just blocks the suite forever. Treat it as
+            // expired: drop the task and run normally rather than deferring again.
+            DateTime? triggerTime = GetScheduledTaskTriggerTime(taskName);
+            if (triggerTime.HasValue && triggerTime.Value <= DateTime.Now)
+            {
+                _log.WriteLog($"Deferral reminder task '{taskName}' was due at {triggerTime.Value} and has passed without running — treating deferral as expired", "Deferral", Log.Severity.Warning);
+                DeleteScheduledTask(taskName);
+                return false;
+            }
+
             bool cacheExists = Directory.Exists(cachedSfxDir);
             _log.WriteLog($"Deferral check — reminder task exists: {taskExists}, cached installer exists: {cacheExists}", "Deferral", Log.Severity.Info);
 
@@ -42,6 +57,16 @@ namespace SuiteExecutor
             _log.WriteLog("Scheduled reminder task exists but cached installer is missing — cleaning up orphaned task", "Deferral", Log.Severity.Warning);
             DeleteScheduledTask(taskName);
             return false;
+        }
+
+        // A Reminder run skips IsDeferralActive() entirely (see Suite.cs), so it needs its own check for the
+        // one thing that would make it unrunnable: the cached installer it depends on is gone (e.g. removed
+        // by AV/disk cleanup between the deferral and the reminder firing).
+        private bool IsCachedInstallerMissing()
+        {
+            string upgradeCode = _suiteConfig.BuildSettings.UpgradeCode.ToString();
+            string cachedSfxDir = Path.Combine(_suiteCacheRoot, upgradeCode);
+            return !Directory.Exists(cachedSfxDir);
         }
 
         private void ScheduleReminder(TimeOnly reminderTime)
@@ -87,6 +112,11 @@ namespace SuiteExecutor
                     DeleteScheduledTask(taskName);
                     _log.WriteLog($"Cleaned up deferral scheduled task '{taskName}'", "Deferral", Log.Severity.Info);
                 }
+
+                // The "Run now" tray icon (see Suite.TrayReminder.cs) has nothing left to do once the
+                // deferral it was watching is resolved — remove its logon-trigger task so it doesn't keep
+                // reappearing at future logons for a suite run that's already finished.
+                RemoveTrayReminderTask();
 
                 // Also clear any pending meeting-recheck task and its wait-started timestamp (see
                 // Suite.MeetingDetection.cs) - this only normally happens once the mic check itself sees the
@@ -205,6 +235,12 @@ namespace SuiteExecutor
                 ? string.Empty
                 : $@" --Config ""{System.Security.SecurityElement.Escape(_suiteConfigPath)}""";
 
+            // Pass the task's own name back to the reminder run so it can delete this task itself if the
+            // cached config it needs turns out to be gone (see Program.cs) — mirrors CreateRecoveryTask's
+            // --failsafe-task handling, otherwise a run that can't find its config never reaches
+            // Suite.Execute's own cleanup, and the task is left to retry forever on every subsequent boot.
+            string escapedTaskName = System.Security.SecurityElement.Escape(taskName);
+
             string taskXml = $@"<?xml version=""1.0"" encoding=""UTF-16""?>
 <Task version=""1.2"" xmlns=""http://schemas.microsoft.com/windows/2004/02/mit/task"">
   <RegistrationInfo>
@@ -247,7 +283,7 @@ namespace SuiteExecutor
   <Actions Context=""Author"">
     <Exec>
       <Command>""{commandPath}""</Command>
-      <Arguments>{actionArg}{configArg} --reminder</Arguments>
+      <Arguments>{actionArg}{configArg} --reminder --reminder-task ""{escapedTaskName}""</Arguments>
     </Exec>
   </Actions>
 </Task>";
@@ -311,6 +347,52 @@ namespace SuiteExecutor
             catch
             {
                 return false;
+            }
+        }
+
+        // Reads back the TimeTrigger StartBoundary we wrote in CreateReminderScheduledTask, so the deferral
+        // check can tell whether the task's trigger time has already passed. Returns null if the task can't
+        // be queried or the XML doesn't contain the expected trigger (deferral check then falls back to the
+        // existence-only behavior).
+        private DateTime? GetScheduledTaskTriggerTime(string taskName)
+        {
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = SystemPaths.SchTasks,
+                    Arguments = $"/Query /TN \"{taskName}\" /XML",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using Process? process = Process.Start(psi);
+                if (process == null) return null;
+
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+                if (process.ExitCode != 0) return null;
+
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(output);
+                XmlNamespaceManager ns = new XmlNamespaceManager(doc.NameTable);
+                ns.AddNamespace("t", "http://schemas.microsoft.com/windows/2004/02/mit/task");
+
+                XmlNode? startBoundaryNode = doc.SelectSingleNode("//t:Triggers/t:TimeTrigger/t:StartBoundary", ns);
+                if (startBoundaryNode == null || string.IsNullOrWhiteSpace(startBoundaryNode.InnerText))
+                    return null;
+
+                if (DateTime.TryParse(startBoundaryNode.InnerText, out DateTime triggerTime))
+                    return triggerTime;
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _log.WriteLog($"Failed to read trigger time for scheduled task '{taskName}': {ex.Message}", "Deferral", Log.Severity.Warning);
+                return null;
             }
         }
 

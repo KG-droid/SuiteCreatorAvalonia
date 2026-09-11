@@ -31,6 +31,8 @@ namespace SuiteExecutor
 
                 string? actionArg = null;
                 string? configPath = null;
+                string? failsafeTaskName = null;
+                string? reminderTaskName = null;
                 SuiteRunMode runMode = SuiteRunMode.Normal;
                 for (int i = 0; i < args.Length; i++)
                 {
@@ -69,6 +71,35 @@ namespace SuiteExecutor
                         continue;
                     }
 
+                    // The FailSafe task passes its own name back so this run can delete it directly if it
+                    // turns out the cached config it needs is gone (see the config-not-found check below).
+                    if (string.Equals(arg, "--failsafe-task", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (i + 1 >= args.Length || string.IsNullOrWhiteSpace(args[i + 1]))
+                        {
+                            Console.Error.WriteLine("Error: --failsafe-task requires a value.\n");
+                            return 87;
+                        }
+
+                        failsafeTaskName = args[i + 1];
+                        i++;
+                        continue;
+                    }
+
+                    // The deferral reminder task passes its own name back for the same reason as --failsafe-task.
+                    if (string.Equals(arg, "--reminder-task", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (i + 1 >= args.Length || string.IsNullOrWhiteSpace(args[i + 1]))
+                        {
+                            Console.Error.WriteLine("Error: --reminder-task requires a value.\n");
+                            return 87;
+                        }
+
+                        reminderTaskName = args[i + 1];
+                        i++;
+                        continue;
+                    }
+
                     if (actionArg == null)
                     {
                         actionArg = arg;
@@ -101,6 +132,22 @@ namespace SuiteExecutor
                 if (!File.Exists(configPath))
                 {
                     Console.Error.WriteLine($"Config file not found: {configPath}");
+
+                    // A FailSafe recovery or deferral reminder run that can't find its cached config can never
+                    // succeed — without this, the task stays registered and keeps retrying (and failing) on
+                    // every subsequent boot/logon forever, since Suite.Execute's own cleanup (RemoveFailSafeTask
+                    // / CleanupDeferral) is never reached (a Suite is never constructed on this path).
+                    if (runMode == SuiteRunMode.FailSafe && !string.IsNullOrWhiteSpace(failsafeTaskName))
+                    {
+                        Console.Error.WriteLine($"Cached installer for this FailSafe recovery is missing — removing orphaned scheduled task '{failsafeTaskName}'.");
+                        TryDeleteOrphanedScheduledTask(failsafeTaskName);
+                    }
+                    else if (runMode == SuiteRunMode.Reminder && !string.IsNullOrWhiteSpace(reminderTaskName))
+                    {
+                        Console.Error.WriteLine($"Cached installer for this deferral reminder is missing — removing orphaned scheduled task '{reminderTaskName}'.");
+                        TryDeleteOrphanedScheduledTask(reminderTaskName);
+                    }
+
                     return 1603;
                 }
 
@@ -112,6 +159,35 @@ namespace SuiteExecutor
             {
                 Console.Error.WriteLine($"Suite exec loadup failed: {ex.Message}");
                 return 1603;
+            }
+        }
+
+        // Best-effort deletion of a FailSafe/restart-retry or deferral reminder scheduled task that can never
+        // succeed (its cached config is gone). Used only from the config-not-found path above, before a
+        // Suite/Log instance exists.
+        private static void TryDeleteOrphanedScheduledTask(string taskName)
+        {
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = SystemPaths.SchTasks,
+                    Arguments = $"/Delete /TN \"{taskName}\" /F",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using Process? process = Process.Start(psi);
+                if (process == null) return;
+
+                process.StandardError.ReadToEnd();
+                process.WaitForExit();
+            }
+            catch
+            {
+                // Best-effort only — nothing else can be done for an orphaned task from here.
             }
         }
 

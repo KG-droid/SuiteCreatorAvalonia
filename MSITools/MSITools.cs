@@ -193,8 +193,8 @@ namespace SuiteTools
                 }, onRetryWaiting);
                 result.CommandRun = $"msiexec.exe {args}";
                 result.ExitCode = exitCode;
-                result.Success = exitCode == 0;
-                result.ErrorMessage = exitCode == 0 ? null :
+                result.Success = exitCode == 0 || exitCode == 3010 || exitCode == 1641;
+                result.ErrorMessage = result.Success ? null :
                     $"MSI installation failed with exit code {exitCode}. Error: {MSITools.GetMSIErrorDescription(exitCode)}";
 
                 return result;
@@ -247,8 +247,8 @@ namespace SuiteTools
                 }, onRetryWaiting);
                 result.CommandRun = $"msiexec.exe {args}";
                 result.ExitCode = exitCode;
-                result.Success = exitCode == 0;
-                result.ErrorMessage = exitCode == 0 ? null :
+                result.Success = exitCode == 0 || exitCode == 3010 || exitCode == 1641;
+                result.ErrorMessage = result.Success ? null :
                     $"MSI repair failed with exit code {exitCode}. Error: {MSITools.GetMSIErrorDescription(exitCode)}";
 
                 return result;
@@ -304,7 +304,7 @@ namespace SuiteTools
                     }
                 }, onRetryWaiting);
                 result.ExitCode = exitCode;
-                if (exitCode == 0 || exitCode == 1605)
+                if (exitCode == 0 || exitCode == 1605 || exitCode == 3010 || exitCode == 1641)
                 {
                     result.Success = true;
                 }
@@ -376,7 +376,7 @@ namespace SuiteTools
                             }
                         }, onRetryWaiting);
                         result.ExitCode = exitCode;
-                        if (exitCode == 0 || exitCode == 1605)
+                        if (exitCode == 0 || exitCode == 1605 || exitCode == 3010 || exitCode == 1641)
                         {
                             result.Success = true;
                         }

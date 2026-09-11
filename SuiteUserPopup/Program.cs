@@ -39,6 +39,14 @@ namespace SuiteUserPopup
             string? blockedExePath = ResolveBlockedExePath(args);
             string? blockedSuiteId = TryGetArgValue(args, "--SuiteId");
 
+            // "Run now" tray icon mode: a minimal, no-window run that just shows a tray icon for the
+            // lifetime of a pending deferral (see Suite.TrayReminder.cs). It needs the reminder task's
+            // name (to trigger it early) and the suite's name/logo (for the tray tooltip/menu/icon) — it
+            // has no popup config or company logo of its own.
+            bool isTrayMode = args.Any(a => a.Equals("--Tray", StringComparison.OrdinalIgnoreCase));
+            string? trayReminderTaskName = TryGetArgValue(args, "--ReminderTask");
+            string traySuiteName = TryGetArgValue(args, "--SuiteName") ?? "Suite";
+
             string? configPath = ResolveConfigPath(args);
             string? companyLogoPath = ResolveLogoPath(args, "--CompanyLogo", "-cl", "CompanyLogo.png");
             string? suiteLogoPath = ResolveLogoPath(args, "--SuiteLogo", "-sl", "SuiteLogo.png");
@@ -63,7 +71,9 @@ namespace SuiteUserPopup
             // A blocked-process notice is fired ad hoc from the IFEO Debugger substitution when a user
             // tries to launch a blocked exe, so it can't depend on a fully configured popup: config/logos
             // are used for branding if present, but their absence must not stop the notice from showing.
-            if (!isBlockedNotice)
+            // Tray mode is similarly minimal — it only needs the reminder task name and a logo, not a
+            // full popconfig.json or company logo.
+            if (!isBlockedNotice && !isTrayMode)
             {
                 if (configPath is null)
                 {
@@ -88,7 +98,25 @@ namespace SuiteUserPopup
                 }
             }
 
-            StartupOptions.Set(configPath, companyLogoPath ?? string.Empty, suiteLogoPath ?? string.Empty, isBlockedNotice, blockedProcessName, blockedExePath, blockedSuiteId);
+            if (isTrayMode && string.IsNullOrWhiteSpace(trayReminderTaskName))
+            {
+                AppLogService.Error("--Tray requires --ReminderTask to be provided.", "SuiteUserPopup");
+                Console.WriteLine("--ReminderTask argument missing, tray mode needs to know which scheduled task to trigger");
+                Environment.Exit(2);
+                return;
+            }
+
+            StartupOptions.Set(
+                configPath,
+                companyLogoPath ?? string.Empty,
+                suiteLogoPath ?? string.Empty,
+                isBlockedNotice,
+                blockedProcessName,
+                blockedExePath,
+                blockedSuiteId,
+                isTrayMode,
+                trayReminderTaskName,
+                traySuiteName);
             AppLogService.Info("Startup options resolved successfully.", "SuiteUserPopup");
 
             BuildAvaloniaApp()
@@ -284,6 +312,9 @@ namespace SuiteUserPopup
             Console.WriteLine("  --ProcessName <name> or -p <name>       : Name of the blocked process, used with --Blocked");
             Console.WriteLine("  --SuiteId <id>                           : Suite's stable ID, tagged onto the window title so a later unblock can find and close it");
             Console.WriteLine("  --CheckMeetingStatus                     : Headless check of whether the microphone is currently in use, no popup shown. Exit code 0 = not in use, 1 = in use, 2 = check failed");
+            Console.WriteLine("  --Tray                                    : Show a 'Run now' tray icon for a pending deferral, instead of the full popup");
+            Console.WriteLine("  --ReminderTask <name>                    : Scheduled task name to trigger early when 'Run now' is clicked, used with --Tray");
+            Console.WriteLine("  --SuiteName <name>                       : Suite display name for the tray tooltip/menu, used with --Tray");
             Console.WriteLine();
             Console.WriteLine("If no parameters are provided, the app will look for 'popconfig.json', 'CompanyLogo.png', and 'SuiteLogo.png' in the executable directory.");
             AppLogService.Info("Application help text displayed.", "SuiteUserPopup");
