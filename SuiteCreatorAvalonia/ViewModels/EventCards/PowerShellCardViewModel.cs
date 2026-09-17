@@ -204,7 +204,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             {
                 ScriptDoc = new TextDocument();
             }
-            if (null != vm.SupportingFiles && vm.SupportingFiles.Any())
+            if (null != vm.SupportingFiles)
             {
                 SupportingFiles = vm.SupportingFiles;
             }
