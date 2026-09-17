@@ -88,7 +88,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             Button editPSBrowseBtn = new Button();
             editPSBrowseBtn.Classes.Add("IconButton");
             editPSBrowseBtn.Tag = MaterialIconKind.Powershell.ToString();
-            editPSBrowseBtn.Command = new RelayCommand(OpenPSModalWindow);
+            editPSBrowseBtn.Command = new RelayCommand(() => OpenPSModalWindow());
             ToolTip.SetTip(editPSBrowseBtn, "Manage PowerShell script");
             Help.Annotate(editPSBrowseBtn, "Manage script", "Opens the script editor: write a script inline, or link an external .ps1 file, add supporting files, and choose which user context it runs as.");
             Grid.SetColumn(editPSBrowseBtn, currentColumn);
@@ -169,7 +169,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             CardInnerView = mainGrid;
         }
 
-        private async void OpenPSModalWindow()
+        public async void OpenPSModalWindow(bool showMissingFiles = false)
         {
             Window psWindow = new PowerShellWindow();
             PowerShellWindowViewModel vm = new PowerShellWindowViewModel();
@@ -189,6 +189,8 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             psWindow.Height = parent.Height * 0.8;
             psWindow.Width = parent.Width * 0.8;
             psWindow.DataContext = vm;
+            if (showMissingFiles)
+                vm.ShowMissingFiles();
             await psWindow.ShowDialog<TextDocument>(parent);
             ScriptName = vm.ScriptName;
             ScriptArgs = vm.ScriptArgs;

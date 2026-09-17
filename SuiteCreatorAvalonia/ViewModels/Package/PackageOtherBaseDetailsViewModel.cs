@@ -12,6 +12,7 @@ using SuiteCreatorAvalonia.Models.Common.TreeNodes;
 using SuiteCreatorAvalonia.Models.Package;
 using SuiteCreatorAvalonia.Models.Rules;
 using SuiteCreatorAvalonia.Services;
+using SuiteCreatorAvalonia.Tools;
 using SuiteCreatorAvalonia.ViewModels.RuleBuilder;
 using System;
 using System.Collections.Generic;
@@ -98,6 +99,15 @@ namespace SuiteCreatorAvalonia.ViewModels
 
         [ObservableProperty]
         private bool _isProgressPopupEnabled;
+
+        [ObservableProperty]
+        private int _selectedTabIndex = 0;
+
+        [ObservableProperty]
+        private ObservableCollection<string> _missingFiles = new();
+
+        [ObservableProperty]
+        private bool _missingFilesPopupOpen = false;
 
         partial void OnSelectedRemoveTypeChanged(OtherRemovalType value)
         {
@@ -212,6 +222,16 @@ namespace SuiteCreatorAvalonia.ViewModels
             }
             _saveDebounceTimer.Stop();
             _saveDebounceTimer.Start();
+        }
+
+        /// <summary>Switches to the Files tab and shows a popup listing any files/folders referenced by this package that no longer exist on disk.</summary>
+        public void ShowMissingFiles()
+        {
+            List<string> missing = FileNodeChecker.GetMissingPaths(FileTreeNodes.FirstOrDefault()?.SubNodes);
+            if (missing.Count == 0) return;
+            MissingFiles = new ObservableCollection<string>(missing);
+            SelectedTabIndex = 1;
+            MissingFilesPopupOpen = true;
         }
 
         [RelayCommand]
