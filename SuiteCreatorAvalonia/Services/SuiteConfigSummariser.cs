@@ -533,7 +533,18 @@ namespace SuiteCreatorAvalonia.Services
                 Add(details, "Script", $"{lines.Length} line(s){preview}");
             }
             string title = FirstNonEmpty(ps.ScriptName, FileNameOnly(ps.ScriptPath), "Unnamed script");
-            return NewEventItem(title, EventTabMappings.PSScripts, details);
+            return new SuiteConfigItem
+            {
+                Title = title,
+                IconKind = EventTabMappings.PSScripts.IconKind,
+                IconColor = EventTabMappings.PSScripts.IconColor,
+                Details = details,
+                // Untruncated, unlike the "Script" detail line above - this is what the "View script"
+                // button in the viewer opens, so the full text must be kept intact.
+                ScriptContent = scriptText,
+                ScriptArgs = ps.ScriptArgs,
+                ScriptContext = ps.Context,
+            };
         }
 
         private static SuiteConfigItem DescribeDriverEvent(DriverExecEvent driver)

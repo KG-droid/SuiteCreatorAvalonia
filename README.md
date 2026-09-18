@@ -40,7 +40,7 @@ The **Build** page turns your configuration into a real deployable: fill in the 
 
 ## Viewing a built suite without importing it
 
-Need to check what's inside a suite someone else built? Press the **View a built Suite** button (the file-with-eye icon in the top-left toolbar) and pick the suite `.exe`. Suite Creator reads only the suite's configuration file out of the exe and shows a read-only summary of the packages and events it contains, each with its settings and when in the suite it runs, plus the rule sets, popup and build settings. Nothing is extracted and your open project isn't touched. If you decide you want to change the suite, press **Import for editing** in the viewer to run the normal full import.
+Need to check what's inside a suite someone else built? Press the **View a built Suite** button (the file-with-eye icon in the top-left toolbar) and pick the suite `.exe`. Suite Creator reads only the suite's configuration file out of the exe and shows a read-only summary of the packages and events it contains, each with its settings and when in the suite it runs, plus the rule sets, popup and build settings. PS Scripts events have a **View script** button that opens their full script text in a read-only window. Nothing is extracted and your open project isn't touched. If you decide you want to change the suite, press **Import for editing** in the viewer to run the normal full import.
 
 ## How suites stay up to date
 

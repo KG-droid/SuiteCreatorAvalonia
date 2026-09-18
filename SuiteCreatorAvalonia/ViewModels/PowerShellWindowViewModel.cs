@@ -52,15 +52,53 @@ namespace SuiteCreatorAvalonia.ViewModels
         [ObservableProperty]
         public bool _isRuleMode = false;
 
+        // Set when this window is opened purely to look at a script (e.g. the Suite Viewer), rather than
+        // to edit one. Every action that would change or run the script is hidden, and the fields/editor
+        // are locked, but nothing else about the window changes.
+        [ObservableProperty]
+        public bool _isReadOnly = false;
+
         [ObservableProperty]
         public ObservableCollection<FileSystemNode> _supportingFiles = new();
 
         [ObservableProperty]
         public ObservableCollection<FileSystemNode> _selectedSupportFiles = new();
 
+        /// <summary>The editor is locked whenever a file is linked (it's the file's own content, not what's typed here) or the window is read-only.</summary>
+        public bool IsEditorReadOnly => IsFilePathVisible || IsReadOnly;
+
+        /// <summary>"Link to ps1 file" only makes sense while editing and nothing is linked yet.</summary>
+        public bool CanLinkScript => !IsFilePathVisible && !IsReadOnly;
+
+        /// <summary>"Unlink from ps1 file" only makes sense while editing a linked script.</summary>
+        public bool CanUnlinkScript => IsFilePathVisible && !IsReadOnly;
+
+        /// <summary>Supporting files and the test-run action are editing/execution actions, not relevant to a read-only view.</summary>
+        public bool CanAddSupportingFiles => !IsRuleMode && !IsReadOnly;
+
         partial void OnScriptDocChanged(TextDocument? value)
         {
             ScriptOutput = null;
+        }
+
+        partial void OnIsFilePathVisibleChanged(bool value)
+        {
+            OnPropertyChanged(nameof(IsEditorReadOnly));
+            OnPropertyChanged(nameof(CanLinkScript));
+            OnPropertyChanged(nameof(CanUnlinkScript));
+        }
+
+        partial void OnIsReadOnlyChanged(bool value)
+        {
+            OnPropertyChanged(nameof(IsEditorReadOnly));
+            OnPropertyChanged(nameof(CanLinkScript));
+            OnPropertyChanged(nameof(CanUnlinkScript));
+            OnPropertyChanged(nameof(CanAddSupportingFiles));
+        }
+
+        partial void OnIsRuleModeChanged(bool value)
+        {
+            OnPropertyChanged(nameof(CanAddSupportingFiles));
         }
 
         partial void OnFilePathChanged(string? value)

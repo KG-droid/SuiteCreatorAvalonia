@@ -1,5 +1,6 @@
 using Avalonia.Media;
 using Material.Icons;
+using SuiteCreatorAvalonia.Enums;
 using System.Collections.Generic;
 
 namespace SuiteCreatorAvalonia.Models.Common
@@ -21,6 +22,14 @@ namespace SuiteCreatorAvalonia.Models.Common
         public List<SuiteConfigDetail> Details { get; init; } = new List<SuiteConfigDetail>();
         public bool HasSubTitle => !string.IsNullOrWhiteSpace(SubTitle);
         public bool HasDetails => Details.Count > 0;
+
+        // Only set for a PowerShell event item. The full script text is already embedded in the suite's
+        // SuiteConfig.scfg (see SuiteBuilder - ScriptDoc is written straight into the JSON at build time),
+        // so the "View script" button in the Suite Viewer needs no further read of the suite exe at all.
+        public string? ScriptContent { get; init; }
+        public string? ScriptArgs { get; init; }
+        public Contexts? ScriptContext { get; init; }
+        public bool HasScriptContent => !string.IsNullOrWhiteSpace(ScriptContent);
     }
 
     /// <summary>A group of items in the Suite Viewer, e.g. "Packages" or "Registry", mirroring a nav pane tab.</summary>
