@@ -1,0 +1,75 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:local="using:SuiteCreatorAvalonia.Controls"
+	x:Class="SuiteCreatorAvalonia.Controls.RichTextEditor">
+
+	<StackPanel
+		Spacing="4">
+
+		<!-- Formatting toolbar. Buttons are non-focusable so clicking them keeps the text selection alive. -->
+		<StackPanel
+			Orientation="Horizontal"
+			Spacing="4">
+			<ToggleButton
+				Name="Bold_ToggleButton"
+				Classes="IconToggleButton"
+				Tag="FormatBold"
+				Focusable="False"
+				Width="30"
+				Height="30"
+				ToolTip.Tip="Bold (Ctrl+B)"/>
+			<ToggleButton
+				Name="Italic_ToggleButton"
+				Classes="IconToggleButton"
+				Tag="FormatItalic"
+				Focusable="False"
+				Width="30"
+				Height="30"
+				ToolTip.Tip="Italic (Ctrl+I)"/>
+			<NumericUpDown
+				Name="FontSize_NumericUpDown"
+				Width="110"
+				Minimum="6"
+				Maximum="72"
+				Increment="1"
+				FormatString="0.#"
+				FontSize="13"
+				FontWeight="Normal"
+				VerticalAlignment="Center"
+				ToolTip.Tip="Font size"/>
+			<ColorPicker
+				Name="Color_ColorPicker"
+				IsAlphaEnabled="False"
+				IsAlphaVisible="False"
+				VerticalAlignment="Center"
+				ToolTip.Tip="Text colour"/>
+			<Button
+				Name="AutoColor_Button"
+				Classes="IconButton"
+				Tag="FormatColorMarkerCancel"
+				Focusable="False"
+				Width="30"
+				Height="30"
+				ToolTip.Tip="Use the default text colour (follows the user's light/dark theme)"/>
+			<Button
+				Name="ClearFormat_Button"
+				Classes="IconButton"
+				Tag="FormatClear"
+				Focusable="False"
+				Width="30"
+				Height="30"
+				ToolTip.Tip="Clear formatting"/>
+		</StackPanel>
+
+		<local:RichTextBox
+			Name="Text_RichTextBox"
+			Template="{StaticResource RichTextBoxTemplate}"
+			AcceptsReturn="True"
+			TextWrapping="Wrap"
+			MinHeight="100"
+			VerticalAlignment="Stretch"
+			VerticalContentAlignment="Top"/>
+	</StackPanel>
+
+</UserControl>

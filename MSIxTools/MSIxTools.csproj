@@ -7,6 +7,9 @@
 		<Platforms>AnyCPU;x64</Platforms>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<IsAotCompatible>true</IsAotCompatible>
+		<Version>1.0.1</Version>
+		<AssemblyVersion>1.0.1</AssemblyVersion>
+		<FileVersion>1.0.1</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -14,7 +17,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Diagnostics.EventLog" Version="10.0.10" />
+		<PackageReference Include="System.Diagnostics.EventLog" Version="10.0.12" />
 	</ItemGroup>
 
 </Project>

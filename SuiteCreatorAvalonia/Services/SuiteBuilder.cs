@@ -112,7 +112,7 @@ namespace SuiteCreatorAvalonia.Services
             }, cancellationToken);
             Report("Finalizing build");
             Build buildSettings = _suiteCoreManager.GetBuildSettings();
-            buildSettings.Detection = $@"Set to a Detection Reg Key of: {(buildSettings.Architecture == SuiteCreatorAvalonia.Enums.Architecture.x64 ? _uninstallKeyBase64 : _uninstallKeyBase32)}\{buildSettings.UpgradeCode}, with a Property detection of: DisplayVersion greater or equal to {buildSettings.SuiteVersion}";
+            buildSettings.Detection = $@"Set to a Detection Reg Key of: {(buildSettings.Architecture == SuiteCreatorAvalonia.Enums.Architecture.x64 ? _uninstallKeyBase64 : _uninstallKeyBase32)}\{{{buildSettings.UpgradeCode}}}, with a Property detection of: DisplayVersion greater or equal to {buildSettings.SuiteVersion}";
             _suiteCoreManager.UpdateBuildSettings(buildSettings);
             AppLog.Info($"Build completed, output at: {buildPath}", "SuiteBuilder");
             SuiteBuilt?.Invoke(this, new SuiteBuiltEventArgs(buildPath ?? string.Empty, buildTime));

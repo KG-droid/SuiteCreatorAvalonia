@@ -4,7 +4,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"  
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-	xmlns:AvaloniaEdit="using:AvaloniaEdit"
 	xmlns:mi="using:Material.Icons.Avalonia"
 	xmlns:labsGif="using:Avalonia.Labs.Gif"
 	xmlns:controls="using:SuiteCreatorControls.Controls"
@@ -155,13 +154,12 @@
 				</Grid>
 				
 				<!-- Main Warning text -->
-				<AvaloniaEdit:TextEditor
+				<controls:RichTextBlock
 					FontSize="13"
-					WordWrap="True"
-					HorizontalScrollBarVisibility="Disabled"
-					VerticalScrollBarVisibility="Disabled"
+					TextWrapping="Wrap"
+					HorizontalAlignment="Center"
 					MaxWidth="300"
-					Document="{Binding MainText}"
+					Markup="{Binding MainText}"
 					Margin="5,5,5,15"/>
 
 				<!-- Apps to close -->

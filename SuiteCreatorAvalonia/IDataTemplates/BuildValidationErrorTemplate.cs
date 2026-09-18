@@ -239,6 +239,11 @@ namespace SuiteCreatorAvalonia.IDataTemplates
                             if (cardToSelect != null)
                             {
                                 cardToSelect.IsSelected = true;
+                                if (cardToSelect is PowerShellCardViewModel psCardVM
+                                    && valErr.Message.Contains("do not exist", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    psCardVM.OpenPSModalWindow(true);
+                                }
                             }
                         }
                         else if (pkgProp != null)
@@ -246,6 +251,11 @@ namespace SuiteCreatorAvalonia.IDataTemplates
                             // View is package
                             PackageViewModel pkgVM = (PackageViewModel)_mainViewModel.CurrentTabView;
                             pkgVM.SelectedPackage = pkgVM.PackageList.FirstOrDefault(p => p.Id == ((PackageBase)valErr.ObjectForError).Id);
+                            if (valErr.Message.Contains("do not exist", StringComparison.OrdinalIgnoreCase)
+                                && pkgVM.CurrentPackageView is PackageOtherBaseDetailsViewModel otherPkgVM)
+                            {
+                                otherPkgVM.ShowMissingFiles();
+                            }
                         }
                     });
                 });

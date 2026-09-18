@@ -231,7 +231,7 @@
 											Background="{DynamicResource SystemControlBackgroundListLowBrush}">
 											<Grid
 												ColumnDefinitions="Auto,*,Auto"
-												RowDefinitions="Auto,Auto">
+												RowDefinitions="Auto,Auto,Auto">
 												<mi:MaterialIcon
 													Grid.Column="0"
 													Grid.RowSpan="2"
@@ -257,16 +257,6 @@
 														Opacity="0.7"
 														Text="{Binding SubTitle}"/>
 												</StackPanel>
-												<Button
-													Grid.Column="2"
-													Grid.RowSpan="2"
-													VerticalAlignment="Top"
-													IsVisible="{Binding HasScriptContent}"
-													Content="View script"
-													FontSize="11"
-													Padding="8,3"
-													Click="ViewScript_Click"
-													ToolTip.Tip="View the full script (read-only)"/>
 												<ItemsControl
 													Grid.Column="1"
 													Grid.Row="1"
@@ -293,6 +283,20 @@
 														</DataTemplate>
 													</ItemsControl.ItemTemplate>
 												</ItemsControl>
+												<Button
+													Grid.Column="1"
+													Grid.RowSpan="1"
+													Grid.Row="2"
+													Margin="0,5,0,0"
+													VerticalAlignment="Top"
+													IsVisible="{Binding HasScriptContent}"
+													Content="View script"
+													FontSize="11"
+													Padding="8,3"
+													Click="ViewScript_Click"
+													services:Help.Title="View script"
+													services:Help.Text="Opens the script's full text in a read-only window - nothing here can be edited or run. The script content comes straight from the suite's configuration file."
+													ToolTip.Tip="View the full script (read-only)"/>
 											</Grid>
 										</Border>
 									</DataTemplate>

@@ -4,6 +4,7 @@ using SuiteCreatorAvalonia.Enums;
 using SuiteCreatorAvalonia.Models.Common;
 using SuiteCreatorAvalonia.Models.Package;
 using SuiteCreatorAvalonia.Models.Rules;
+using SuiteCreatorControls.Text;
 using SuiteOperations;
 using SuiteOperations.Events;
 using SuiteOperations.Package;
@@ -643,8 +644,8 @@ namespace SuiteCreatorAvalonia.Services
                 Add(details, "If logged off", HumaniseNullable(popup.LoggedOffAction));
                 Add(details, "If locked", HumaniseNullable(popup.LockedAction));
                 Add(details, "During enrollment (ESP)", HumaniseNullable(popup.ESPAction));
-                if (popup.HasInstallTxt) Add(details, "Install message", popup.InstallTxt);
-                if (popup.HasUninstallTxt) Add(details, "Uninstall message", popup.UninstallTxt);
+                if (popup.HasInstallTxt) Add(details, "Install message", RichTextMarkup.ToPlainText(popup.InstallTxt));
+                if (popup.HasUninstallTxt) Add(details, "Uninstall message", RichTextMarkup.ToPlainText(popup.UninstallTxt));
                 if (popup.HasPSCondition) Add(details, "PowerShell condition", "Set");
             }
             if (popup.LockdownEnabled)
