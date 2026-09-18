@@ -6,6 +6,7 @@ using SuiteCreatorAvalonia.Enums;
 using SuiteCreatorAvalonia.Models.Common;
 using SuiteCreatorAvalonia.Models.Common.TreeNodes;
 using SuiteCreatorAvalonia.Services;
+using SuiteCreatorAvalonia.Tools;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -75,6 +76,11 @@ namespace SuiteCreatorAvalonia.ViewModels
 
         /// <summary>Supporting files and the test-run action are editing/execution actions, not relevant to a read-only view.</summary>
         public bool CanAddSupportingFiles => !IsRuleMode && !IsReadOnly;
+        [ObservableProperty]
+        private ObservableCollection<string> _missingFiles = new();
+
+        [ObservableProperty]
+        private bool _missingFilesPopupOpen = false;
 
         partial void OnScriptDocChanged(TextDocument? value)
         {
@@ -135,6 +141,15 @@ namespace SuiteCreatorAvalonia.ViewModels
                 else
                     HasSupportingFiles = false;
             };
+        }
+
+        /// <summary>Shows a popup listing any supporting files that no longer exist on disk.</summary>
+        public void ShowMissingFiles()
+        {
+            List<string> missing = FileNodeChecker.GetMissingPaths(SupportingFiles);
+            if (missing.Count == 0) return;
+            MissingFiles = new ObservableCollection<string>(missing);
+            MissingFilesPopupOpen = true;
         }
 
         public void LoadScript()

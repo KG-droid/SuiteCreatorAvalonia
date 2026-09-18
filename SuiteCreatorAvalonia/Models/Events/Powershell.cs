@@ -54,7 +54,7 @@ namespace SuiteCreatorAvalonia.Models.Events
             }
             if (SupportingFiles != null && !FileNodeChecker.AllTreeNodeFilesExist(SupportingFiles))
             {
-                return "One or more files in the package do not exist.";
+                return "One or more supporting files for this PowerShell script do not exist.";
             }
             return null;
         }

@@ -22,11 +22,11 @@
 	<StackPanel>
 
 		<!-- Main Warning text -->
-		<TextBlock
+		<sharedControls:RichTextBlock
 			FontSize="13"
 			TextWrapping="Wrap"
 			HorizontalAlignment="Center"
-			Text="{Binding MainText}"
+			Markup="{Binding MainText}"
 			Margin="0,0,0,5"/>
 
 		<!-- Apps to close -->
