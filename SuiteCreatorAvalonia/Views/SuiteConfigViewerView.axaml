@@ -283,6 +283,9 @@
 														</DataTemplate>
 													</ItemsControl.ItemTemplate>
 												</ItemsControl>
+												<!-- No Help.Title/Text here deliberately: a suite can have any number of PowerShell
+												     events, so registering one per button would repeat the identical walkthrough step
+												     once per script instead of showing it once (see HelpService.CurrentPageTargets). -->
 												<Button
 													Grid.Column="1"
 													Grid.RowSpan="1"
@@ -294,8 +297,6 @@
 													FontSize="11"
 													Padding="8,3"
 													Click="ViewScript_Click"
-													services:Help.Title="View script"
-													services:Help.Text="Opens the script's full text in a read-only window - nothing here can be edited or run. The script content comes straight from the suite's configuration file."
 													ToolTip.Tip="View the full script (read-only)"/>
 											</Grid>
 										</Border>
