@@ -133,26 +133,47 @@ namespace SuiteCreatorAvalonia.Services
             HelpStep step = _steps[index];
             _stepIndex = index;
 
-            if (step.NavigateTo != null)
+            try
             {
-                NavigateToPage?.Invoke(step.NavigateTo);
-                await Task.Delay(350); // let the page transition settle
-            }
-
-            Control? target = null;
-            if (step.ResolveTarget != null)
-            {
-                // The target may still be materialising after a page navigation; poll briefly
-                for (int attempt = 0; attempt < 20; attempt++)
+                if (step.NavigateTo != null)
                 {
-                    target = step.ResolveTarget();
-                    if (target != null && target.IsEffectivelyVisible && target.Bounds.Width > 0)
-                        break;
+                    NavigateToPage?.Invoke(step.NavigateTo);
+                    await Task.Delay(350); // let the page transition settle
+                }
+
+                Control? target = null;
+                if (step.ResolveTarget != null)
+                {
+                    // The target may still be materialising after a page navigation; poll briefly
+                    for (int attempt = 0; attempt < 20; attempt++)
+                    {
+                        target = step.ResolveTarget();
+                        if (target != null && target.IsEffectivelyVisible && target.Bounds.Width > 0)
+                            break;
+                        await Task.Delay(80);
+                    }
+                }
+
+                if (target != null)
+                {
+                    // The target may be inside a ScrollViewer and currently scrolled out of view (e.g. an
+                    // item further down a long page); scroll it into view first so the spotlight and callout
+                    // always land somewhere the user can actually see, rather than off the visible window.
+                    target.BringIntoView();
                     await Task.Delay(80);
                 }
-            }
 
-            Overlay.ShowStep(target, step.Title, step.Text, index, _steps.Count);
+                Overlay.ShowStep(target, step.Title, step.Text, index, _steps.Count);
+            }
+            catch (Exception ex)
+            {
+                // A walkthrough step is never worth crashing over, and leaving the dimmed overlay up with
+                // no callout would trap the user behind it. Falling back to a centered, un-spotlit callout
+                // keeps the walkthrough usable (Next/Back/Close still work) even if a target couldn't be
+                // resolved or positioned.
+                AppLog.Error($"Help walkthrough step {index} failed; showing it without a spotlight", ex, "Help");
+                Overlay.ShowStep(null, step.Title, step.Text, index, _steps.Count);
+            }
         }
 
         public async Task NextAsync()
