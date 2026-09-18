@@ -38,6 +38,10 @@ The **Build** page turns your configuration into a real deployable: fill in the 
 |---|---|
 | ![Popups](docs/images/popups.png) | ![Build](docs/images/build.png) |
 
+## Viewing a built suite without importing it
+
+Need to check what's inside a suite someone else built? Press the **View a built Suite** button (the file-with-eye icon in the top-left toolbar) and pick the suite `.exe`. Suite Creator reads only the suite's configuration file out of the exe and shows a read-only summary of the packages and events it contains, each with its settings and when in the suite it runs, plus the rule sets, popup and build settings. Nothing is extracted and your open project isn't touched. If you decide you want to change the suite, press **Import for editing** in the viewer to run the normal full import.
+
 ## How suites stay up to date
 
 Every built suite carries its own copy of the runtime (`SuiteExecutor` and the popups), but on a target device that runtime is actually **shared machine-wide**: the first suite that ever runs installs it into `%ProgramFiles%\SuiteExecutor`, and every suite that runs after that — including older ones built and deployed earlier — checks the version already installed there. If the suite it's running carries a newer runtime, it updates the shared copy before continuing; if not, it just uses what's already installed. So deploying your latest build effectively **upgrades the runtime for every other suite on that machine too**, without needing to redeploy them.

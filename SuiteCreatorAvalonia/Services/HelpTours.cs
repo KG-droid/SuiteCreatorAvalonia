@@ -21,8 +21,8 @@ namespace SuiteCreatorAvalonia.Services
             {
                 Title = "Project toolbar",
                 ResolveTarget = () => HelpService.Instance.FindByTourTag("ProjectToolbar"),
-                Text = "Manage your Suite project here: open an existing project, save, save a copy, start a new project, or import an already-built suite to edit it. " +
-                    "Ctrl+S saves at any time.",
+                Text = "Manage your Suite project here: open an existing project, save, save a copy, start a new project, import an already-built suite to edit it, " +
+                    "or view what a built suite contains without importing it. Ctrl+S saves at any time.",
             },
             new HelpStep
             {

@@ -119,6 +119,9 @@
 		<Compile Update="Views\ProgressDiagView.axaml.cs">
 			<DependentUpon>ProgressDiagView.axaml</DependentUpon>
 		</Compile>
+		<Compile Update="Views\SuiteConfigViewerView.axaml.cs">
+			<DependentUpon>SuiteConfigViewerView.axaml</DependentUpon>
+		</Compile>
 		<Compile Update="Views\Package\PackageMSIInstallSubDetailsView.axaml.cs">
 			<DependentUpon>PackageMSIInstallSubDetailsView.axaml</DependentUpon>
 		</Compile>
