@@ -1,0 +1,99 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="using:SuiteCreatorAvalonia.Controls">
+
+  <!--
+    Copy of Avalonia 12.1.2's Fluent TextBox template (Avalonia.Themes.Fluent/Controls/TextBox.xaml) with the
+    TextPresenter swapped for StyledTextPresenter so RichTextEditor can draw per-character formatting. Part
+    names are unchanged so TextBox and the theme's state styles keep finding them. Keep in sync if the
+    Avalonia package updates.
+  -->
+  <ControlTemplate x:Key="RichTextBoxTemplate" TargetType="TextBox">
+    <DataValidationErrors>
+      <Panel>
+        <Border
+          Name="PART_BorderElement"
+          Background="{TemplateBinding Background}"
+          BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}"
+          CornerRadius="{TemplateBinding CornerRadius}"
+          MinWidth="{TemplateBinding MinWidth}"
+          MinHeight="{TemplateBinding MinHeight}">
+        </Border>
+
+        <Border
+          Margin="{TemplateBinding BorderThickness}">
+          <Grid ColumnDefinitions="Auto,*,Auto" >
+            <ContentPresenter Grid.Column="0"
+                              Grid.ColumnSpan="1"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Content="{TemplateBinding InnerLeftContent}"/>
+            <DockPanel x:Name="PART_InnerDockPanel"
+                       Grid.Column="1"
+                       Grid.ColumnSpan="1"
+                       Margin="{TemplateBinding Padding}">
+              <TextBlock Name="PART_FloatingPlaceholder"
+                         Foreground="{TemplateBinding PlaceholderForeground}"
+                         IsVisible="False"
+                         Text="{TemplateBinding PlaceholderText}"
+                         DockPanel.Dock="Top" />
+
+              <ScrollViewer Name="PART_ScrollViewer"
+                            HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                            VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+                            IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+                            AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                            BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}">
+                <Panel>
+                  <TextBlock Name="PART_Placeholder"
+                             Foreground="{TemplateBinding PlaceholderForeground}"
+                             Opacity="{DynamicResource TextControlPlaceholderOpacity}"
+                             Text="{TemplateBinding PlaceholderText}"
+                             TextAlignment="{TemplateBinding TextAlignment}"
+                             TextWrapping="{TemplateBinding TextWrapping}"
+                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                    <TextBlock.IsVisible>
+                      <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding ElementName="PART_TextPresenter" Path="PreeditText" Converter="{x:Static StringConverters.IsNullOrEmpty}"/>
+                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Text" Converter="{x:Static StringConverters.IsNullOrEmpty}"/>
+                      </MultiBinding>
+                    </TextBlock.IsVisible>
+                  </TextBlock>
+
+                  <local:StyledTextPresenter Name="PART_TextPresenter"
+                                             Text="{TemplateBinding Text, Mode=TwoWay}"
+                                             CaretBlinkInterval="{TemplateBinding CaretBlinkInterval}"
+                                             CaretIndex="{TemplateBinding CaretIndex}"
+                                             SelectionStart="{TemplateBinding SelectionStart}"
+                                             SelectionEnd="{TemplateBinding SelectionEnd}"
+                                             TextAlignment="{TemplateBinding TextAlignment}"
+                                             TextWrapping="{TemplateBinding TextWrapping}"
+                                             LineHeight="{TemplateBinding LineHeight}"
+                                             LetterSpacing="{TemplateBinding LetterSpacing}"
+                                             PasswordChar="{TemplateBinding PasswordChar}"
+                                             RevealPassword="{TemplateBinding RevealPassword}"
+                                             SelectionBrush="{TemplateBinding SelectionBrush}"
+                                             SelectionForegroundBrush="{TemplateBinding SelectionForegroundBrush}"
+                                             CaretBrush="{TemplateBinding CaretBrush}"
+                                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                </Panel>
+                <ScrollViewer.Styles>
+                  <Style Selector="ScrollContentPresenter#PART_ContentPresenter">
+                    <Setter Property="Cursor" Value="IBeam" />
+                  </Style>
+                </ScrollViewer.Styles>
+              </ScrollViewer>
+            </DockPanel>
+            <ContentPresenter Grid.Column="2"
+                              Grid.ColumnSpan="1"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Content="{TemplateBinding InnerRightContent}"/>
+          </Grid>
+        </Border>
+      </Panel>
+    </DataValidationErrors>
+  </ControlTemplate>
+
+</ResourceDictionary>
