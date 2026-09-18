@@ -8,6 +8,7 @@
 	xmlns:AvaloniaEdit="using:AvaloniaEdit"
 	xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
 	xmlns:enums="using:SuiteCreatorAvalonia.Enums"
+	xmlns:system="clr-namespace:System;assembly=System.Runtime"
     mc:Ignorable="d"
 	d:DesignWidth="800"
 	d:DesignHeight="450"
@@ -263,6 +264,39 @@
 				Margin="10,0,10,0">
 				The directory will be changed to this support files DIR when the script runs, so you can access files like ".\MyExampleFile.json"
 			</TextBlock>
+
+			<Popup
+				Grid.Row="0"
+				Grid.RowSpan="2"
+				IsOpen="{Binding MissingFilesPopupOpen, Mode=TwoWay}"
+				IsLightDismissEnabled="True"
+				Placement="Center"
+				PlacementTarget="{Binding #SupportingFiles_Grid}">
+				<Border
+					Background="{DynamicResource AccentVariant1}"
+					Padding="12"
+					CornerRadius="4"
+					MaxWidth="380"
+					BoxShadow="0 2 8 0 #40000000">
+					<StackPanel Spacing="8">
+						<TextBlock
+							Classes="FieldName"
+							Text="These supporting files could not be found:"/>
+						<ScrollViewer MaxHeight="300">
+							<ItemsControl ItemsSource="{Binding MissingFiles}">
+								<ItemsControl.ItemTemplate>
+									<DataTemplate DataType="{x:Type system:String}">
+										<TextBlock
+											TextWrapping="Wrap"
+											Text="{Binding}"
+											Margin="0,2"/>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</ScrollViewer>
+					</StackPanel>
+				</Border>
+			</Popup>
 		</Grid>
 
 		<!-- Script Test Output-->

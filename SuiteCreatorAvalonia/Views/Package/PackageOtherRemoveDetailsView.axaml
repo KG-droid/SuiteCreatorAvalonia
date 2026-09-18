@@ -11,6 +11,7 @@
 	xmlns:enums="using:SuiteCreatorAvalonia.Enums"
 	xmlns:common="using:SuiteCreatorAvalonia.Models.Common"
 	xmlns:services="clr-namespace:SuiteCreatorAvalonia.Services"
+	xmlns:system="clr-namespace:System;assembly=System.Runtime"
 	mc:Ignorable="d"
 	d:DesignWidth="800"
 	d:DesignHeight="650"
@@ -24,7 +25,7 @@
 
 	<TabControl
 		Margin="0,0,-12,0"
-		SelectedIndex="0">
+		SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
 		<TabItem
 			Name="DetailsTab"
 			Header="Details"
@@ -514,6 +515,7 @@
 			Header="Files"
 			FontSize="13">
 			<Grid
+				Name="FilesTabGrid"
 				RowDefinitions="Auto,*">
 				<TextBlock
 					HorizontalAlignment="Center"
@@ -524,6 +526,38 @@
 				<UserControl
 					Grid.Row="1"
 					Content="{Binding FileTreeVM}"/>
+
+				<Popup
+					Grid.Row="0"
+					IsOpen="{Binding MissingFilesPopupOpen, Mode=TwoWay}"
+					IsLightDismissEnabled="True"
+					Placement="Center"
+					PlacementTarget="{Binding #FilesTabGrid}">
+					<Border
+						Background="{DynamicResource AccentVariant1}"
+						Padding="12"
+						CornerRadius="4"
+						MaxWidth="420"
+						BoxShadow="0 2 8 0 #40000000">
+						<StackPanel Spacing="8">
+							<TextBlock
+								Classes="FieldName"
+								Text="These files/folders could not be found:"/>
+							<ScrollViewer MaxHeight="300">
+								<ItemsControl ItemsSource="{Binding MissingFiles}">
+									<ItemsControl.ItemTemplate>
+										<DataTemplate DataType="{x:Type system:String}">
+											<TextBlock
+												TextWrapping="Wrap"
+												Text="{Binding}"
+												Margin="0,2"/>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</ScrollViewer>
+						</StackPanel>
+					</Border>
+				</Popup>
 			</Grid>
 		</TabItem>
 	</TabControl>
