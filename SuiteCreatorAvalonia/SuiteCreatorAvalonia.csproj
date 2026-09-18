@@ -23,9 +23,9 @@
 		<IsRidAgnostic>true</IsRidAgnostic>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>1.0.24</Version>
-		<AssemblyVersion>1.0.24</AssemblyVersion>
-		<FileVersion>1.0.24</FileVersion>
+		<Version>1.0.25</Version>
+		<AssemblyVersion>1.0.25</AssemblyVersion>
+		<FileVersion>1.0.25</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

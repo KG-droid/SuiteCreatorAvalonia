@@ -97,13 +97,23 @@ namespace SuiteCreatorAvalonia.Services
                 });
             }
 
+            // Repeating controls (one per list/card item - e.g. a per-row action button) can end up
+            // annotated with the exact same Title/Text on every instance. Walking through the identical
+            // step once per instance would be repetitive and confusing, so only the first instance of any
+            // given (Title, Text) pair becomes a step; that first control is still what gets spotlighted.
+            HashSet<(string? Title, string Text)> seenSteps = new();
             foreach (Control target in CurrentPageTargets())
             {
+                string? title = Help.GetTitle(target);
+                string text = Help.GetText(target)!;
+                if (!seenSteps.Add((title, text)))
+                    continue;
+
                 Control captured = target;
                 steps.Add(new HelpStep
                 {
-                    Title = Help.GetTitle(captured),
-                    Text = Help.GetText(captured)!,
+                    Title = title,
+                    Text = text,
                     ResolveTarget = () => captured,
                 });
             }
