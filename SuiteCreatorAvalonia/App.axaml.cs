@@ -121,6 +121,7 @@ namespace SuiteCreatorAvalonia
             collection.AddTransient<ServClosuresViewModel>();
             collection.AddTransient<SettingsViewModel>();
             collection.AddTransient<ShortcutsViewModel>();
+            collection.AddTransient<SuiteConfigViewerViewModel>();
             collection.AddTransient<SupportFilesViewModel>();
             collection.AddTransient<UninstallsViewModel>();
             collection.AddSingleton<Func<Type, ViewModelBase>>(serviceProvider => type =>

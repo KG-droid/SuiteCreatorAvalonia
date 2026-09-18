@@ -38,6 +38,10 @@ namespace SuiteCreatorAvalonia.ViewModels
         private readonly SuiteBuilder _suiteBuilder;
         private readonly ViewFactory _tabFac;
 
+        // Last built suite opened in the read-only Suite Viewer, so navigating back/forward to that
+        // page (which creates a fresh view model) shows the same suite again rather than an empty page.
+        private string? _lastViewedSuitePath;
+
         [ObservableProperty]
         private bool _isPaneOpen = false;
 
@@ -149,6 +153,11 @@ namespace SuiteCreatorAvalonia.ViewModels
                         if ((bool)!btn.IsChecked) { btn.IsChecked = true; }
                     }
             }
+
+            if (value is SuiteConfigViewerViewModel viewerVm && !viewerVm.IsLoaded && !viewerVm.IsLoading && !string.IsNullOrWhiteSpace(_lastViewedSuitePath))
+            {
+                _ = viewerVm.LoadSuiteAsync(_lastViewedSuitePath);
+            }
         }
 
         public MainViewModel() : this(new ViewFactory(
@@ -185,6 +194,9 @@ namespace SuiteCreatorAvalonia.ViewModels
             AppNavigationService.Instance.NavigateToPackage = NavigateToPackage;
             AppNavigationService.Instance.NavigateToEvent = NavigateToEvent;
             AppNavigationService.Instance.NavigateToPackagesTab = () => SetView(typeof(PackageViewModel));
+            AppNavigationService.Instance.NavigateBack = GoBack;
+            AppNavigationService.Instance.ViewBuiltSuite = ViewSuiteConfigAsync;
+            AppNavigationService.Instance.ImportBuiltSuite = ImportProjectAsync;
             CurrentTabView = tabFac.GetVM(typeof(PackageViewModel));
             _backNavigationStack.Push(CurrentTabView.GetType());
             ConfigureTabButtons();
@@ -474,7 +486,16 @@ namespace SuiteCreatorAvalonia.ViewModels
         [RelayCommand]
         public async Task ImportProject()
         {
-            ImportProjectViewModel importVm = new ImportProjectViewModel();
+            await ImportProjectAsync(null);
+        }
+
+        /// <summary>
+        /// Runs the full suite import (extract + load as the open project). When a built suite exe path is
+        /// supplied, e.g. from the Suite Viewer, the import dialog opens with it already filled in.
+        /// </summary>
+        public async Task ImportProjectAsync(string? presetSuiteExePath)
+        {
+            ImportProjectViewModel importVm = new ImportProjectViewModel { SuiteExePath = presetSuiteExePath };
             object? importResult = await this.ShowDialogAsync(importVm);
             if (importResult is not string strImport || strImport != "Import")
                 return;
@@ -520,6 +541,43 @@ namespace SuiteCreatorAvalonia.ViewModels
             finally
             {
                 this.CloseDialog();
+            }
+        }
+
+        [RelayCommand]
+        public async Task ViewSuiteConfig()
+        {
+            await ViewSuiteConfigAsync(null);
+        }
+
+        /// <summary>
+        /// Opens the read-only Suite Viewer for a built suite exe, reading only its config file so the open
+        /// project is untouched. Prompts for the exe when no path is supplied.
+        /// </summary>
+        public async Task ViewSuiteConfigAsync(string? suiteExePath)
+        {
+            if (string.IsNullOrWhiteSpace(suiteExePath))
+            {
+                IEnumerable<string>? results = await this.OpenFileDialogAsync(new FilePickerOpenOptions()
+                {
+                    AllowMultiple = false,
+                    Title = "Select a built Suite exe to view",
+                    FileTypeFilter = SysIOPickerTypes.SuiteExe
+                });
+                if (results == null || !results.Any())
+                    return;
+                suiteExePath = results.First();
+            }
+
+            _lastViewedSuitePath = suiteExePath;
+            if (CurrentTabView is SuiteConfigViewerViewModel viewerVm)
+            {
+                await viewerVm.LoadSuiteAsync(suiteExePath);
+            }
+            else
+            {
+                // OnCurrentTabViewChanged picks up _lastViewedSuitePath and loads it into the new page.
+                SetView(typeof(SuiteConfigViewerViewModel));
             }
         }
 

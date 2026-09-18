@@ -1,0 +1,298 @@
+<UserControl
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:mi="using:Material.Icons.Avalonia"
+	xmlns:common="using:SuiteCreatorAvalonia.Models.Common"
+	xmlns:services="using:SuiteCreatorAvalonia.Services"
+	mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="550"
+	x:Class="SuiteCreatorAvalonia.Views.SuiteConfigViewerView"
+	services:Help.Title="Suite Viewer"
+	services:Help.PageSummary="A read-only look inside a built suite. Only the suite's configuration file is read from the exe, so nothing is extracted and your open project is left untouched. Each section mirrors a page in the nav pane and lists only what that suite actually contains. If you want to edit the suite, use 'Import for editing' to run the full import."
+	x:DataType="vm:SuiteConfigViewerViewModel">
+
+	<Design.DataContext>
+		<vm:SuiteConfigViewerViewModel/>
+	</Design.DataContext>
+
+	<Grid
+		RowDefinitions="Auto,Auto,*">
+
+		<!-- Header: title, read-only badge and actions -->
+		<Grid
+			Grid.Row="0"
+			ColumnDefinitions="*,Auto"
+			Margin="0,0,15,0">
+			<StackPanel
+				Grid.Column="0"
+				Orientation="Horizontal"
+				Spacing="10">
+				<TextBlock
+					Classes="TabHeader"
+					Margin="0"
+					VerticalAlignment="Center"
+					Text="Suite Viewer"/>
+				<Border
+					CornerRadius="10"
+					Padding="8,2"
+					VerticalAlignment="Center"
+					Background="{DynamicResource SystemControlBackgroundListMediumBrush}"
+					ToolTip.Tip="Nothing here can be edited. Use 'Import for editing' to bring the suite into a project.">
+					<StackPanel
+						Orientation="Horizontal"
+						Spacing="4">
+						<mi:MaterialIcon
+							Kind="LockOutline"
+							Width="13"
+							Height="13"/>
+						<TextBlock
+							FontSize="11"
+							Text="Read-only"/>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+			<StackPanel
+				Grid.Column="1"
+				Orientation="Horizontal"
+				Spacing="8"
+				VerticalAlignment="Center">
+				<Button
+					Content="Open another suite..."
+					Padding="12,5,12,5"
+					services:Help.Title="Open another suite"
+					services:Help.Text="Pick a different built suite exe to view. The current project is not affected."
+					services:Help.Order="2"
+					ToolTip.Tip="Select a different built Suite exe to view"
+					Command="{Binding BrowseSuiteCommand}"/>
+				<Button
+					Content="Import for editing"
+					FontWeight="Bold"
+					Padding="12,5,12,5"
+					IsVisible="{Binding IsLoaded}"
+					services:Help.Title="Import for editing"
+					services:Help.Text="Runs the normal full suite import with this exe pre-selected: you choose an output folder, the suite's packages and files are extracted there, and it becomes the open project so you can edit and rebuild it."
+					services:Help.Order="3"
+					ToolTip.Tip="Run the full import so this suite can be edited and rebuilt"
+					Command="{Binding ImportSuiteCommand}"/>
+				<Button
+					Classes="IconButton"
+					Tag="Close"
+					services:Help.Title="Close the viewer"
+					services:Help.Text="Returns to the page you were on before opening the viewer."
+					services:Help.Order="4"
+					ToolTip.Tip="Close the viewer"
+					Command="{Binding CloseCommand}"/>
+			</StackPanel>
+		</Grid>
+
+		<!-- Which suite is loaded -->
+		<StackPanel
+			Grid.Row="1"
+			IsVisible="{Binding IsLoaded}"
+			Spacing="2"
+			Margin="0,4,15,12"
+			services:Help.Title="Suite summary"
+			services:Help.Text="The suite you are looking at: its project name, the manufacturer/product/version it was built with, where the exe lives, and a count of what it contains."
+			services:Help.Order="1">
+			<StackPanel
+				Orientation="Horizontal"
+				Spacing="8">
+				<TextBlock
+					FontSize="16"
+					FontWeight="Bold"
+					Text="{Binding ProjectName}"/>
+				<TextBlock
+					IsVisible="{Binding HasBuildSummary}"
+					Opacity="0.7"
+					Text="{Binding BuildSummary}"/>
+			</StackPanel>
+			<SelectableTextBlock
+				FontSize="11"
+				Opacity="0.7"
+				TextWrapping="Wrap"
+				Text="{Binding SuiteExePath}"/>
+			<TextBlock
+				FontSize="12"
+				Text="{Binding CountsSummary}"/>
+		</StackPanel>
+
+		<!-- Empty / loading / error state -->
+		<StackPanel
+			Grid.Row="2"
+			IsVisible="{Binding !IsLoaded}"
+			HorizontalAlignment="Center"
+			VerticalAlignment="Center"
+			MaxWidth="520"
+			Spacing="12">
+			<mi:MaterialIcon
+				Kind="FileEye"
+				Width="56"
+				Height="56"
+				Opacity="0.5"
+				HorizontalAlignment="Center"/>
+			<TextBlock
+				IsVisible="{Binding !IsLoading}"
+				TextWrapping="Wrap"
+				TextAlignment="Center"
+				Text="Select a built Suite exe to see the packages and events configured inside it, without importing it or changing your current project."/>
+			<TextBlock
+				IsVisible="{Binding IsLoading}"
+				FontWeight="Bold"
+				HorizontalAlignment="Center"
+				Text="Reading suite configuration..."/>
+			<Border
+				IsVisible="{Binding HasLoadError}"
+				Background="{DynamicResource BinButton}"
+				CornerRadius="10"
+				Padding="12,8">
+				<StackPanel
+					Orientation="Horizontal"
+					Spacing="8">
+					<mi:MaterialIcon
+						Kind="AlertCircle"
+						Foreground="White"
+						Width="22"
+						Height="22"
+						VerticalAlignment="Top"/>
+					<StackPanel Spacing="2">
+						<TextBlock
+							Foreground="White"
+							FontWeight="Bold"
+							Text="{Binding SuiteFileName, StringFormat='Could not read {0}'}"/>
+						<TextBlock
+							Foreground="White"
+							TextWrapping="Wrap"
+							Text="{Binding LoadError}"/>
+					</StackPanel>
+				</StackPanel>
+			</Border>
+			<Button
+				IsVisible="{Binding !IsLoading}"
+				Content="Select a built suite..."
+				FontWeight="Bold"
+				Padding="14,6,14,6"
+				HorizontalAlignment="Center"
+				Command="{Binding BrowseSuiteCommand}"/>
+		</StackPanel>
+
+		<!-- Loaded content -->
+		<ScrollViewer
+			Grid.Row="2"
+			IsVisible="{Binding IsLoaded}"
+			HorizontalScrollBarVisibility="Disabled"
+			VerticalScrollBarVisibility="Auto"
+			services:Help.Title="What the suite contains"
+			services:Help.Text="One section per part of the suite, in the same order as the nav pane, listing only what was actually added. Each package shows its install/removal settings, each event shows its settings and every point in the suite where it runs. Values can be selected and copied."
+			services:Help.Order="5">
+			<ItemsControl
+				ItemsSource="{Binding Sections}"
+				Margin="0,0,15,0">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate DataType="common:SuiteConfigSection">
+						<StackPanel
+							Margin="0,0,0,18">
+
+							<!-- Section header -->
+							<StackPanel
+								Orientation="Horizontal"
+								Spacing="8"
+								Margin="0,0,0,6">
+								<mi:MaterialIcon
+									Kind="{Binding IconKind}"
+									Foreground="{Binding IconColor}"
+									Width="22"
+									Height="22"/>
+								<TextBlock
+									Classes="FieldName"
+									FontSize="15"
+									Text="{Binding Header}"/>
+								<Border
+									CornerRadius="9"
+									Padding="7,1"
+									VerticalAlignment="Center"
+									Background="{DynamicResource SystemControlBackgroundListMediumBrush}">
+									<TextBlock
+										FontSize="11"
+										Text="{Binding Count}"/>
+								</Border>
+							</StackPanel>
+
+							<!-- Section items -->
+							<ItemsControl
+								ItemsSource="{Binding Items}">
+								<ItemsControl.ItemTemplate>
+									<DataTemplate DataType="common:SuiteConfigItem">
+										<Border
+											CornerRadius="8"
+											Padding="12,8,12,8"
+											Margin="0,0,0,6"
+											Background="{DynamicResource SystemControlBackgroundListLowBrush}">
+											<Grid
+												ColumnDefinitions="Auto,*"
+												RowDefinitions="Auto,Auto">
+												<mi:MaterialIcon
+													Grid.Column="0"
+													Grid.RowSpan="2"
+													Kind="{Binding IconKind}"
+													Foreground="{Binding IconColor}"
+													Width="26"
+													Height="26"
+													VerticalAlignment="Top"
+													Margin="0,1,12,0"/>
+												<StackPanel
+													Grid.Column="1"
+													Grid.Row="0"
+													Orientation="Horizontal"
+													Spacing="8">
+													<SelectableTextBlock
+														FontSize="13"
+														FontWeight="SemiBold"
+														TextWrapping="Wrap"
+														Text="{Binding Title}"/>
+													<TextBlock
+														IsVisible="{Binding HasSubTitle}"
+														FontSize="11"
+														Opacity="0.7"
+														Text="{Binding SubTitle}"/>
+												</StackPanel>
+												<ItemsControl
+													Grid.Column="1"
+													Grid.Row="1"
+													IsVisible="{Binding HasDetails}"
+													ItemsSource="{Binding Details}"
+													Margin="0,4,0,0">
+													<ItemsControl.ItemTemplate>
+														<DataTemplate DataType="common:SuiteConfigDetail">
+															<Grid
+																ColumnDefinitions="160,*"
+																Margin="0,1,0,1">
+																<TextBlock
+																	Grid.Column="0"
+																	FontSize="12"
+																	Opacity="0.7"
+																	VerticalAlignment="Top"
+																	Text="{Binding Label}"/>
+																<SelectableTextBlock
+																	Grid.Column="1"
+																	FontSize="12"
+																	TextWrapping="Wrap"
+																	Text="{Binding Value}"/>
+															</Grid>
+														</DataTemplate>
+													</ItemsControl.ItemTemplate>
+												</ItemsControl>
+											</Grid>
+										</Border>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</StackPanel>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+	</Grid>
+
+</UserControl>
