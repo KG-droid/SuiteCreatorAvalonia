@@ -124,7 +124,6 @@
 			IsVisible="{Binding !IsLoaded}"
 			HorizontalAlignment="Center"
 			VerticalAlignment="Center"
-			MaxWidth="520"
 			Spacing="12">
 			<mi:MaterialIcon
 				Kind="FileEye"
