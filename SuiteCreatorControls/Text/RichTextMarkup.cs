@@ -1,4 +1,3 @@
-using Avalonia.Controls.Documents;
 using Avalonia.Media;
 using System.Collections.Generic;
 using System.Globalization;
@@ -194,21 +193,5 @@ namespace SuiteCreatorControls.Text
             return sb.ToString();
         }
 
-        public static IEnumerable<Inline> ToInlines(string? markup)
-        {
-            foreach (RichTextRun run in Parse(markup))
-            {
-                Run inline = new Run(run.Text);
-                if (run.Style.Bold)
-                    inline.FontWeight = FontWeight.Bold;
-                if (run.Style.Italic)
-                    inline.FontStyle = FontStyle.Italic;
-                if (run.Style.FontSize is double size)
-                    inline.FontSize = size;
-                if (run.Style.Foreground is Color color)
-                    inline.Foreground = new SolidColorBrush(ReadableColors.Clamp(color));
-                yield return inline;
-            }
-        }
     }
 }
