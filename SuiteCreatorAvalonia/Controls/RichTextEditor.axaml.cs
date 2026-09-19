@@ -290,8 +290,20 @@ public partial class RichTextEditor : UserControl
         if (_updatingToolbar)
             return;
 
-        Color? stored = e.NewColor == DefaultForeground ? null : e.NewColor;
-        ApplyStyle(s => s with { Foreground = stored });
+        Color readable = ReadableColors.Clamp(Color.FromRgb(e.NewColor.R, e.NewColor.G, e.NewColor.B));
+        if (readable != e.NewColor)
+        {
+            _updatingToolbar = true;
+            try
+            {
+                Color_ColorPicker.Color = readable;
+            }
+            finally
+            {
+                _updatingToolbar = false;
+            }
+        }
+        ApplyStyle(s => s with { Foreground = readable });
     }
 
     private void OnTextBoxPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)

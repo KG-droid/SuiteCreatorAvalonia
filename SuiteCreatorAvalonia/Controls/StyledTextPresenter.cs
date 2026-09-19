@@ -104,7 +104,7 @@ public class StyledTextPresenter : TextPresenter
             FontStretch);
         IBrush? foreground = selected
             ? SelectionForegroundBrush
-            : style.Foreground is Color color ? new SolidColorBrush(color) : Foreground;
+            : style.Foreground is Color color ? new SolidColorBrush(ReadableColors.Clamp(color)) : Foreground;
         return new GenericTextRunProperties(typeface, style.FontSize ?? FontSize, foregroundBrush: foreground, fontFeatures: FontFeatures);
     }
 }

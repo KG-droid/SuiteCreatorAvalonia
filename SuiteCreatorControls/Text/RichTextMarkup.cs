@@ -206,7 +206,7 @@ namespace SuiteCreatorControls.Text
                 if (run.Style.FontSize is double size)
                     inline.FontSize = size;
                 if (run.Style.Foreground is Color color)
-                    inline.Foreground = new SolidColorBrush(color);
+                    inline.Foreground = new SolidColorBrush(ReadableColors.Clamp(color));
                 yield return inline;
             }
         }

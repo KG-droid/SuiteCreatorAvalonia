@@ -43,7 +43,7 @@
 				IsAlphaEnabled="False"
 				IsAlphaVisible="False"
 				VerticalAlignment="Center"
-				ToolTip.Tip="Text colour"/>
+				ToolTip.Tip="Text colour. Limited to colours readable on both the light and dark popup, so very dark or very light colours (black, white, pastels) are adjusted to the nearest readable shade. Use the default colour button for black/white that follows the theme."/>
 			<Button
 				Name="AutoColor_Button"
 				Classes="IconButton"
