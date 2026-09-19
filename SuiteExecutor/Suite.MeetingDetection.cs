@@ -178,7 +178,7 @@ namespace SuiteExecutor
             try
             {
                 TimeSpan checkTimeout = TimeSpan.FromSeconds(15);
-                ImpersonatedProcessResult? result = StartProcessAsCurrentUser(_userPopExe, "--CheckMeetingStatus", _installedPopupDir, false, true, checkTimeout);
+                ImpersonatedProcessResult? result = StartProcessAsCurrentUser(_userPopExe, $"--CheckMeetingStatus --LogFile \"{_logPath}\"", _installedPopupDir, false, true, checkTimeout);
                 if (result == null)
                 {
                     diagnostics = "no active user session found";

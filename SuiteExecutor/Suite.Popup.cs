@@ -318,6 +318,7 @@ namespace SuiteExecutor
                     return;
                 }
                 popConfigNode["Action"] = _action.ToString();
+                popConfigNode["LogFilePath"] = _logPath;
                 _log.WriteLog($"Setting popup {_action} text", "ExecPopup", Log.Severity.Info);
                 if (_action == SuiteAction.Deployment)
                 {
@@ -337,7 +338,7 @@ namespace SuiteExecutor
                 _popupWasShown = true;
                 CreateSuitePopupInitialDateRegistry(); // Run this first so that if the popup kept failing, it wont just give infinite skips.
                 TimeSpan popTimeSpan = TimeSpan.FromMinutes(_suiteConfig.PopupSettings.Timer);
-                string popArguments = $"--Config \"{popConfigPath}\" --SuiteLogo \"{suiteLogoPath}\" --CompanyLogo \"{companyLogoPath}\"";
+                string popArguments = $"--Config \"{popConfigPath}\" --SuiteLogo \"{suiteLogoPath}\" --CompanyLogo \"{companyLogoPath}\" --LogFile \"{_logPath}\"";
                 _log.WriteLog($"Popup command: \"{_userPopExe}\" {popArguments}", "ExecPopup", Log.Severity.Info);
                 ImpersonatedProcessResult? result = StartProcessAsCurrentUser(_userPopExe, popArguments, popupDir, true, true, popTimeSpan);
                 switch ((PopupExitType?)result?.ExitCode)
