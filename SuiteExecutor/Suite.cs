@@ -39,6 +39,7 @@ namespace SuiteExecutor
         private Mutex? _suiteMutex;
         private bool _ownsMutex;
         private string _familyMutexName;
+        private bool _createdRunningRegistry;
         private string _logPath;
         private PackageBase? _lastFailedPackage;
 
@@ -68,10 +69,35 @@ namespace SuiteExecutor
                 // Startup
                 _action = action;
                 RegisterShutdownDetection();
-                if (IsNewerSuiteInFamilyAlreadyRunning())
+                switch (ResolveFamilyRunDecision())
                 {
-                    _log.WriteLog("A newer version or revision of this suite family is already running, exiting this instance.", "Startup", Log.Severity.Info);
-                    return;
+                    case FamilyRunDecision.Skip:
+                        _log.WriteLog("Another instance of this suite family + action is already running a version/revision that is the same as or newer than this run; exiting this instance.", "Startup", Log.Severity.Info);
+                        return;
+                    case FamilyRunDecision.WaitThenProceed:
+                        _log.WriteLog("An older instance of this suite family + action is currently running; waiting for it to finish before starting.", "Startup", Log.Severity.Info);
+                        if (!WaitForFamilyMutex(TimeSpan.FromHours(3)))
+                        {
+                            _log.WriteLog("Timed out waiting for the older running instance to finish; exiting without running to avoid running alongside it.", "Startup", Log.Severity.Warning);
+                            return;
+                        }
+                        _log.WriteLog("Older running instance finished; proceeding with this run.", "Startup", Log.Severity.Info);
+                        // A stale FailSafe recovery task may still be registered for the older run we just
+                        // waited out (e.g. it disabled FailSafe, or failed before reaching CreateFailSafeTask).
+                        // Clear it now so it can't later resume the old version behind this newer run's back.
+                        RemoveFailSafeTask();
+                        break;
+                    case FamilyRunDecision.Proceed:
+                    default:
+                        if (runMode != SuiteRunMode.FailSafe)
+                        {
+                            // Not resuming ourselves — this is a fresh run (e.g. from Intune) with no other
+                            // live instance. Clear any stale FailSafe recovery task left behind by a previous
+                            // run of this suite family that was interrupted, so it can't fire later and
+                            // resume an older/abandoned run now that this run is taking over.
+                            RemoveFailSafeTask();
+                        }
+                        break;
                 }
                 LogStartupInfo();
                 LogTimeZoneWarning();
@@ -129,6 +155,7 @@ namespace SuiteExecutor
                     }
                 }
                 CreateSuiteRunningRegistry();
+                _createdRunningRegistry = true;
 
                 // FailSafe: register the recovery task before the popup runs, not after — otherwise there's
                 // a window (the entire time the popup is up waiting for a response, or waiting out a
@@ -289,8 +316,15 @@ namespace SuiteExecutor
                     _suiteMutex.Dispose();
                 }
 
-                // Clear running registry
-                RemoveSuiteRunningRegistry();
+                // Clear running registry — but only if this instance actually wrote it. It's keyed by
+                // UpgradeCode, not per-instance, so an instance that exited early (Skip, or timed out waiting
+                // in WaitThenProceed) never called CreateSuiteRunningRegistry and must not wipe out the
+                // LastSuiteVersionRan/Revision that the instance actually running right now depends on for its
+                // own family-concurrency checks.
+                if (_createdRunningRegistry)
+                {
+                    RemoveSuiteRunningRegistry();
+                }
 
                 // Reverse process and service blocks
                 Unblocks();
