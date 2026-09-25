@@ -130,13 +130,24 @@ namespace SuiteExecutor
             }
         }
 
-        private bool IsNewerSuiteInFamilyAlreadyRunning()
+        private enum FamilyRunDecision
         {
-            _log.WriteLog($"Checking if a newer version or revision of this suite family is already running", "SuiteFamilyCheck", Log.Severity.Info);
-            if (!SetFamilyMutexActive())
+            Proceed,        // No other instance of this suite family + action is currently running.
+            Skip,           // Another live instance is running a version/revision that is >= ours — never
+                             // worth running a second time (a same-version race) and never worth pre-empting
+                             // a genuinely newer live run. Exit without running.
+            WaitThenProceed // Another live instance is running a strictly older version/revision. Don't kill
+                             // it and don't run alongside it — wait for it to finish, then run ourselves so
+                             // the machine still ends up on this newer version.
+        }
+
+        private FamilyRunDecision ResolveFamilyRunDecision()
+        {
+            _log.WriteLog($"Checking if this suite family + action is already running", "SuiteFamilyCheck", Log.Severity.Info);
+            if (SetFamilyMutexActive())
             {
                 _log.WriteLog($"No Suite in this upgrade family is already running", "SuiteFamilyCheck", Log.Severity.Info);
-                return false;
+                return FamilyRunDecision.Proceed;
             }
             _log.WriteLog($"Another suite in this upgrade family is running, checking its version and revision", "SuiteFamilyCheck", Log.Severity.Info);
             Guid detectedGuid = _suiteConfig.BuildSettings.UpgradeCode;
@@ -159,20 +170,32 @@ namespace SuiteExecutor
                         Version thisVersion = _suiteConfig.BuildSettings.SuiteVersion;
                         int thisRevision = _suiteConfig.BuildSettings.Revision;
 
-                        if (activeVersion > thisVersion) return true;
-                        if (activeVersion == thisVersion && activeRevision > thisRevision) return true;
-                        return false;
+                        int cmp = (activeVersion ?? new Version(0, 0)).CompareTo(thisVersion);
+                        if (cmp == 0) cmp = activeRevision.CompareTo(thisRevision);
+
+                        if (cmp >= 0)
+                        {
+                            _log.WriteLog($"Running instance is version {activeVersion} revision {activeRevision}, which is the same as or newer than this run ({thisVersion} revision {thisRevision}); exiting this instance.", "SuiteFamilyCheck", Log.Severity.Info);
+                            return FamilyRunDecision.Skip;
+                        }
+
+                        _log.WriteLog($"Running instance is version {activeVersion} revision {activeRevision}, which is older than this run ({thisVersion} revision {thisRevision}); will wait for it to finish before proceeding.", "SuiteFamilyCheck", Log.Severity.Info);
+                        return FamilyRunDecision.WaitThenProceed;
                     }
                     else
                     {
-                        _log.WriteLog("Suite registry key detected, but no Version found.", "SuiteFamilyCheck", Log.Severity.Info);
-                        return false;
+                        // Another instance holds the mutex but hasn't (yet, or no longer) recorded its version —
+                        // can't tell whether it's a duplicate of us or a genuine older run. Waiting is always
+                        // safe (worst case we wait for a same-version run to finish, which is harmless), whereas
+                        // proceeding unconditionally is exactly the double-run this check exists to prevent.
+                        _log.WriteLog("Suite registry key detected, but no Version found; waiting for the other instance to finish before proceeding.", "SuiteFamilyCheck", Log.Severity.Info);
+                        return FamilyRunDecision.WaitThenProceed;
                     }
                 }
                 else
                 {
-                    _log.WriteLog("Suite registry key not detected in registry, but another suite in the family is running, so something has gone wrong, so will continue with this suite just in case.", "SuiteFamilyCheck", Log.Severity.Info);
-                    return false;
+                    _log.WriteLog("Suite registry key not detected in registry, but another suite in the family is running; waiting for it to finish before proceeding.", "SuiteFamilyCheck", Log.Severity.Info);
+                    return FamilyRunDecision.WaitThenProceed;
                 }
             }
         }
