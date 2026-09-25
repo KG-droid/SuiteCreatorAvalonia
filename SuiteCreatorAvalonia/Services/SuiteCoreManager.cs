@@ -1394,6 +1394,9 @@ namespace SuiteCreatorAvalonia.Services
         #region ConfigManagement
         internal void SetDefaultConfig(bool deleteAutoSave = true)
         {
+            // A new/default project has no file on disk yet, so forget the previous project's path
+            // otherwise Save would overwrite the previously opened project.
+            _suiteSaveFilePath = null;
             _suiteConfig.ProjectName = "Untitled Suite";
             _suiteConfig.Packages = new ObservableCollection<PackageBase>();
             _suiteConfig.RuleSets = new ObservableCollection<RuleSet>();
