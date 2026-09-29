@@ -130,7 +130,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
                     DetectionType == DetectionTypes.FileVersion ||
                     DetectionType == DetectionTypes.ProductVersion ||
                     DetectionType == DetectionTypes.StringVersion
-                ) && !Version.TryParse(ComparatorValue, out _)
+                ) && !TryParseLooseVersion(ComparatorValue, out _)
             )
             {
                 return "A version based rule detection must have a valid System.Version like 1.0.0";
@@ -590,11 +590,11 @@ namespace SuiteCreatorAvalonia.Models.Rules
                             return ruleResult;
 
                         case DetectionTypes.StringVersion:
-                            if (!Version.TryParse(ComparatorValue, out _))
+                            if (!TryParseLooseVersion(ComparatorValue, out _))
                             {
                                 throw new ArgumentOutOfRangeException(nameof(ComparatorValue), $"Registry reference: '{ComparatorValue}' is not a valid version.");
                             }
-                            if (!Version.TryParse(actualString, out _))
+                            if (!TryParseLooseVersion(actualString, out _))
                             {
                                 ruleResult.IsMet = false;
                                 ruleResult.Summary = $"Registry value: '{ComparatorProperty}' is '{actualString}', which is not a valid version string, detection not met.";
@@ -776,6 +776,25 @@ namespace SuiteCreatorAvalonia.Models.Rules
             throw new ArgumentException("Unsupported comparator type", nameof(comparator));
         }
 
+        // Vendors sometimes separate version parts with something other than a dot (10,0,0 or 10/0/0), which
+        // System.Version can't parse directly. Any run of non-alphanumeric characters is treated as a separator.
+        private static readonly Regex VersionSeparatorRegex = new(@"[^0-9A-Za-z]+", RegexOptions.Compiled);
+
+        // True when the value is a strict System.Version (dots only). Used by the UI to decide whether to warn.
+        public static bool IsStrictVersion(string? value) => Version.TryParse(value?.Trim(), out _);
+
+        // Rewrites any separators to dots, so "10,0,0" and "10/0/0" both become "10.0.0".
+        public static string NormalizeVersionSeparators(string value) =>
+            string.Join(".", VersionSeparatorRegex.Split(value.Trim()).Where(p => p.Length > 0));
+
+        public static bool TryParseLooseVersion(string? value, out Version? version)
+        {
+            version = null;
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+            return Version.TryParse(NormalizeVersionSeparators(value), out version);
+        }
+
         // Returns >0 if left is greater, <0 if right is greater, 0 if equal.
         public static int CompareVersionStrings(string? left, string? right)
         {
@@ -783,8 +802,8 @@ namespace SuiteCreatorAvalonia.Models.Rules
             if (left == null) return -1;
             if (right == null) return 1;
 
-            var leftParts = Regex.Split(left, @"[\.\-_\s]+");
-            var rightParts = Regex.Split(right, @"[\.\-_\s]+");
+            var leftParts = VersionSeparatorRegex.Split(left.Trim()).Where(p => p.Length > 0).ToArray();
+            var rightParts = VersionSeparatorRegex.Split(right.Trim()).Where(p => p.Length > 0).ToArray();
             int maxLen = Math.Max(leftParts.Length, rightParts.Length);
 
             for (int i = 0; i < maxLen; i++)
