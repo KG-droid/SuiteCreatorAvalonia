@@ -455,6 +455,7 @@
 							<DataGrid
 								SelectionMode="Extended"
 								AutoGenerateColumns="False"
+								x:Name="CustomReturnCodes_DataGrid"
 								ItemsSource="{Binding CustomReturnCodes}"
 								MinWidth="100"
 								Grid.Column="0">
@@ -485,6 +486,7 @@
 									Classes="IconButton"
 									Tag="Bin"
 									Command="{Binding RemoveCustomReturnCodeCommand}"
+									CommandParameter="{Binding SelectedItem, ElementName=CustomReturnCodes_DataGrid}"
 									Foreground="{DynamicResource BinButton}"/>
 							</StackPanel>
 						</Grid>

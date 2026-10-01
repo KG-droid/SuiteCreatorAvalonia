@@ -241,9 +241,10 @@ namespace SuiteCreatorAvalonia.ViewModels
         }
 
         [RelayCommand]
-        public void RemoveCustomReturnCode(ReturnCode code)
+        public void RemoveCustomReturnCode(ReturnCode? code)
         {
-            CustomReturnCodes.Remove(code);
+            if (code != null)
+                CustomReturnCodes.Remove(code);
         }
 
         [RelayCommand]
