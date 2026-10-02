@@ -119,8 +119,46 @@ namespace SuiteCreatorAvalonia.Services
                 using Stream entryStream = entry.Open();
                 using StreamReader reader = new StreamReader(entryStream);
                 string json = reader.ReadToEnd();
-                return DeserializeExecConfig(json);
+                SuiteExecConfig config = DeserializeExecConfig(json);
+                LoadLinkedPowerShellScripts(zip, config);
+                return config;
             });
+        }
+
+        /// <summary>
+        /// PowerShell events that were linked to a .ps1 file when the suite was built carry no script text in
+        /// SuiteConfig.scfg - the file itself is bundled at PowerShell/{eventId}/*.ps1 in the payload. Read that
+        /// file's text into the event's ScriptDoc so the viewer can preview it like an inline script.
+        /// </summary>
+        private static void LoadLinkedPowerShellScripts(ZipArchive zip, SuiteExecConfig config)
+        {
+            if (config.PowerShellEvents == null) return;
+            foreach (SuiteOperations.Events.PowerShellExecEvent psEvent in config.PowerShellEvents)
+            {
+                if (!string.IsNullOrWhiteSpace(psEvent.ScriptDoc?.Text)) continue;
+
+                // Only the script directly in the event folder; the "Support" subfolder holds supporting files.
+                string prefix = $"PowerShell/{psEvent.Id}/";
+                ZipArchiveEntry? scriptEntry = zip.Entries.FirstOrDefault(e =>
+                {
+                    string name = e.FullName.Replace('\\', '/');
+                    return name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                        && !name.Substring(prefix.Length).Contains('/')
+                        && name.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase);
+                });
+                if (scriptEntry == null) continue;
+
+                try
+                {
+                    using Stream scriptStream = scriptEntry.Open();
+                    using StreamReader scriptReader = new StreamReader(scriptStream);
+                    psEvent.ScriptDoc = new AvaloniaEdit.Document.TextDocument(scriptReader.ReadToEnd());
+                }
+                catch (Exception ex) when (ex is IOException || ex is InvalidDataException)
+                {
+                    AppLog.Warning($"Could not read linked PowerShell script for event {psEvent.Id}: {ex.Message}", "SuiteViewer");
+                }
+            }
         }
 
         /// <summary>Read-only, seekable view over a fixed byte range of another stream.</summary>
