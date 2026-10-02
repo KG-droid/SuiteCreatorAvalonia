@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using SuiteCreatorAvalonia.Enums;
 using SuiteCreatorAvalonia.Models.Common;
 using SuiteCreatorAvalonia.Models.Common.TreeNodes;
@@ -129,13 +130,20 @@ namespace SuiteCreatorAvalonia.Services
         /// PowerShell events that were linked to a .ps1 file when the suite was built carry no script text in
         /// SuiteConfig.scfg - the file itself is bundled at PowerShell/{eventId}/*.ps1 in the payload. Read that
         /// file's text into the event's ScriptDoc so the viewer can preview it like an inline script.
+        ///
+        /// This runs inside ReadSuiteConfigAsync's Task.Run, i.e. on a background thread, but ScriptDoc is an
+        /// AvaloniaEdit TextDocument, which (like TextDocumentToJson's own converter) can only be created or
+        /// read on the UI thread that owns it - touching one from any other thread throws
+        /// "Call from invalid thread", so every read or write of ScriptDoc here is explicitly marshaled over.
         /// </summary>
         private static void LoadLinkedPowerShellScripts(ZipArchive zip, SuiteExecConfig config)
         {
             if (config.PowerShellEvents == null) return;
             foreach (SuiteOperations.Events.PowerShellExecEvent psEvent in config.PowerShellEvents)
             {
-                if (!string.IsNullOrWhiteSpace(psEvent.ScriptDoc?.Text)) continue;
+                bool hasInlineText = Dispatcher.UIThread.InvokeAsync(
+                    () => !string.IsNullOrWhiteSpace(psEvent.ScriptDoc?.Text)).GetAwaiter().GetResult();
+                if (hasInlineText) continue;
 
                 // Only the script directly in the event folder; the "Support" subfolder holds supporting files.
                 string prefix = $"PowerShell/{psEvent.Id}/";
@@ -150,9 +158,14 @@ namespace SuiteCreatorAvalonia.Services
 
                 try
                 {
-                    using Stream scriptStream = scriptEntry.Open();
-                    using StreamReader scriptReader = new StreamReader(scriptStream);
-                    psEvent.ScriptDoc = new AvaloniaEdit.Document.TextDocument(scriptReader.ReadToEnd());
+                    string scriptText;
+                    using (Stream scriptStream = scriptEntry.Open())
+                    using (StreamReader scriptReader = new StreamReader(scriptStream))
+                    {
+                        scriptText = scriptReader.ReadToEnd();
+                    }
+                    Dispatcher.UIThread.InvokeAsync(
+                        () => psEvent.ScriptDoc = new AvaloniaEdit.Document.TextDocument(scriptText)).Wait();
                 }
                 catch (Exception ex) when (ex is IOException || ex is InvalidDataException)
                 {
