@@ -1446,6 +1446,8 @@ namespace SuiteCreatorAvalonia.Services
                 RemoveIconKind = Material.Icons.MaterialIconKind.Restore,
                 UninstAction = "Rollback",
                 HasPSCondition = false,
+                PauseDuringMeeting = false,
+                LockdownEnabled = false,
             };
             _lastSavedSnapshot = CreateConfigSnapshot();
             HasUnsavedChanges = false;
