@@ -142,6 +142,18 @@ namespace SuiteExecutor
             }
         }
 
+        // A meeting recheck task/wait marker may be left over from an earlier pass; once the popup is found
+        // not to be needed, they have no reason to linger.
+        private void CleanupMeetingWaitState()
+        {
+            if (!_suiteConfig.PopupSettings.PauseDuringMeeting)
+            {
+                return;
+            }
+            RemoveMeetingRecheckTaskIfExists();
+            RemoveMeetingWaitStartedRegistry();
+        }
+
         private void ExecutePopup()
         {
             // Checked first, before any popup asset/registry work: there's no real interactive user to show
@@ -159,42 +171,6 @@ namespace SuiteExecutor
                 }
                 _log.WriteLog($"ESPAction is Continue, continuing with the suite execution without showing the popup", "ExecPopup", Log.Severity.Info);
                 return;
-            }
-
-            if (_suiteConfig.PopupSettings.PauseDuringMeeting)
-            {
-                if (IsMicrophoneInUse(out string micDiagnostics))
-                {
-                    // Each recheck is a fresh process (see ScheduleMeetingRecheckIfNeeded), so there's no
-                    // in-memory way to know how long this has been going on - the wait's start time has to be
-                    // persisted so a meeting that never ends still gets capped instead of retrying forever.
-                    DateTime? existingWaitStarted = GetMeetingWaitStartedRegistry();
-                    DateTime waitStarted = existingWaitStarted ?? DateTime.Now;
-                    if (existingWaitStarted == null)
-                    {
-                        CreateMeetingWaitStartedRegistry();
-                    }
-
-                    if (DateTime.Now - waitStarted >= _meetingMaxWait)
-                    {
-                        _log.WriteLog($"Microphone has been in use for over {_meetingMaxWait.TotalHours:0} hours; proceeding with the popup anyway as a fail-safe", "ExecPopup", Log.Severity.Warning);
-                        RemoveMeetingRecheckTaskIfExists();
-                        RemoveMeetingWaitStartedRegistry();
-                    }
-                    else
-                    {
-                        _log.WriteLog($"Microphone is currently in use ({micDiagnostics}); scheduling a recheck and exiting so the deployment tool isn't kept waiting", "ExecPopup", Log.Severity.Info);
-                        ScheduleMeetingRecheckIfNeeded();
-                        CleanupBeforeUserSkipExit();
-                        Environment.Exit(1602);
-                    }
-                }
-                else
-                {
-                    RemoveMeetingRecheckTaskIfExists();
-                    RemoveMeetingWaitStartedRegistry();
-                    _log.WriteLog($"Microphone is not currently in use, proceeding with the popup ({micDiagnostics})", "ExecPopup", Log.Severity.Info);
-                }
             }
 
             int delayDaysConfigured = (int)_suiteConfig.PopupSettings.DelayDays;
@@ -296,17 +272,59 @@ namespace SuiteExecutor
                 {
                     _log.WriteLog($"Popup is configured, but it is linked to Process Closures, and none of those processes are running", "ExecPopup", Log.Severity.Info);
                     _log.WriteLog($"Continuing with the suite execution", "ExecPopup", Log.Severity.Info);
+                    CleanupMeetingWaitState();
                     return;
                 }
             }
             if (_suiteConfig.HasGlobalPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.GlobalPSCondition, "global popup condition"))
             {
+                CleanupMeetingWaitState();
                 return;
             }
             if (_suiteConfig.PopupSettings.HasPSCondition && IsPopupConditionExplicitlyNotMet(_suiteConfig.PopupSettings.PSCondition, "popup condition"))
             {
+                CleanupMeetingWaitState();
                 return;
             }
+            // Deliberately checked last, after every check that can decide the popup isn't needed (ESP, process
+            // closure link, global and suite conditions) - there's no point probing the mic, or holding the
+            // deployment back for a meeting, when the popup wouldn't be shown anyway.
+            if (_suiteConfig.PopupSettings.PauseDuringMeeting)
+            {
+                if (IsMicrophoneInUse(out string micDiagnostics))
+                {
+                    // Each recheck is a fresh process (see ScheduleMeetingRecheckIfNeeded), so there's no
+                    // in-memory way to know how long this has been going on - the wait's start time has to be
+                    // persisted so a meeting that never ends still gets capped instead of retrying forever.
+                    DateTime? existingWaitStarted = GetMeetingWaitStartedRegistry();
+                    DateTime waitStarted = existingWaitStarted ?? DateTime.Now;
+                    if (existingWaitStarted == null)
+                    {
+                        CreateMeetingWaitStartedRegistry();
+                    }
+
+                    if (DateTime.Now - waitStarted >= _meetingMaxWait)
+                    {
+                        _log.WriteLog($"Microphone has been in use for over {_meetingMaxWait.TotalHours:0} hours; proceeding with the popup anyway as a fail-safe", "ExecPopup", Log.Severity.Warning);
+                        RemoveMeetingRecheckTaskIfExists();
+                        RemoveMeetingWaitStartedRegistry();
+                    }
+                    else
+                    {
+                        _log.WriteLog($"Microphone is currently in use ({micDiagnostics}); scheduling a recheck and exiting so the deployment tool isn't kept waiting", "ExecPopup", Log.Severity.Info);
+                        ScheduleMeetingRecheckIfNeeded();
+                        CleanupBeforeUserSkipExit();
+                        Environment.Exit(1602);
+                    }
+                }
+                else
+                {
+                    RemoveMeetingRecheckTaskIfExists();
+                    RemoveMeetingWaitStartedRegistry();
+                    _log.WriteLog($"Microphone is not currently in use, proceeding with the popup ({micDiagnostics})", "ExecPopup", Log.Severity.Info);
+                }
+            }
+
             try
             {
                 // Set PopConfig to suite exec action
