@@ -146,6 +146,7 @@ namespace SuiteCreatorAvalonia.Services
                 RuleSets = new ObservableCollection<RuleSet>(execConfig.RuleSets ?? new List<RuleSet>()),
                 CertEvents = new ObservableCollection<Cert>(),
                 DriverEvents = new ObservableCollection<Driver>(),
+                FontEvents = new ObservableCollection<SystemFont>(),
                 ProcClosureEvents = new ObservableCollection<ProcessClosure>((execConfig.ProcClosureEvents ?? new List<SuiteOperations.Events.ProcClosureExecEvent>()).Select(e => new ProcessClosure
                 {
                     Id = e.Id,
@@ -439,6 +440,7 @@ namespace SuiteCreatorAvalonia.Services
             Report("Importing events");
             AssignCertEventFiles(execConfig.CertEvents ?? new List<SuiteOperations.Events.CertExecEvent>(), newConfig, GetEventDir);
             AssignDriverEventFiles(execConfig.DriverEvents ?? new List<SuiteOperations.Events.DriverExecEvent>(), newConfig, GetEventDir);
+            AssignFontEventFiles(execConfig.FontEvents ?? new List<SuiteOperations.Events.FontExecEvent>(), newConfig, GetEventDir);
             await AssignExecutableEventFiles(execConfig.ExecutableEvents ?? new List<SuiteOperations.Events.ExecutableExecEvent>(), newConfig, GetEventDir);
             AssignExtensionEventFiles(execConfig.ExtensionEvents ?? new List<SuiteOperations.Events.BrowserExExecEvent>(), newConfig, GetEventDir);
             AssignFileEventFiles(execConfig.FileEvents ?? new List<SuiteOperations.Events.FileExecEvent>(), newConfig, GetEventDir);
@@ -524,6 +526,29 @@ namespace SuiteCreatorAvalonia.Services
                     InfName = driver.InfName,
                     IsPermanent = driver.IsPermanent,
                     Schedules = driver.Schedules?.Select(s => s.Clone()).ToList() ?? new List<Schedule>()
+                });
+            }
+        }
+
+        private static void AssignFontEventFiles(IEnumerable<SuiteOperations.Events.FontExecEvent> fontEvents, SuiteProjectConfig config, Func<string, Guid, string> getEventDir)
+        {
+            foreach (var font in fontEvents)
+            {
+                var fontDir = getEventDir("Font", font.Id);
+                if (Directory.Exists(fontDir))
+                {
+                    // Installs are bundled flat into the event's folder, so point at the folder (or the single file in it)
+                    string[] fontFiles = Directory.GetFiles(fontDir, "*", SearchOption.TopDirectoryOnly).Where(SystemFont.IsFontFile).ToArray();
+                    font.FontPath = fontFiles.Length == 1 ? fontFiles[0] : fontDir;
+                }
+                config.FontEvents.Add(new SystemFont
+                {
+                    Id = font.Id,
+                    Action = font.Action,
+                    FontPath = font.FontPath,
+                    FontFileName = font.FontFileName,
+                    IsPermanent = font.IsPermanent,
+                    Schedules = font.Schedules?.Select(s => s.Clone()).ToList() ?? new List<Schedule>()
                 });
             }
         }
@@ -682,7 +707,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
 
                 // Named folders to remove if present at the root
-                string[] foldersToDelete = { "Certificate", "Driver", "Executable", "File", "Package", "Popup" };
+                string[] foldersToDelete = { "Certificate", "Driver", "Executable", "File", "Font", "Package", "Popup" };
                 foreach (string folderName in foldersToDelete)
                 {
                     string? dir = Directory.EnumerateDirectories(outputFolder, "*").FirstOrDefault(d =>

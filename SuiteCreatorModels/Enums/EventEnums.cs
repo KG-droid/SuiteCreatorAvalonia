@@ -35,6 +35,14 @@
     }
     #endregion
 
+    #region Fonts
+    public enum FontAction
+    {
+        Install,
+        Remove
+    }
+    #endregion
+
     #region Drivers
     public enum DriverAction
     {

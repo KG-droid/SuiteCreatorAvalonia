@@ -737,6 +737,59 @@ namespace SuiteCreatorAvalonia.Services
 
         #endregion
 
+        #region FontEvents
+        internal ObservableCollection<SystemFont> GetFontEvents()
+        {
+            return new ObservableCollection<SystemFont>(_suiteConfig.FontEvents.Select(f => f.Clone()));
+        }
+
+        internal SystemFont NewFontEvent()
+        {
+            SystemFont font = new SystemFont
+            {
+                Action = FontAction.Install,
+                Schedules = new List<Schedule>
+                {
+                    new Schedule
+                    {
+                        EventStage = GetStages().Where(s => s.Name.Equals("End")).First(),
+                        Condition = null,
+                        StageSequence = Sequence.DuringInstallBeforeStage,
+                    },
+                }
+            };
+            _suiteConfig.FontEvents.Add(font);
+            ProjectChanged?.Invoke(this, font);
+            return font.Clone();
+        }
+
+        internal void RemoveFontEvent(SystemFont font)
+        {
+            if (font == null) throw new ArgumentNullException(nameof(font), "Font cannot be null");
+            var matching = _suiteConfig.FontEvents.Where(p => p.Id.Equals(font.Id)).FirstOrDefault();
+            if (matching != null)
+            {
+                _suiteConfig.FontEvents.Remove(matching);
+                ProjectChanged?.Invoke(this, matching);
+            }
+        }
+
+        internal void UpdateFontEvent(SystemFont font)
+        {
+            if (font == null) return;
+            SystemFont match = _suiteConfig.FontEvents.Where(f => f.Id == font.Id).FirstOrDefault();
+            if (match == null) throw new ArgumentException("The provided Font does not exist the Core Service");
+            string before = JsonConvert.SerializeObject(match);
+            match.UpdateFrom(font);
+            if (!string.Equals(before, JsonConvert.SerializeObject(match), StringComparison.Ordinal))
+            {
+                ProjectChanged?.Invoke(this, font);
+                CheckIfMatchesSaved();
+            }
+        }
+
+        #endregion
+
         #region DriverEvents
         internal ObservableCollection<Driver> GetDriverEvents()
         {
@@ -1303,6 +1356,10 @@ namespace SuiteCreatorAvalonia.Services
                     _suiteConfig.DriverEvents = new ObservableCollection<Driver>(
                         order.Select(id => _suiteConfig.DriverEvents.First(e => e.Id == id)));
                     break;
+                case SuiteProperty.FontEvents:
+                    _suiteConfig.FontEvents = new ObservableCollection<SystemFont>(
+                        order.Select(id => _suiteConfig.FontEvents.First(e => e.Id == id)));
+                    break;
                 case SuiteProperty.EnvironmentEvents:
                     _suiteConfig.EnvironmentEvents = new ObservableCollection<Environment>(
                         order.Select(id => _suiteConfig.EnvironmentEvents.First(e => e.Id == id)));
@@ -1358,6 +1415,9 @@ namespace SuiteCreatorAvalonia.Services
                 case Driver driver:
                     _suiteConfig.DriverEvents.Add(driver);
                     break;
+                case SystemFont font:
+                    _suiteConfig.FontEvents.Add(font);
+                    break;
                 case Environment env:
                     _suiteConfig.EnvironmentEvents.Add(env);
                     break;
@@ -1399,6 +1459,7 @@ namespace SuiteCreatorAvalonia.Services
             _suiteConfig.RuleSets = new ObservableCollection<RuleSet>();
             _suiteConfig.CertEvents = new ObservableCollection<Cert>();
             _suiteConfig.DriverEvents = new ObservableCollection<Driver>();
+            _suiteConfig.FontEvents = new ObservableCollection<SystemFont>();
             _suiteConfig.ProcClosureEvents = new ObservableCollection<ProcessClosure>();
             _suiteConfig.EnvironmentEvents = new ObservableCollection<Environment>();
             _suiteConfig.ExecutableEvents = new ObservableCollection<Executable>();

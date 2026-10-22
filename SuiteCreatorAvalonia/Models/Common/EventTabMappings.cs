@@ -5,6 +5,7 @@ using SuiteCreatorAvalonia.Models.Package;
 using SuiteCreatorAvalonia.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SuiteCreatorAvalonia.Models.Common
 {
@@ -125,6 +126,7 @@ namespace SuiteCreatorAvalonia.Models.Common
             IconColor = Brush.Parse("#2e8b57"),
             ContentType = typeof(DriversViewModel),
             ModelType = typeof(Driver),
+            AdditionalModelTypes = new[] { typeof(SystemFont) },
         };
 
         public static EventTab Rules { get; set; } = new EventTab
@@ -169,6 +171,9 @@ namespace SuiteCreatorAvalonia.Models.Common
         public class EventTab : Tab
         {
             public List<object>? List { get; set; } = new List<object>();
+
+            // Other event types that are managed on this same tab (e.g. Fonts, which sit under Drivers)
+            public Type[] AdditionalModelTypes { get; init; } = Array.Empty<Type>();
         }
 
         public class SettingsTab : Tab
@@ -182,7 +187,7 @@ namespace SuiteCreatorAvalonia.Models.Common
                 if (prop.PropertyType == typeof(EventTab))
                 {
                     var tab = prop.GetValue(null) as EventTab;
-                    if (tab != null && tab.ModelType.IsAssignableFrom(modelType))
+                    if (tab != null && (tab.ModelType.IsAssignableFrom(modelType) || tab.AdditionalModelTypes.Any(t => t.IsAssignableFrom(modelType))))
                         return tab;
                 }
             }

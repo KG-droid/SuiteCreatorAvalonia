@@ -26,7 +26,8 @@ namespace SuiteCreatorAvalonia.Models.Common
         ShortcutEvents,
         Stages,
         BuildSettings,
-        PopupSettings
+        PopupSettings,
+        FontEvents
     }
 
     public class SuiteProjectConfig
@@ -50,6 +51,7 @@ namespace SuiteCreatorAvalonia.Models.Common
         public ObservableCollection<RuleSet> RuleSets { get; set; } = new();
         public ObservableCollection<Cert> CertEvents { get; set; } = new();
         public ObservableCollection<Driver> DriverEvents { get; set; } = new();
+        public ObservableCollection<SystemFont> FontEvents { get; set; } = new();
         public ObservableCollection<ProcessClosure> ProcClosureEvents { get; set; } = new();
         public ObservableCollection<Environment> EnvironmentEvents { get; set; } = new();
         public ObservableCollection<Executable> ExecutableEvents { get; set; } = new();

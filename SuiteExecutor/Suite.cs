@@ -361,6 +361,9 @@ namespace SuiteExecutor
             if (_suiteConfig.DriverEvents != null)
                 foreach (DriverExecEvent driver in _suiteConfig.DriverEvents)
                     driver.SetLog(_log);
+            if (_suiteConfig.FontEvents != null)
+                foreach (FontExecEvent font in _suiteConfig.FontEvents)
+                    font.SetLog(_log);
             if (_suiteConfig.ProcClosureEvents != null)
                 foreach (ProcClosureExecEvent proc in _suiteConfig.ProcClosureEvents)
                 {

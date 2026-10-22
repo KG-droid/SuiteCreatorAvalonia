@@ -33,6 +33,9 @@ namespace SuiteCreatorAvalonia.IDataTemplates
                     case Driver:
                         eventView.DataContext = new DriverCardViewModel(core as Driver, _coreManager);
                         break;
+                    case SystemFont:
+                        eventView.DataContext = new FontCardViewModel(core as SystemFont, _coreManager);
+                        break;
                     case Environment:
                         eventView.DataContext = new EnvCardViewModel(core as Environment, _coreManager);
                         break;

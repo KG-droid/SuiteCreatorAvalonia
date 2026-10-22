@@ -18,6 +18,7 @@ namespace SuiteOperations
         public List<RuleSet> RuleSets { get; set; } = new();
         public List<CertExecEvent> CertEvents { get; set; } = new();
         public List<DriverExecEvent> DriverEvents { get; set; } = new();
+        public List<FontExecEvent> FontEvents { get; set; } = new();
         public List<ProcClosureExecEvent> ProcClosureEvents { get; set; } = new();
         public List<EnvExecEvent> EnvironmentEvents { get; set; } = new();
         public List<ExecutableExecEvent> ExecutableEvents { get; set; } = new();

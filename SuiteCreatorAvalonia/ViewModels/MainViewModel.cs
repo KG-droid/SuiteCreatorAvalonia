@@ -383,6 +383,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             Type? contentType = EventTabMappings.GetEventTabByModelType(evt.GetType())?.ContentType;
             if (contentType == null) return;
             SetView(contentType);
+            (CurrentTabView as DriversViewModel)?.ShowSectionFor(evt);
             Dispatcher.UIThread.Post(() =>
             {
                 PropertyInfo? eventCardProp = CurrentTabView.GetType().GetProperty("IoEventViewModel");
