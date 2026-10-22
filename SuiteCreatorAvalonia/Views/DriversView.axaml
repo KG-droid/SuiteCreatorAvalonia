@@ -15,15 +15,13 @@
 		<vm:DriversViewModel/>
 	</Design.DataContext>
 
-	<Grid RowDefinitions="Auto,*">
-		<TabStrip
-			Grid.Row="0"
-			Margin="0,0,0,5"
-			SelectedIndex="{Binding SelectedSectionIndex}">
-			<TabStripItem Content="Drivers"/>
-			<TabStripItem Content="Fonts"/>
-		</TabStrip>
-		<UserControl Grid.Row="1" Content="{Binding IoEventViewModel}"/>
-	</Grid>
+	<TabControl SelectedIndex="{Binding SelectedSectionIndex, Mode=TwoWay}">
+		<TabItem Header="Drivers">
+			<UserControl Content="{Binding DriversEventViewModel}"/>
+		</TabItem>
+		<TabItem Header="Fonts">
+			<UserControl Content="{Binding FontsEventViewModel}"/>
+		</TabItem>
+	</TabControl>
 
 </UserControl>

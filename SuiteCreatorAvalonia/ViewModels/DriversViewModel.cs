@@ -15,6 +15,10 @@ namespace SuiteCreatorAvalonia.ViewModels
         private readonly IOEventViewModel _driversEventViewModel;
         private readonly IOEventViewModel _fontsEventViewModel;
 
+        public IOEventViewModel DriversEventViewModel => _driversEventViewModel;
+
+        public IOEventViewModel FontsEventViewModel => _fontsEventViewModel;
+
         // The event list of whichever section (Drivers or Fonts) is currently showing
         [ObservableProperty]
         private IOEventViewModel _ioEventViewModel;
