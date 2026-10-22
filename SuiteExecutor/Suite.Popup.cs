@@ -255,17 +255,15 @@ namespace SuiteExecutor
             // Check the popup condition if it exists
             if (_suiteConfig.PopupSettings.LinkToProcClosures)
             {
-                IEnumerable<string?> procClosureExeNames = _suiteConfig.ProcClosureEvents.Select(pc => pc.Name);
+                // Each event's Name may be a separated list of exes, so split it via GetNames()
+                IEnumerable<string> procClosureExeNames = _suiteConfig.ProcClosureEvents.SelectMany(pc => pc.GetNames());
                 HashSet<string> procNamesToCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (string? exeName in procClosureExeNames)
+                foreach (string exeName in procClosureExeNames)
                 {
-                    if (!string.IsNullOrWhiteSpace(exeName))
-                    {
-                        string name = exeName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
-                            ? exeName[..^4]
-                            : exeName;
-                        procNamesToCheck.Add(name);
-                    }
+                    string name = exeName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                        ? exeName[..^4]
+                        : exeName;
+                    procNamesToCheck.Add(name);
                 }
                 bool anyProcClosureRunning = false;
                 Process[] runningProcesses = Process.GetProcesses();
