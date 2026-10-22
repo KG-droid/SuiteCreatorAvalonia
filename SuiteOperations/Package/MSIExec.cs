@@ -121,6 +121,7 @@ namespace SuiteOperations.Package
 
             _log.WriteLog("Running per-user MSI install for all active user sessions.");
             string msiPath = GetEffectivePath(MSIFile)!;
+            MSITools.EnsureLogDirectoryExists(GetEffectiveLogPath(LogPath));
             string args = MSITools.BuildInstallArguments(
                 msiPath,
                 GetEffectivePath(TransformsFile),
