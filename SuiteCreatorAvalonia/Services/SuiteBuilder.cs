@@ -379,6 +379,7 @@ namespace SuiteCreatorAvalonia.Services
                 SourcePath = file.Action == Enums.FileSysIOAction.Deploy ? null : file.SourcePath,
                 DestinationPath = file.DestinationPath,
                 ReplaceExisting = file.ReplaceExisting,
+                DeleteOnlyIfEmpty = file.DeleteOnlyIfEmpty,
                 OverridePermissions = file.OverridePermissions,
                 Permissions = file.Permissions?.Select(p => p.Clone()).ToList(),
                 Schedules = file.Schedules.Select(s => s).ToList(),

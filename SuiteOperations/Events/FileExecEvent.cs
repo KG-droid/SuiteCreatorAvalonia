@@ -291,6 +291,11 @@ namespace SuiteOperations.Events
                 {
                     if (Directory.Exists(deletionPath))
                     {
+                        if (DeleteOnlyIfEmpty && Directory.EnumerateFileSystemEntries(deletionPath).Any())
+                        {
+                            _log.WriteLog($"Directory is not empty, leaving it in place: {deletionPath}");
+                            return;
+                        }
                         SeizeAccessForDelete(deletionPath);
                         DeleteDirectoryRecursive(deletionPath);
                     }

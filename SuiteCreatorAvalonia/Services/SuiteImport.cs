@@ -594,6 +594,7 @@ namespace SuiteCreatorAvalonia.Services
                     SourcePath = sourcePath,
                     DestinationPath = fileEvent.DestinationPath?.Select(v => v.Clone()).ToList(),
                     ReplaceExisting = fileEvent.ReplaceExisting,
+                    DeleteOnlyIfEmpty = fileEvent.DeleteOnlyIfEmpty,
                     OverridePermissions = fileEvent.OverridePermissions,
                     Permissions = fileEvent.Permissions?.Select(p => p.Clone()).ToList(),
                     IsPermanent = fileEvent.IsPermanent,

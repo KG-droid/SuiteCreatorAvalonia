@@ -11,6 +11,9 @@ namespace SuiteCreatorAvalonia.Models.Events
         public List<VariableText>? SourcePath { get; set; }
         public List<VariableText>? DestinationPath { get; set; }
         public bool ReplaceExisting { get; set; }
+        // Only applies when deleting a Directory (including a reversed CreateFolder). Defaults to false so
+        // events saved before this option existed keep their original recursive delete behaviour.
+        public bool DeleteOnlyIfEmpty { get; set; }
         public bool OverridePermissions { get; set; }
         public List<Permission>? Permissions { get; set; }
         public string? TargetsName { get; set; }
@@ -83,6 +86,7 @@ namespace SuiteCreatorAvalonia.Models.Events
                 Action = Action,
                 FileSysIOType = FileSysIOType,
                 ReplaceExisting = ReplaceExisting,
+                DeleteOnlyIfEmpty = DeleteOnlyIfEmpty,
                 SourcePath = SourcePath?.ConvertAll(s => s.Clone()),
                 DestinationPath = DestinationPath?.ConvertAll(d => d.Clone()),
                 OverridePermissions = OverridePermissions,
@@ -102,6 +106,7 @@ namespace SuiteCreatorAvalonia.Models.Events
             DestinationPath = file.DestinationPath?.ConvertAll(d => d.Clone());
             OverridePermissions = file.OverridePermissions;
             ReplaceExisting = file.ReplaceExisting;
+            DeleteOnlyIfEmpty = file.DeleteOnlyIfEmpty;
             Permissions = file.Permissions?.ConvertAll(p => p.Clone());
             Schedules = file.Schedules.ConvertAll(s => s.Clone());
         }
