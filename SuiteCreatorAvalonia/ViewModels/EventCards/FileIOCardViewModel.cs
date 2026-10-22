@@ -88,11 +88,22 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             {
                 Action = FileSysIOAction.Deploy;
             }
+            ResetDeleteOnlyIfEmptyIfNotApplicable();
             CreateInnerCardView();
+        }
+
+        // The "only delete if empty" option only applies to deleting a directory, so don't let a hidden value linger
+        private void ResetDeleteOnlyIfEmptyIfNotApplicable()
+        {
+            if (!_isLoading && (Action != FileSysIOAction.Delete || IOType != FileSysIOType.Directory))
+            {
+                DeleteOnlyIfEmpty = false;
+            }
         }
 
         partial void OnActionChanged(FileSysIOAction value)
         {
+            ResetDeleteOnlyIfEmptyIfNotApplicable();
             CreateInnerCardView();
         }
 
@@ -262,8 +273,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                     break;
                 case FileSysIOAction.CreateFolder:
                     // Create folder card
-                    mainGrid.ColumnDefinitions = new ColumnDefinitions("Auto, Auto, *, Auto, Auto, Auto");
-                    mainGrid.Children.Add(CreateDeleteOnlyIfEmptyToggle(4));
+                    mainGrid.ColumnDefinitions = new ColumnDefinitions("Auto, Auto, *, Auto, Auto");
 
                     // Toggle Permanent
                     ToggleButton permanentFolderToggle = new();
@@ -272,7 +282,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                     permanentFolderToggle.Tag = "DiamondStone";
                     ToolTip.SetTip(permanentFolderToggle, "If enabled, the folder won't be removed on Suite removal");
                     Help.Annotate(permanentFolderToggle, "Permanent", "If enabled, this folder won't be removed on Suite removal.");
-                    Grid.SetColumn(permanentFolderToggle, 5);
+                    Grid.SetColumn(permanentFolderToggle, 4);
                     mainGrid.Children.Add(permanentFolderToggle);
                     break;
                 case FileSysIOAction.Delete:
