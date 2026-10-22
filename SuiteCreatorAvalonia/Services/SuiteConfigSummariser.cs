@@ -49,6 +49,7 @@ namespace SuiteCreatorAvalonia.Services
             AddEventSection(sections, EventTabMappings.Shortcuts, config.ShortcutEvents, DescribeShortcutEvent, stageNames, ref eventCount);
             AddEventSection(sections, EventTabMappings.PSScripts, config.PowerShellEvents, DescribePowerShellEvent, stageNames, ref eventCount);
             AddEventSection(sections, EventTabMappings.Drivers, config.DriverEvents, DescribeDriverEvent, stageNames, ref eventCount);
+            AddEventSection(sections, EventTabMappings.Fonts, config.FontEvents, DescribeFontEvent, stageNames, ref eventCount);
 
             SuiteConfigSection rules = BuildRulesSection(config);
             if (rules.Count > 0) sections.Add(rules);
@@ -555,6 +556,16 @@ namespace SuiteCreatorAvalonia.Services
             AddFlags(details, "Options", ("Kept on uninstall", driver.IsPermanent));
             string title = $"{Humanise(driver.Action)} driver {FirstNonEmpty(driver.InfName, FileNameOnly(driver.InfPath))}".TrimEnd();
             return NewEventItem(title, EventTabMappings.Drivers, details);
+        }
+
+        private static SuiteConfigItem DescribeFontEvent(FontExecEvent font)
+        {
+            List<SuiteConfigDetail> details = new List<SuiteConfigDetail>();
+            string fontTarget = FirstNonEmpty(font.FontFileName, FileNameOnly(font.FontPath));
+            Add(details, font.Action == FontAction.Install ? "Font file(s)" : "Font file name(s)", fontTarget);
+            AddFlags(details, "Options", ("Kept on uninstall", font.IsPermanent));
+            string title = $"{Humanise(font.Action)} font {fontTarget}".TrimEnd();
+            return NewEventItem(title, EventTabMappings.Fonts, details);
         }
 
         private static SuiteConfigItem NewEventItem(string title, EventTabMappings.Tab tab, List<SuiteConfigDetail> details)

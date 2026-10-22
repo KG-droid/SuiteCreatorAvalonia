@@ -92,7 +92,7 @@ namespace SuiteCreatorAvalonia.IDataTemplates
                         break;
                     case SystemFont font:
                         ToolTip.SetTip(button, "Navigate to this Font event");
-                        iconKind = EventTabMappings.Drivers.IconKind;
+                        iconKind = EventTabMappings.Fonts.IconKind;
                         break;
                     case Models.Events.Environment env:
                         ToolTip.SetTip(button, "Navigate to this Environment Variable event");
@@ -179,7 +179,6 @@ namespace SuiteCreatorAvalonia.IDataTemplates
                 {
                     Type navContentType = valErr.ObjectForError is Models.Rules.RuleSet ? ruleSetResolvedContentType : contentType;
                     _mainViewModel.SetView(navContentType);
-                    (_mainViewModel.CurrentTabView as DriversViewModel)?.ShowSectionFor(ruleSetLinkedEvent ?? valErr.ObjectForError as EventCore);
                     Dispatcher.UIThread.Post(() =>
                     {
                         Type? navType = _mainViewModel.CurrentTabView.GetType();
