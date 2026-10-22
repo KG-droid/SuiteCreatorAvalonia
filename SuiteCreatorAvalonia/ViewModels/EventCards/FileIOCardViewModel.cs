@@ -93,11 +93,6 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
 
         partial void OnActionChanged(FileSysIOAction value)
         {
-            // Creating a folder only makes sense for a Directory
-            if (!_isLoading && value == FileSysIOAction.CreateFolder && IOType != FileSysIOType.Directory)
-            {
-                IOType = FileSysIOType.Directory;
-            }
             CreateInnerCardView();
         }
 
@@ -150,7 +145,10 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
 
             // Action
             ComboBox actionCombo = new ComboBox();
-            actionCombo.ItemsSource = Enum.GetValues(typeof(FileSysIOAction));
+            // Creating a folder is only offered when the Type is Directory
+            actionCombo.ItemsSource = Enum.GetValues<FileSysIOAction>()
+                .Where(a => a != FileSysIOAction.CreateFolder || IOType == FileSysIOType.Directory)
+                .ToList();
             actionCombo.Bind(ComboBox.SelectedValueProperty, new Binding("Action"));
             actionCombo.Background = Brushes.Transparent;
             actionCombo.SelectionChanged += HoldCardOpenAfterComboChange;
