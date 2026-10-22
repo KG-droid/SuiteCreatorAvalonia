@@ -8,13 +8,22 @@
              xmlns:services="using:SuiteCreatorAvalonia.Services"
              x:Class="SuiteCreatorAvalonia.Views.DriversView"
              services:Help.Title="Drivers"
-             services:Help.PageSummary="Install Windows drivers from an .inf file (the driver's folder is bundled into the suite), or remove installed drivers from the driver store by their original .inf file name."
+             services:Help.PageSummary="Drivers: install Windows drivers from an .inf file (the driver's folder is bundled into the suite), or remove installed drivers from the driver store by their original .inf file name. Fonts: install font files (or a whole folder of them) for all users, or remove installed fonts by file name."
 			 x:DataType="vm:DriversViewModel">
 
 	<Design.DataContext>
 		<vm:DriversViewModel/>
 	</Design.DataContext>
 
-	<UserControl Content="{Binding IoEventViewModel}"/>
+	<Grid RowDefinitions="Auto,*">
+		<TabStrip
+			Grid.Row="0"
+			Margin="0,0,0,5"
+			SelectedIndex="{Binding SelectedSectionIndex}">
+			<TabStripItem Content="Drivers"/>
+			<TabStripItem Content="Fonts"/>
+		</TabStrip>
+		<UserControl Grid.Row="1" Content="{Binding IoEventViewModel}"/>
+	</Grid>
 
 </UserControl>

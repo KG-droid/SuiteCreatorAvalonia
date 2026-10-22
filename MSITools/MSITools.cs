@@ -122,6 +122,16 @@ namespace SuiteTools
             Installed = 5,
         }
 
+        // msiexec fails outright (rather than creating it) when /l*v points into a folder that doesn't
+        // exist, so make sure the admin's chosen log folder is there before running the MSI.
+        public static void EnsureLogDirectoryExists(string? logPath)
+        {
+            if (string.IsNullOrWhiteSpace(logPath)) return;
+            string? logDir = Path.GetDirectoryName(logPath);
+            if (!string.IsNullOrWhiteSpace(logDir) && !Directory.Exists(logDir))
+                Directory.CreateDirectory(logDir);
+        }
+
         public static string BuildInstallArguments(
             string msiPath,
             string? transformsPath = null,
@@ -178,6 +188,7 @@ namespace SuiteTools
             }
             try
             {
+                EnsureLogDirectoryExists(logPath);
                 var args = BuildInstallArguments(msiPath, transformsPath, secureTransforms, patchPath, properties, logPath);
 
                 int exitCode = RunProcessWithRetry(() => new System.Diagnostics.Process
@@ -229,6 +240,7 @@ namespace SuiteTools
                         }
                     }
                 }
+                EnsureLogDirectoryExists(logPath);
                 if (!string.IsNullOrWhiteSpace(logPath))
                 {
                     args += $" /l*v \"{logPath}\"";
@@ -288,6 +300,7 @@ namespace SuiteTools
                 {
                     args += $" {additionalParams}";
                 }
+                EnsureLogDirectoryExists(logPath);
                 if (!string.IsNullOrWhiteSpace(logPath))
                 {
                     args += $" /l*v \"{logPath}\"";
@@ -360,6 +373,7 @@ namespace SuiteTools
                         {
                             args += $" {additionalParams}";
                         }
+                        EnsureLogDirectoryExists(logPath);
                         if (!string.IsNullOrWhiteSpace(logPath))
                         {
                             args += $" /l*v \"{logPath}\"";

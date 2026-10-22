@@ -85,6 +85,7 @@ namespace SuiteCreatorAvalonia
             collection.AddTransient<DriverCardViewModel>();
             collection.AddTransient<DriversViewModel>();
             collection.AddTransient<EnvCardViewModel>();
+            collection.AddTransient<FontCardViewModel>();
             collection.AddTransient<EnvViewModel>();
             collection.AddTransient<ExecCardViewModel>();
             collection.AddTransient<ExecViewModel>();

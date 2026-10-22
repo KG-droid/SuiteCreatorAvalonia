@@ -41,6 +41,9 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
         private bool _replaceExisting = true;
 
         [ObservableProperty]
+        private bool _deleteOnlyIfEmpty = false;
+
+        [ObservableProperty]
         private Brush _lockColour = new SolidColorBrush(Colors.White);
 
         private Flyout _permissionsFlyout;
@@ -81,11 +84,20 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
 
         partial void OnIOTypeChanged(FileSysIOType value)
         {
+            if (!_isLoading && value != FileSysIOType.Directory && Action == FileSysIOAction.CreateFolder)
+            {
+                Action = FileSysIOAction.Deploy;
+            }
             CreateInnerCardView();
         }
 
         partial void OnActionChanged(FileSysIOAction value)
         {
+            // Creating a folder only makes sense for a Directory
+            if (!_isLoading && value == FileSysIOAction.CreateFolder && IOType != FileSysIOType.Directory)
+            {
+                IOType = FileSysIOType.Directory;
+            }
             CreateInnerCardView();
         }
 
@@ -143,12 +155,12 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             actionCombo.Background = Brushes.Transparent;
             actionCombo.SelectionChanged += HoldCardOpenAfterComboChange;
             actionCombo.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
-            Help.Annotate(actionCombo, "Action", "Deploy a new file/folder, Copy or Move an existing one, Delete one, or Rename one.");
+            Help.Annotate(actionCombo, "Action", "Deploy a new file/folder, Copy or Move an existing one, Delete one, Rename one, or Create a new empty folder.");
             Grid.SetColumn(actionCombo, 1);
             mainGrid.Children.Add(actionCombo);
 
             // Source
-            if (Action == FileSysIOAction.Delete || Action == FileSysIOAction.Rename)
+            if (Action == FileSysIOAction.Delete || Action == FileSysIOAction.Rename || Action == FileSysIOAction.CreateFolder)
             {
                 _sourcePathVM.DontShowUserVars = false;
             }
@@ -250,9 +262,26 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                     Grid.SetColumn(overridePermissionsButton, 9);
                     mainGrid.Children.Add(overridePermissionsButton);
                     break;
+                case FileSysIOAction.CreateFolder:
+                    // Create folder card
+                    mainGrid.ColumnDefinitions = new ColumnDefinitions("Auto, Auto, *, Auto, Auto, Auto");
+                    mainGrid.Children.Add(CreateDeleteOnlyIfEmptyToggle(4));
+
+                    // Toggle Permanent
+                    ToggleButton permanentFolderToggle = new();
+                    permanentFolderToggle.Classes.Add("IconToggleButton");
+                    permanentFolderToggle.Bind(ToggleButton.IsCheckedProperty, new Binding("IsPermanent"));
+                    permanentFolderToggle.Tag = "DiamondStone";
+                    ToolTip.SetTip(permanentFolderToggle, "If enabled, the folder won't be removed on Suite removal");
+                    Help.Annotate(permanentFolderToggle, "Permanent", "If enabled, this folder won't be removed on Suite removal.");
+                    Grid.SetColumn(permanentFolderToggle, 5);
+                    mainGrid.Children.Add(permanentFolderToggle);
+                    break;
                 case FileSysIOAction.Delete:
                     // Delete card
-                    mainGrid.ColumnDefinitions = new ColumnDefinitions("Auto, Auto, *, Auto");
+                    mainGrid.ColumnDefinitions = new ColumnDefinitions("Auto, Auto, *, Auto, Auto");
+                    if (IOType == FileSysIOType.Directory)
+                        mainGrid.Children.Add(CreateDeleteOnlyIfEmptyToggle(4));
                     break;
                 case FileSysIOAction.Rename:
                     // Rename card
@@ -277,6 +306,18 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                     break;
             }
             CardInnerView = mainGrid;
+        }
+
+        private ToggleButton CreateDeleteOnlyIfEmptyToggle(int column)
+        {
+            ToggleButton deleteOnlyIfEmptyToggle = new();
+            deleteOnlyIfEmptyToggle.Classes.Add("IconToggleButton");
+            deleteOnlyIfEmptyToggle.Bind(ToggleButton.IsCheckedProperty, new Binding("DeleteOnlyIfEmpty"));
+            deleteOnlyIfEmptyToggle.Tag = "FolderRemove";
+            ToolTip.SetTip(deleteOnlyIfEmptyToggle, "If enabled, the folder is only deleted when it's empty. Otherwise it's deleted along with everything in it");
+            Help.Annotate(deleteOnlyIfEmptyToggle, "Only delete if empty", "If enabled, the folder is only deleted when it contains nothing; if it still has files or folders in it, it's left in place. If off, the folder and everything in it is deleted.");
+            Grid.SetColumn(deleteOnlyIfEmptyToggle, column);
+            return deleteOnlyIfEmptyToggle;
         }
 
         private async void SourceBrowse(string title, FileSysIOType ioType)
@@ -328,6 +369,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 }
                 OverridePermissions = fileIO.OverridePermissions;
                 ReplaceExisting = fileIO.ReplaceExisting;
+                DeleteOnlyIfEmpty = fileIO.DeleteOnlyIfEmpty;
                 IsPermanent = fileIO.IsPermanent;
                 Permissions.Clear();
                 if (fileIO.Permissions != null)
@@ -356,6 +398,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 file.FileSysIOType = IOType;
                 file.IsPermanent = IsPermanent;
                 file.ReplaceExisting = ReplaceExisting;
+                file.DeleteOnlyIfEmpty = DeleteOnlyIfEmpty;
                 file.Schedules = Schedules.ToList();
                 if (!Design.IsDesignMode)
                     _coreManager.UpdateFileEvent(file);

@@ -73,6 +73,7 @@ namespace SuiteCreatorAvalonia.Services
             List<BrowserExt> extensionEvents = _suiteCoreManager.GetExtensionEvents().ToList();
             List<Cert> certEvents = _suiteCoreManager.GetCertEvents().ToList();
             List<Driver> driverEvents = _suiteCoreManager.GetDriverEvents().ToList();
+            List<SystemFont> fontEvents = _suiteCoreManager.GetFontEvents().ToList();
             List<PackageBase> packages = _suiteCoreManager.GetPackages().ToList();
             List<FileSysIO> fileEvents = _suiteCoreManager.GetFileEvents().ToList();
             List<Executable> executableEvents = _suiteCoreManager.GetExecutableEvents().ToList();
@@ -108,7 +109,7 @@ namespace SuiteCreatorAvalonia.Services
             DateTime buildTime = DateTime.Now;
             await Task.Run(() =>
             {
-                buildPath = CreateSuiteFiles(suiteExecConfig, extensionEvents, certEvents, driverEvents, packages, fileEvents, executableEvents, powerShellEvents, registryEvents, popupSettings, companyLogoBase64, companyLogoBytes, companyLogoExt, progress, cancellationToken);
+                buildPath = CreateSuiteFiles(suiteExecConfig, extensionEvents, certEvents, driverEvents, fontEvents, packages, fileEvents, executableEvents, powerShellEvents, registryEvents, popupSettings, companyLogoBase64, companyLogoBytes, companyLogoExt, progress, cancellationToken);
             }, cancellationToken);
             Report("Finalizing build");
             Build buildSettings = _suiteCoreManager.GetBuildSettings();
@@ -333,6 +334,19 @@ namespace SuiteCreatorAvalonia.Services
                 IsPermanent = driver.IsPermanent,
                 Schedules = driver.Schedules.Select(s => s).ToList(),
             }).ToList();
+            suiteExecConfig.FontEvents = _suiteCoreManager.GetFontEvents().Select(font => new SuiteOperations.Events.FontExecEvent(log)
+            {
+                Id = font.Id,
+                Action = font.Action,
+                FontPath = font.FontPath,
+                // Removal identifies the font by its file name(s), so derive them from the font path
+                // for install events where they haven't been set explicitly.
+                FontFileName = string.IsNullOrWhiteSpace(font.FontFileName) && !string.IsNullOrWhiteSpace(font.FontPath)
+                    ? SystemFont.DeriveFileNames(font.FontPath)
+                    : font.FontFileName,
+                IsPermanent = font.IsPermanent,
+                Schedules = font.Schedules.Select(s => s).ToList(),
+            }).ToList();
             suiteExecConfig.ProcClosureEvents = _suiteCoreManager.GetProcessClosureEvents().Select(proc => new SuiteOperations.Events.ProcClosureExecEvent(log)
             {
                 Id = proc.Id,
@@ -379,6 +393,7 @@ namespace SuiteCreatorAvalonia.Services
                 SourcePath = file.Action == Enums.FileSysIOAction.Deploy ? null : file.SourcePath,
                 DestinationPath = file.DestinationPath,
                 ReplaceExisting = file.ReplaceExisting,
+                DeleteOnlyIfEmpty = file.DeleteOnlyIfEmpty,
                 OverridePermissions = file.OverridePermissions,
                 Permissions = file.Permissions?.Select(p => p.Clone()).ToList(),
                 Schedules = file.Schedules.Select(s => s).ToList(),
@@ -489,6 +504,7 @@ namespace SuiteCreatorAvalonia.Services
             List<BrowserExt> extensionEvents,
             List<Cert> certEvents,
             List<Driver> driverEvents,
+            List<SystemFont> fontEvents,
             List<PackageBase> packages,
             List<FileSysIO> fileEvents,
             List<Executable> executableEvents,
@@ -582,6 +598,25 @@ namespace SuiteCreatorAvalonia.Services
                         }
                         string fileDir = Path.Combine(tempRoot, "Driver", driverEvent.Id.ToString());
                         NativeTools.CopyWithRoboCopy(driverSourceDir, fileDir, false, cancellationToken: cancellationToken);
+                    }
+                }
+
+                // Font files (a single file, or every font file in a folder, flattened into the event's folder)
+                Report("Copying font files");
+                foreach (SystemFont fontEvent in fontEvents)
+                {
+                    if (fontEvent.Action == Enums.FontAction.Install && !string.IsNullOrWhiteSpace(fontEvent.FontPath))
+                    {
+                        string fileDir = Path.Combine(tempRoot, "Font", fontEvent.Id.ToString());
+                        Directory.CreateDirectory(fileDir);
+                        IEnumerable<string> fontFiles = Directory.Exists(fontEvent.FontPath)
+                            ? Directory.EnumerateFiles(fontEvent.FontPath, "*", SearchOption.AllDirectories).Where(SystemFont.IsFontFile)
+                            : new[] { fontEvent.FontPath };
+                        foreach (string fontFile in fontFiles)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            File.Copy(fontFile, Path.Combine(fileDir, Path.GetFileName(fontFile)), true);
+                        }
                     }
                 }
 
@@ -1080,6 +1115,20 @@ namespace SuiteCreatorAvalonia.Services
                 }
             }
 
+            // Validate FontEvents
+            foreach (SystemFont font in _suiteCoreManager.GetFontEvents())
+            {
+                string? valResult = font.Validate();
+                if (!string.IsNullOrWhiteSpace(valResult))
+                {
+                    validationErrors.Add(new SuiteValidationError
+                    {
+                        Message = valResult,
+                        ObjectForError = font
+                    });
+                }
+            }
+
             // Validate ProcessClosureEvents
             foreach (ProcessClosure proc in _suiteCoreManager.GetProcessClosureEvents())
             {
@@ -1308,6 +1357,7 @@ namespace SuiteCreatorAvalonia.Services
             List<EventCore> allEvents = new();
             allEvents.AddRange(_suiteCoreManager.GetCertEvents());
             allEvents.AddRange(_suiteCoreManager.GetDriverEvents());
+            allEvents.AddRange(_suiteCoreManager.GetFontEvents());
             allEvents.AddRange(_suiteCoreManager.GetProcessClosureEvents());
             allEvents.AddRange(_suiteCoreManager.GetEnvironmentEvents());
             allEvents.AddRange(_suiteCoreManager.GetExecutableEvents());
