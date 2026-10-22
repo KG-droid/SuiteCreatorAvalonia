@@ -81,11 +81,20 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
 
         partial void OnIOTypeChanged(FileSysIOType value)
         {
+            if (!_isLoading && value != FileSysIOType.Directory && Action == FileSysIOAction.CreateFolder)
+            {
+                Action = FileSysIOAction.Deploy;
+            }
             CreateInnerCardView();
         }
 
         partial void OnActionChanged(FileSysIOAction value)
         {
+            // Creating a folder only makes sense for a Directory
+            if (!_isLoading && value == FileSysIOAction.CreateFolder && IOType != FileSysIOType.Directory)
+            {
+                IOType = FileSysIOType.Directory;
+            }
             CreateInnerCardView();
         }
 
@@ -143,12 +152,12 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
             actionCombo.Background = Brushes.Transparent;
             actionCombo.SelectionChanged += HoldCardOpenAfterComboChange;
             actionCombo.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
-            Help.Annotate(actionCombo, "Action", "Deploy a new file/folder, Copy or Move an existing one, Delete one, or Rename one.");
+            Help.Annotate(actionCombo, "Action", "Deploy a new file/folder, Copy or Move an existing one, Delete one, Rename one, or Create a new empty folder.");
             Grid.SetColumn(actionCombo, 1);
             mainGrid.Children.Add(actionCombo);
 
             // Source
-            if (Action == FileSysIOAction.Delete || Action == FileSysIOAction.Rename)
+            if (Action == FileSysIOAction.Delete || Action == FileSysIOAction.Rename || Action == FileSysIOAction.CreateFolder)
             {
                 _sourcePathVM.DontShowUserVars = false;
             }
@@ -249,6 +258,20 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                     Help.Annotate(overridePermissionsButton, "Permissions", "Set custom NTFS permissions on the deployed file/folder, overriding the defaults it would otherwise inherit.");
                     Grid.SetColumn(overridePermissionsButton, 9);
                     mainGrid.Children.Add(overridePermissionsButton);
+                    break;
+                case FileSysIOAction.CreateFolder:
+                    // Create folder card
+                    mainGrid.ColumnDefinitions = new ColumnDefinitions("Auto, Auto, *, Auto, Auto");
+
+                    // Toggle Permanent
+                    ToggleButton permanentFolderToggle = new();
+                    permanentFolderToggle.Classes.Add("IconToggleButton");
+                    permanentFolderToggle.Bind(ToggleButton.IsCheckedProperty, new Binding("IsPermanent"));
+                    permanentFolderToggle.Tag = "DiamondStone";
+                    ToolTip.SetTip(permanentFolderToggle, "If enabled, the folder won't be removed on Suite removal");
+                    Help.Annotate(permanentFolderToggle, "Permanent", "If enabled, this folder won't be removed on Suite removal.");
+                    Grid.SetColumn(permanentFolderToggle, 4);
+                    mainGrid.Children.Add(permanentFolderToggle);
                     break;
                 case FileSysIOAction.Delete:
                     // Delete card

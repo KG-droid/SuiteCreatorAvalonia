@@ -46,6 +46,9 @@ namespace SuiteOperations.Events
                 case FileSysIOAction.Rename:
                     Rename();
                     break;
+                case FileSysIOAction.CreateFolder:
+                    CreateFolder();
+                    break;
                 default:
                     throw new InvalidOperationException($"Unrecognised File event Action type: {Action}");
             }
@@ -215,6 +218,36 @@ namespace SuiteOperations.Events
                 }
             }, $"copy '{sourcePath}' to '{destinationPath}'");
             ApplyPermissions(destinationPath);
+        }
+
+        private void CreateFolder()
+        {
+            SpecialDIR? userSpecialDir = GetUserProfileRelativeSpecialDir(SourcePath);
+            if (userSpecialDir != null)
+            {
+                ApplyAcrossUserProfiles(SourcePath!, userSpecialDir, CreateFolderAt, "Create directory in user profile");
+                return;
+            }
+
+            CreateFolderAt(ParseVarPath(SourcePath!));
+        }
+
+        private void CreateFolderAt(string folderPath)
+        {
+            ExecuteWithFileLockRetry(() =>
+            {
+                if (Directory.Exists(folderPath))
+                {
+                    _log.WriteLog($"Directory already exists, nothing to create: {folderPath}");
+                    return;
+                }
+                if (File.Exists(folderPath))
+                {
+                    throw new IOException($"Cannot create directory '{folderPath}' as a file with that name already exists");
+                }
+                _log.WriteLog($"Creating directory: {folderPath}");
+                Directory.CreateDirectory(folderPath);
+            }, $"create directory '{folderPath}'");
         }
 
         private void Delete()

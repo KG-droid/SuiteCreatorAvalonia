@@ -116,6 +116,10 @@ namespace SuiteCreatorAvalonia.Models.Events
             {
                 return "FileSysIOType must be specified for FileSysIO event.";
             }
+            if (Action == FileSysIOAction.CreateFolder && FileSysIOType != FileSysIOType.Directory)
+            {
+                return "A CreateFolder FileSysIO event must be of type Directory.";
+            }
             if (SourcePath == null || SourcePath.Count == 0 || SourcePath.All(v => string.IsNullOrWhiteSpace(v.GetValue())))
             {
                 return "SourcePath must be specified for FileSysIO event.";
@@ -146,7 +150,10 @@ namespace SuiteCreatorAvalonia.Models.Events
             // Already a Delete: nothing to reverse, so leave the schedule alone (it should only run on the side it was configured for).
             if (Action == FileSysIOAction.Delete) return;
             base.Reverse();
+            bool wasCreateFolder = Action == FileSysIOAction.CreateFolder;
             Action = FileSysIOAction.Delete;
+            // Reversing a CreateFolder: the folder to remove is simply the one the event created (its SourcePath)
+            if (wasCreateFolder) return;
             string? parsedDestPath = DestinationPath != null ? string.Concat(DestinationPath.Select(d => d.GetValue())) : null;
             if (string.IsNullOrWhiteSpace(TargetsName)) throw new Exception("Failed to reverse FileSysIO event, as the TargetsName is null");
             SourcePath = new();

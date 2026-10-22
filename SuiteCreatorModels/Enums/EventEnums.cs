@@ -60,7 +60,8 @@
         Copy,
         Move,
         Delete,
-        Rename
+        Rename,
+        CreateFolder
     }
 
     public enum FileSysIOType
