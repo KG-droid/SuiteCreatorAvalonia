@@ -338,7 +338,8 @@ namespace SuiteCreatorAvalonia.Services
             {
                 Id = font.Id,
                 Action = font.Action,
-                FontPath = font.FontPath,
+                // FontPath is deliberately not stored: it's a path on this machine, and the executor resolves
+                // it from the Font/{id} folder bundled in the built suite (see Suite.PathResolution).
                 // Removal identifies the font by its file name(s), so derive them from the font path
                 // for install events where they haven't been set explicitly.
                 FontFileName = string.IsNullOrWhiteSpace(font.FontFileName) && !string.IsNullOrWhiteSpace(font.FontPath)
