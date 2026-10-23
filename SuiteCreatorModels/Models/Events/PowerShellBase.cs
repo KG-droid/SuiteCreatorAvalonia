@@ -31,7 +31,7 @@ namespace SuiteCreatorAvalonia.Models.Events
         public override void UpdateFrom(EventCore ecore)
         {
             if (ecore is not PowerShellBase powershell) return;
-            Id = Id;
+            Id = powershell.Id;
             ScriptName = powershell.ScriptName;
             ScriptPath = powershell.ScriptPath;
             if (ScriptDoc != null)

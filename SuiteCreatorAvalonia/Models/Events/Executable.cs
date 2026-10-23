@@ -40,7 +40,7 @@ namespace SuiteCreatorAvalonia.Models.Events
         public override string? Validate()
         {
             string? baseValResults = base.Validate();
-            if (string.IsNullOrWhiteSpace(baseValResults))
+            if (!string.IsNullOrWhiteSpace(baseValResults))
             {
                 return baseValResults;
             }

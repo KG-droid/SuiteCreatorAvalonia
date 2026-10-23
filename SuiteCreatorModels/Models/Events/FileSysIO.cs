@@ -95,7 +95,7 @@ namespace SuiteCreatorAvalonia.Models.Events
         public override void UpdateFrom(EventCore ecore)
         {
             if (ecore is not FileSysIO file) return;
-            Id = Id;
+            Id = file.Id;
             Action = file.Action;
             FileSysIOType = file.FileSysIOType;
             SourcePath = file.SourcePath?.ConvertAll(s => s.Clone());
