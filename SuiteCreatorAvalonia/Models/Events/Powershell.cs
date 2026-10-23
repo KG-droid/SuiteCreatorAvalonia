@@ -1,6 +1,7 @@
 ﻿using AvaloniaEdit.Document;
 using SuiteCreatorAvalonia.Models.Common.TreeNodes;
 using SuiteCreatorAvalonia.Tools;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -34,8 +35,10 @@ namespace SuiteCreatorAvalonia.Models.Events
             Id = powershell.Id;
             ScriptName = powershell.ScriptName;
             ScriptPath = powershell.ScriptPath;
-            if (ScriptDoc != null)
-                ScriptDoc.Text = powershell.ScriptDoc != null ? powershell.ScriptDoc.Text : string.Empty;
+            if (ScriptDoc == null)
+                ScriptDoc = powershell.ScriptDoc != null ? new TextDocument(powershell.ScriptDoc.Text) : null;
+            else if (!string.Equals(ScriptDoc.Text, powershell.ScriptDoc?.Text ?? string.Empty, StringComparison.Ordinal))
+                ScriptDoc.Text = powershell.ScriptDoc?.Text ?? string.Empty;
             SupportingFiles = powershell.SupportingFiles != null
                 ? new ObservableCollection<FileSystemNode>(
                     powershell.SupportingFiles.Select(f => f.Clone()))
