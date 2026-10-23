@@ -418,11 +418,12 @@ namespace SuiteExecutor
                     if (ext.Action == ExtAction.Install && ext.Source == BrowserExtensionSource.Local)
                     {
                         string extDir = Path.Combine(_suiteRootDir, "BrowserExt", ext.Id.ToString());
-                        if (Directory.Exists(extDir))
+                        if (!Directory.Exists(extDir))
                         {
-                            ext.ExtPath = extDir;
-                            _log.WriteLog($"Resolved browser extension path: {extDir}", "PathResolution", Log.Severity.Info);
+                            throw new DirectoryNotFoundException($"Could not find browser extension directory: {extDir}");
                         }
+                        ext.ExtPath = extDir;
+                        _log.WriteLog($"Resolved browser extension path: {extDir}", "PathResolution", Log.Severity.Info);
                     }
                 }
             }

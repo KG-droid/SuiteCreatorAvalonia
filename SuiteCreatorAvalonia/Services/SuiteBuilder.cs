@@ -383,7 +383,7 @@ namespace SuiteCreatorAvalonia.Services
                 ExtensionId = ext.ExtensionId,
                 Browser = ext.Browser,
                 Source = ext.Source,
-                ExtPath = ext.ExtPath,
+                ExtPath = null, // Resolved by the executor from the bundled BrowserExt/{id} folder, never the admin's path
                 Schedules = ext.Schedules.Select(s => s).ToList(),
                 IsPermanent = ext.IsPermanent,
             }).ToList();
