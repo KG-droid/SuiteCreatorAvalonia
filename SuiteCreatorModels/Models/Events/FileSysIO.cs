@@ -102,6 +102,7 @@ namespace SuiteCreatorAvalonia.Models.Events
             DestinationPath = file.DestinationPath?.ConvertAll(d => d.Clone());
             OverridePermissions = file.OverridePermissions;
             ReplaceExisting = file.ReplaceExisting;
+            IsPermanent = file.IsPermanent;
             Permissions = file.Permissions?.ConvertAll(p => p.Clone());
             Schedules = file.Schedules.ConvertAll(s => s.Clone());
         }
