@@ -99,7 +99,7 @@ namespace SuiteCreatorAvalonia.Models.Events
         public override void UpdateFrom(EventCore ecore)
         {
             if (ecore is not FileSysIO file) return;
-            Id = Id;
+            Id = file.Id;
             Action = file.Action;
             FileSysIOType = file.FileSysIOType;
             SourcePath = file.SourcePath?.ConvertAll(s => s.Clone());
@@ -107,6 +107,7 @@ namespace SuiteCreatorAvalonia.Models.Events
             OverridePermissions = file.OverridePermissions;
             ReplaceExisting = file.ReplaceExisting;
             DeleteOnlyIfEmpty = file.DeleteOnlyIfEmpty;
+            IsPermanent = file.IsPermanent;
             Permissions = file.Permissions?.ConvertAll(p => p.Clone());
             Schedules = file.Schedules.ConvertAll(s => s.Clone());
         }
