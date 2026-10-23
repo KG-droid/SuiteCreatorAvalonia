@@ -325,7 +325,8 @@ namespace SuiteCreatorAvalonia.Services
             {
                 Id = driver.Id,
                 Action = driver.Action,
-                InfPath = driver.InfPath,
+                // InfPath is deliberately not stored: it's a path on this machine, and the executor resolves
+                // it from the Driver/{id} folder bundled in the built suite (see Suite.PathResolution).
                 // Removal identifies the driver by its original .inf file name, so derive it from
                 // the .inf path for install events where it hasn't been set explicitly.
                 InfName = string.IsNullOrWhiteSpace(driver.InfName) && !string.IsNullOrWhiteSpace(driver.InfPath)
