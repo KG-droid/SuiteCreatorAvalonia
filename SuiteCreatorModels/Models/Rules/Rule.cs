@@ -262,9 +262,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
             {
                 case DetectionTypes.Installed:
                     // Only ProductCode detection
-                    bool isInstalled = MSITools.IsMSIProductInstalledForAllUsers(
-                        productCode, 
-                        Architecture == Enums.Architecture.x64 ? System.Runtime.InteropServices.Architecture.X64 : System.Runtime.InteropServices.Architecture.X86);
+                    bool isInstalled = MSITools.IsMSIProductInstalledForAllUsers(productCode);
                     ruleResult.IsMet = isInstalled;
                     ruleResult.Summary = isInstalled
                         ? $"MSI product with ProductCode {productCode} is installed."
@@ -273,9 +271,7 @@ namespace SuiteCreatorAvalonia.Models.Rules
 
                 case DetectionTypes.NotInstalled:
                     // Only ProductCode detection
-                    bool notInstalled = !MSITools.IsMSIProductInstalledForAllUsers(
-                        productCode,
-                        Architecture == Enums.Architecture.x64 ? System.Runtime.InteropServices.Architecture.X64 : System.Runtime.InteropServices.Architecture.X86);
+                    bool notInstalled = !MSITools.IsMSIProductInstalledForAllUsers(productCode);
                     ruleResult.IsMet = notInstalled;
                     ruleResult.Summary = notInstalled
                         ? $"MSI product with ProductCode {productCode} is not installed."
