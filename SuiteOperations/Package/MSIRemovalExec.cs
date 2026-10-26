@@ -190,7 +190,7 @@ namespace SuiteOperations.Package
                 throw new ArgumentNullException(nameof(RemovalCode), "RemovalCode is null or whitespace");
             if (IsProductRemoval)
             {
-                result.Result = MSITools.IsMSIProductInstalledForAllUsers(RemovalCode, Architecture);
+                result.Result = MSITools.IsMSIProductInstalledForAllUsers(RemovalCode);
                 result.Summary = $"Checking for installed products matching the Product code: {RemovalCode}";
             }
             else

@@ -674,7 +674,7 @@ namespace SuiteTools
             }
         }
 
-        public static bool IsMSIProductInstalledForAllUsers(string productCode, Architecture arch)
+        public static bool IsMSIProductInstalledForAllUsers(string productCode)
         {
             if (string.IsNullOrWhiteSpace(productCode))
                 throw new ArgumentNullException(nameof(productCode), "No ProductCode was provided to each if the MSI is installed");
@@ -687,8 +687,9 @@ namespace SuiteTools
             // Compare parsed GUIDs rather than raw strings so differences in curly-brace
             // formatting or casing between the caller's value and what Windows Installer
             // reports (via GetInstalledMSIProductsEx) don't cause a false "not installed" result.
+            // Architecture is deliberately not compared: a ProductCode uniquely identifies an installed
+            // product, and the detected architecture can be null or differ from a stored value.
             MSIProductInfo? product = installedProducts?.FirstOrDefault(p =>
-                p.Architecture == arch &&
                 p.ProductCode != null &&
                 Guid.TryParse(p.ProductCode, out Guid installedGuid) &&
                 installedGuid == productGuid);
