@@ -126,6 +126,11 @@ namespace SuiteExecutor
             }
         }
 
+        private string GetPopupBuildIdentifier()
+        {
+            return $"{_suiteConfig.BuildSettings.SuiteVersion}+{_suiteConfig.BuildSettings.Revision}";
+        }
+
         private void CreateSuitePopupInitialDateRegistry()
         {
             try
@@ -138,6 +143,7 @@ namespace SuiteExecutor
                         return;
                     }
                     key.SetValue($"{_action}FirstPopupShownDate", DateTime.Now.ToString("o"), RegistryValueKind.String);
+                    key.SetValue($"{_action}FirstPopupShownBuild", GetPopupBuildIdentifier(), RegistryValueKind.String);
                     _log.WriteLog($"Set {_action}FirstPopupShownDate in registry: {_suiteRegistryPath}", "SuiteRegistry", Log.Severity.Info);
                 }
             }
@@ -162,6 +168,19 @@ namespace SuiteExecutor
                     string? dateValue = key.GetValue($"{_action}FirstPopupShownDate") as string;
                     if (string.IsNullOrWhiteSpace(dateValue))
                         return null;
+
+                    // The key is shared by every version of the suite (it's keyed on UpgradeCode), so a date
+                    // left behind by a previous version/revision must not count against this one - otherwise
+                    // the new version's delay days would already be used up and Later would be hidden.
+                    // Dates written before the build was recorded have no marker and are treated as stale too.
+                    string? shownBuild = key.GetValue($"{_action}FirstPopupShownBuild") as string;
+                    string currentBuild = GetPopupBuildIdentifier();
+                    if (!string.Equals(shownBuild, currentBuild, StringComparison.Ordinal))
+                    {
+                        _log.WriteLog($"Ignoring {_action}FirstPopupShownDate from registry: it was recorded for build '{shownBuild ?? "unknown"}', current build is '{currentBuild}'", "SuiteRegistry", Log.Severity.Info);
+                        return null;
+                    }
+
                     if (DateTime.TryParse(dateValue, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime firstPopupDate))
                     {
                         _log.WriteLog($"Retrieved FirstPopupShownDate from registry: {firstPopupDate:o}", "SuiteRegistry", Log.Severity.Info);
