@@ -65,7 +65,7 @@ namespace SuiteOperations.Package
         private MSIResult RepairThenRetryUninstall(MSIResult failedResult)
         {
             _log.WriteLog($"Uninstall failed with exit code 1603; attempting full repair of old product via: {RepairMsiPath}");
-            MSIResult repairResult = MSITools.RepairMSI(RepairMsiPath!, LogPath, Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)));
+            MSIResult repairResult = MSITools.RepairMSI(RepairMsiPath!, LogPath, Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)), secureParams: SecureParams);
             _log.WriteLog($"Repair command: {repairResult.CommandRun}");
             if (!repairResult.Success)
             {
@@ -74,7 +74,7 @@ namespace SuiteOperations.Package
             }
             _log.WriteLog("Repair completed successfully; retrying removal");
             MSIResult retryResult = MSITools.UninstallMSI(RemovalCode, LogPath,
-                Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)));
+                Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)), secureParams: SecureParams);
             return retryResult;
         }
 
@@ -84,7 +84,7 @@ namespace SuiteOperations.Package
             {
                 _log.WriteLog($"Running MSI Product removal via ProductCode: {RemovalCode}");
                 MSIResult result = MSITools.UninstallMSI(RemovalCode, LogPath,
-                    Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)));
+                    Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)), secureParams: SecureParams);
                 _log.WriteLog($"Uninstall command: {result.CommandRun}");
                 if (!result.Success && result.ExitCode == 1603 && RepairOldProductOnFailure && !string.IsNullOrWhiteSpace(RepairMsiPath))
                 {
@@ -102,7 +102,7 @@ namespace SuiteOperations.Package
             {
                 _log.WriteLog($"Running MSI Family removal via UpgradeCode: {RemovalCode}");
                 MSIResult result = MSITools.UninstallMSIFamily(RemovalCode, LogPath,
-                    Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)));
+                    Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)), secureParams: SecureParams);
                 _log.WriteLog($"Uninstall command: {result.CommandRun}");
                 if (!result.Success)
                 {
@@ -121,7 +121,7 @@ namespace SuiteOperations.Package
                 _log.WriteLog($"Running per-user MSI Product removal via ProductCode: {RemovalCode}");
                 List<MSIResult> results = UserTools.ProcessExtensions.RunAsAllUsersImpersonated<MSIResult>(() =>
                     MSITools.UninstallMSI(RemovalCode, LogPath,
-                        Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)))
+                        Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)), secureParams: SecureParams)
                 );
                 foreach (MSIResult initialResult in results)
                 {
@@ -145,7 +145,7 @@ namespace SuiteOperations.Package
             {
                 _log.WriteLog($"Running per-user MSI Family removal via UpgradeCode: {RemovalCode}");
                 List<MSIResult> results = UserTools.ProcessExtensions.RunAsAllUsersImpersonated<MSIResult>(() =>
-                    MSITools.UninstallMSIFamily(RemovalCode, LogPath, Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)))
+                    MSITools.UninstallMSIFamily(RemovalCode, LogPath, Properties?.ConvertAll(p => new MSITools.MSIProp(p.Name!, p.Value!)), secureParams: SecureParams)
                 );
                 foreach (MSIResult result in results)
                 {

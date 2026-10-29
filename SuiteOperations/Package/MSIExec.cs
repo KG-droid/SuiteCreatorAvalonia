@@ -100,7 +100,8 @@ namespace SuiteOperations.Package
                     p => new MSITools.MSIProp(p.Name!, p.Value!)
                 ),
                 GetEffectiveLogPath(LogPath),
-                msg => _log.WriteLog(msg)
+                msg => _log.WriteLog(msg),
+                SecureParams
             );
             _log.WriteLog($"Install command was: {result.CommandRun}");
             if (!result.Success)
@@ -132,8 +133,22 @@ namespace SuiteOperations.Package
                 GetEffectiveLogPath(LogPath)
             );
 
+            string loggedArgs = SecureParams
+                ? MSITools.BuildInstallArguments(
+                    msiPath,
+                    GetEffectivePath(TransformsFile),
+                    SecureTransforms,
+                    GetEffectivePath(PatchFile),
+                    Properties?.ConvertAll(
+                        p => new MSITools.MSIProp(p.Name!, p.Value!)
+                    ),
+                    GetEffectiveLogPath(LogPath),
+                    true
+                )
+                : args;
+
             string msiexecPath = MSITools.GetMSIExecPath();
-            string commandRun = $"{ msiexecPath} {args}";
+            string commandRun = $"{ msiexecPath} {loggedArgs}";
 
             List<UserTools.ProcessExtensions.ImpersonatedProcessResult> procResults;
             int retryAttempt = 0;
@@ -339,6 +354,7 @@ namespace SuiteOperations.Package
                 TransformsFile = RollbackTransformsFile,
                 PatchFile = RollbackPatchFile,
                 SecureTransforms = Rollback.SecureTransforms,
+                SecureParams = Rollback.SecureParams,
                 Context = Rollback.Context,
                 IsCreateLog = Rollback.IsCreateLog,
                 IsRemoveFamily = Rollback.IsRemoveFamily,

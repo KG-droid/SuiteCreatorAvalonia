@@ -92,6 +92,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             MsiSubDetails.TransformFile = msiPkg.TransformsPath;
             MsiSubDetails.PatchFile = msiPkg.PatchPath;
             MsiSubDetails.SecureTransforms = msiPkg.SecureTransforms;
+            MsiSubDetails.SecureParams = msiPkg.SecureParams;
             MsiSubDetails.LegacyLongFilePath = msiPkg.LegacyLongFilePath;
             MsiSubDetails.RestartBehavior = msiPkg.RestartBehavior;
             MsiSubDetails.RemoveOnSuiteRemoval = msiPkg.RemoveOnSuiteRemoval;
@@ -118,6 +119,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                 Rollback.TransformFile = rollbackPkg.TransformsPath;
                 Rollback.PatchFile = rollbackPkg.PatchPath;
                 Rollback.SecureTransforms = rollbackPkg.SecureTransforms;
+                Rollback.SecureParams = rollbackPkg.SecureParams;
                 Rollback.LegacyLongFilePath = rollbackPkg.LegacyLongFilePath;
                 Rollback.EstimatedInstallSeconds = rollbackPkg.EstimatedInstallSeconds;
                 // Update Rollback Properties in place
@@ -141,6 +143,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             msiPkg.IsRemoveFamily = MsiSubDetails.IsRemoveFamily;
             msiPkg.PatchPath = MsiSubDetails.PatchFile;
             msiPkg.SecureTransforms = MsiSubDetails.SecureTransforms;
+            msiPkg.SecureParams = MsiSubDetails.SecureParams;
             msiPkg.Context = MsiSubDetails.IsUserContext ? Enums.Contexts.User : Enums.Contexts.System;
             msiPkg.IsCreateLog = MsiSubDetails.IsCreateLog;
             msiPkg.IncludeAdjacentFiles = MsiSubDetails.IncludeAdjacentFilesFolders;
@@ -158,6 +161,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                 rollbackPkg.PatchPath = Rollback.PatchFile;
                 rollbackPkg.IsRemoveFamily = Rollback.IsRemoveFamily;
                 rollbackPkg.SecureTransforms = Rollback.SecureTransforms;
+                rollbackPkg.SecureParams = Rollback.SecureParams;
                 rollbackPkg.Context = Rollback.IsUserContext ? Enums.Contexts.User : Enums.Contexts.System;
                 rollbackPkg.IsCreateLog = Rollback.IsCreateLog;
                 rollbackPkg.LegacyLongFilePath = Rollback.LegacyLongFilePath;

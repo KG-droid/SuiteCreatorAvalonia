@@ -211,6 +211,7 @@ namespace SuiteCreatorAvalonia.Services
                             Name = msiExec.Name,
                             RequirementRuleSetId = msiExec.RequirementRuleSetId,
                             SecureTransforms = msiExec.SecureTransforms,
+                            SecureParams = msiExec.SecureParams,
                             Context = msiExec.Context,
                             IsCreateLog = msiExec.IsCreateLog,
                             IsRemoveFamily = msiExec.IsRemoveFamily,
@@ -240,6 +241,7 @@ namespace SuiteCreatorAvalonia.Services
                                 Name = msiExec.Rollback.Name,
                                 RequirementRuleSetId = msiExec.Rollback.RequirementRuleSetId,
                                 SecureTransforms = msiExec.Rollback.SecureTransforms,
+                                SecureParams = msiExec.Rollback.SecureParams,
                                 Context = msiExec.Rollback.Context,
                                 IsCreateLog = msiExec.Rollback.IsCreateLog,
                                 IsRemoveFamily = msiExec.Rollback.IsRemoveFamily,
@@ -276,6 +278,7 @@ namespace SuiteCreatorAvalonia.Services
                             Context = msiRemExec.Context,
                             RestartBehavior = msiRemExec.RestartBehavior,
                             Properties = msiRemExec.Properties?.Select(p => p.Clone()).ToList(),
+                            SecureParams = msiRemExec.SecureParams,
                             RepairOldProductOnFailure = msiRemExec.RepairOldProductOnFailure,
                             EstimatedUninstallSeconds = msiRemExec.EstimatedUninstallSeconds,
                         };

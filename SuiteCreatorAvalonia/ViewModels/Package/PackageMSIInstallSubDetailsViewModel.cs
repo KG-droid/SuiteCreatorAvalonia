@@ -69,6 +69,9 @@ namespace SuiteCreatorAvalonia.ViewModels
         private bool _secureTransforms;
 
         [ObservableProperty]
+        private bool _secureParams;
+
+        [ObservableProperty]
         private string? _cmdPreview;
 
         [ObservableProperty]

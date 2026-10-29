@@ -62,6 +62,9 @@ namespace SuiteCreatorAvalonia.ViewModels
         private bool _isProgressPopupEnabled;
 
         [ObservableProperty]
+        private bool _secureParams = false;
+
+        [ObservableProperty]
         private bool _repairOldProductOnFailure = false;
 
         [ObservableProperty]
@@ -156,6 +159,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             RestartBehavior = msiRemovePackage.RestartBehavior;
             EstimatedUninstallSeconds = msiRemovePackage.EstimatedUninstallSeconds;
             IsProgressPopupEnabled = _suiteCoreManager.GetPopupSettings().ShowProgress;
+            SecureParams = msiRemovePackage.SecureParams;
             RepairOldProductOnFailure = msiRemovePackage.RepairOldProductOnFailure;
             RepairMsiPath = msiRemovePackage.RepairMsiPath;
             Properties.Clear();
@@ -185,6 +189,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             packageMSIRemove.LogPath = LogPath;
             packageMSIRemove.RestartBehavior = RestartBehavior;
             packageMSIRemove.EstimatedUninstallSeconds = EstimatedUninstallSeconds;
+            packageMSIRemove.SecureParams = SecureParams;
             packageMSIRemove.RepairOldProductOnFailure = RepairOldProductOnFailure;
             packageMSIRemove.RepairMsiPath = RepairMsiPath;
             packageMSIRemove.Properties = Properties.Count > 0 ? Properties.Select(p => p.Clone()).ToList() : null;

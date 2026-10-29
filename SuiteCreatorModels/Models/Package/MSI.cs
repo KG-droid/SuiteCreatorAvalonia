@@ -50,6 +50,7 @@ namespace SuiteCreatorAvalonia.Models.Package
     public class MSI : PackageBase
     {
         public bool SecureTransforms { get; set; }
+        public bool SecureParams { get; set; }
         public Contexts? Context { get; set; }
         public bool IsCreateLog { get; set; }
         public bool IsRemoveFamily { get; set; }
@@ -68,6 +69,7 @@ namespace SuiteCreatorAvalonia.Models.Package
             Name = source.Name;
             RequirementRuleSetId = source.RequirementRuleSetId;
             SecureTransforms = source.SecureTransforms;
+            SecureParams = source.SecureParams;
             Context = source.Context;
             IsCreateLog = source.IsCreateLog;
             IsRemoveFamily = source.IsRemoveFamily;
@@ -96,6 +98,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                 Name = msi.Name;
                 RequirementRuleSetId = msi.RequirementRuleSetId;
                 SecureTransforms = msi.SecureTransforms;
+                SecureParams = msi.SecureParams;
                 Context = msi.Context;
                 IsCreateLog = msi.IsCreateLog;
                 IsRemoveFamily = msi.IsRemoveFamily;

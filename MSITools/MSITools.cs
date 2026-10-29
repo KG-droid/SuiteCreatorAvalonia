@@ -122,13 +122,21 @@ namespace SuiteTools
             Installed = 5,
         }
 
+        public const string SecureValueMask = "***";
+
+        private static string FormatProperty(MSIProp prop, bool maskValue)
+        {
+            return $" {prop.Name}={(maskValue ? SecureValueMask : prop.Value)}";
+        }
+
         public static string BuildInstallArguments(
             string msiPath,
             string? transformsPath = null,
             bool? secureTransforms = false,
             string? patchPath = null,
             List<MSIProp>? properties = null,
-            string? logPath = null
+            string? logPath = null,
+            bool maskPropertyValues = false
         )
         {
             var args = $"/i \"{msiPath}\" /q";
@@ -152,7 +160,7 @@ namespace SuiteTools
                 {
                     if (!string.IsNullOrWhiteSpace(prop.Name) && !string.IsNullOrWhiteSpace(prop.Value))
                     {
-                        args += $" {prop.Name}={prop.Value}";
+                        args += FormatProperty(prop, maskPropertyValues);
                     }
                 }
             }
@@ -166,7 +174,8 @@ namespace SuiteTools
             string? patchPath = null,
             List<MSIProp>? properties = null,
             string? logPath = null,
-            Action<string>? onRetryWaiting = null
+            Action<string>? onRetryWaiting = null,
+            bool secureParams = false
         )
         {
             var result = new MSIResult();
@@ -191,7 +200,7 @@ namespace SuiteTools
                         CreateNoWindow = true
                     }
                 }, onRetryWaiting);
-                result.CommandRun = $"msiexec.exe {args}";
+                result.CommandRun = $"msiexec.exe {(secureParams ? BuildInstallArguments(msiPath, transformsPath, secureTransforms, patchPath, properties, logPath, true) : args)}";
                 result.ExitCode = exitCode;
                 result.Success = exitCode == 0 || exitCode == 3010 || exitCode == 1641;
                 result.ErrorMessage = result.Success ? null :
@@ -207,7 +216,7 @@ namespace SuiteTools
             return result;
         }
 
-        public static MSIResult RepairMSI(string msiPath, string? logPath = null, List<MSIProp>? properties = null, string repairOptions = "aumsv", Action<string>? onRetryWaiting = null)
+        public static MSIResult RepairMSI(string msiPath, string? logPath = null, List<MSIProp>? properties = null, string repairOptions = "aumsv", Action<string>? onRetryWaiting = null, bool secureParams = false)
         {
             var result = new MSIResult();
             if (string.IsNullOrWhiteSpace(msiPath))
@@ -219,19 +228,22 @@ namespace SuiteTools
             try
             {
                 var args = $"/f{repairOptions} \"{msiPath}\" /q";
+                var loggedArgs = args;
                 if (properties != null && properties.Count > 0)
                 {
                     foreach (var prop in properties)
                     {
                         if (!string.IsNullOrWhiteSpace(prop.Name) && !string.IsNullOrWhiteSpace(prop.Value))
                         {
-                            args += $" {prop.Name}={prop.Value}";
+                            args += FormatProperty(prop, false);
+                            loggedArgs += FormatProperty(prop, secureParams);
                         }
                     }
                 }
                 if (!string.IsNullOrWhiteSpace(logPath))
                 {
                     args += $" /l*v \"{logPath}\"";
+                    loggedArgs += $" /l*v \"{logPath}\"";
                 }
 
                 int exitCode = RunProcessWithRetry(() => new System.Diagnostics.Process
@@ -245,7 +257,7 @@ namespace SuiteTools
                         CreateNoWindow = true
                     }
                 }, onRetryWaiting);
-                result.CommandRun = $"msiexec.exe {args}";
+                result.CommandRun = $"msiexec.exe {loggedArgs}";
                 result.ExitCode = exitCode;
                 result.Success = exitCode == 0 || exitCode == 3010 || exitCode == 1641;
                 result.ErrorMessage = result.Success ? null :
@@ -261,7 +273,7 @@ namespace SuiteTools
             return result;
         }
 
-        public static MSIResult UninstallMSI(string removalCode, string? logPath, List<MSIProp>? properties = null, string? additionalParams = null, Action<string>? onRetryWaiting = null)
+        public static MSIResult UninstallMSI(string removalCode, string? logPath, List<MSIProp>? properties = null, string? additionalParams = null, Action<string>? onRetryWaiting = null, bool secureParams = false)
         {
             var result = new MSIResult();
             if (string.IsNullOrWhiteSpace(removalCode))
@@ -276,23 +288,29 @@ namespace SuiteTools
                     ? removalCode
                     : $"{{{removalCode}}}";
                 string args = $"/x {formattedRemovalCode} /q";
+                string loggedArgs = args;
                 if (properties != null && properties.Count > 0)
                 {
                     foreach (MSIProp prop in properties)
                     {
                         if (!string.IsNullOrWhiteSpace(prop.Name) && !string.IsNullOrWhiteSpace(prop.Value))
-                            args += $" {prop.Name}={prop.Value}";
+                        {
+                            args += FormatProperty(prop, false);
+                            loggedArgs += FormatProperty(prop, secureParams);
+                        }
                     }
                 }
                 if (!string.IsNullOrWhiteSpace(additionalParams))
                 {
                     args += $" {additionalParams}";
+                    loggedArgs += $" {additionalParams}";
                 }
                 if (!string.IsNullOrWhiteSpace(logPath))
                 {
                     args += $" /l*v \"{logPath}\"";
+                    loggedArgs += $" /l*v \"{logPath}\"";
                 }
-                result.CommandRun = $"msiexec.exe {args}";
+                result.CommandRun = $"msiexec.exe {loggedArgs}";
                 int exitCode = RunProcessWithRetry(() => new System.Diagnostics.Process
                 {
                     StartInfo = new System.Diagnostics.ProcessStartInfo
@@ -322,7 +340,7 @@ namespace SuiteTools
             return result;
         }
 
-        public static MSIResult UninstallMSIFamily(string upgradeCode, string? logPath, List<MSIProp>? properties = null, string? additionalParams = null, Action<string>? onRetryWaiting = null)
+        public static MSIResult UninstallMSIFamily(string upgradeCode, string? logPath, List<MSIProp>? properties = null, string? additionalParams = null, Action<string>? onRetryWaiting = null, bool secureParams = false)
         {
             var result = new MSIResult();
             if (string.IsNullOrWhiteSpace(upgradeCode))
@@ -348,23 +366,29 @@ namespace SuiteTools
                         if (!code.StartsWith("{")) code = "{" + code;
                         if (!code.EndsWith("}")) code = code + "}";
                         string args = $"/x {code} /q";
+                        string loggedArgs = args;
                         if (properties != null && properties.Count > 0)
                         {
                             foreach (MSIProp prop in properties)
                             {
                                 if (!string.IsNullOrWhiteSpace(prop.Name) && !string.IsNullOrWhiteSpace(prop.Value))
-                                    args += $" {prop.Name}={prop.Value}";
+                                {
+                                    args += FormatProperty(prop, false);
+                                    loggedArgs += FormatProperty(prop, secureParams);
+                                }
                             }
                         }
                         if (!string.IsNullOrWhiteSpace(additionalParams))
                         {
                             args += $" {additionalParams}";
+                            loggedArgs += $" {additionalParams}";
                         }
                         if (!string.IsNullOrWhiteSpace(logPath))
                         {
                             args += $" /l*v \"{logPath}\"";
+                            loggedArgs += $" /l*v \"{logPath}\"";
                         }
-                        result.CommandRun += $"msiexec.exe {args}\n";
+                        result.CommandRun += $"msiexec.exe {loggedArgs}\n";
                         int exitCode = RunProcessWithRetry(() => new System.Diagnostics.Process
                         {
                             StartInfo = new System.Diagnostics.ProcessStartInfo

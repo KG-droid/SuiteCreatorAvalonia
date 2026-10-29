@@ -18,6 +18,7 @@ namespace SuiteCreatorAvalonia.Models.Package
         public Contexts? Context { get; set; }
         public RestartBehavior RestartBehavior { get; set; } = RestartBehavior.Ignore;
         public List<MSIProperty>? Properties { get; set; }
+        public bool SecureParams { get; set; }
         public bool RepairOldProductOnFailure { get; set; }
         public string? RepairMsiPath { get; set; }
         public int EstimatedUninstallSeconds { get; set; }
@@ -37,6 +38,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                 Architecture = Architecture,
                 RestartBehavior = RestartBehavior,
                 Properties = Properties != null ? Properties.Select(p => p.Clone()).ToList() : null,
+                SecureParams = SecureParams,
                 RepairOldProductOnFailure = RepairOldProductOnFailure,
                 RepairMsiPath = RepairMsiPath,
                 EstimatedUninstallSeconds = EstimatedUninstallSeconds
@@ -59,6 +61,7 @@ namespace SuiteCreatorAvalonia.Models.Package
                 Architecture = msirem.Architecture;
                 RestartBehavior = msirem.RestartBehavior;
                 Properties = msirem.Properties != null ? msirem.Properties.Select(p => p.Clone()).ToList() : null;
+                SecureParams = msirem.SecureParams;
                 RepairOldProductOnFailure = msirem.RepairOldProductOnFailure;
                 RepairMsiPath = msirem.RepairMsiPath;
                 EstimatedUninstallSeconds = msirem.EstimatedUninstallSeconds;

@@ -301,6 +301,11 @@
 				Spacing="5">
 				<TextBlock
 					Text="Custom MSI Properties"/>
+				<CheckBox
+					Content="Secure parameters"
+					IsChecked="{Binding SecureParams}"
+					Margin="10,0,0,0"
+					ToolTip.Tip="Hide the property values from the suite's log file. Use this if a property contains a secret such as a password."/>
 				<StackPanel 
 					Orientation="Horizontal"
 					Margin="10,0,0,0">

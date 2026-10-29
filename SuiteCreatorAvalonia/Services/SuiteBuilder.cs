@@ -150,6 +150,7 @@ namespace SuiteCreatorAvalonia.Services
                             Name = msiPkg.Name,
                             RequirementRuleSetId = msiPkg.RequirementRuleSetId,
                             SecureTransforms = msiPkg.SecureTransforms,
+                            SecureParams = msiPkg.SecureParams,
                             Context = msiPkg.Context,
                             IsCreateLog = msiPkg.IsCreateLog,
                             IsRemoveFamily = msiPkg.IsRemoveFamily,
@@ -165,6 +166,7 @@ namespace SuiteCreatorAvalonia.Services
                                     Name = msiPkg.Rollback.Name,
                                     RequirementRuleSetId = msiPkg.Rollback.RequirementRuleSetId,
                                     SecureTransforms = msiPkg.Rollback.SecureTransforms,
+                                    SecureParams = msiPkg.Rollback.SecureParams,
                                     Context = msiPkg.Rollback.Context,
                                     IsCreateLog = msiPkg.Rollback.IsCreateLog,
                                     IsRemoveFamily = msiPkg.Rollback.IsRemoveFamily,
@@ -235,6 +237,7 @@ namespace SuiteCreatorAvalonia.Services
                             Architecture = msiRem.Architecture,
                             RestartBehavior = msiRem.RestartBehavior,
                             Properties = msiRem.Properties?.Select(p => p.Clone()).ToList(),
+                            SecureParams = msiRem.SecureParams,
                             EstimatedUninstallSeconds = msiRem.EstimatedUninstallSeconds,
                             RepairOldProductOnFailure = msiRem.RepairOldProductOnFailure,
                             RepairMsiPath = string.IsNullOrWhiteSpace(msiRem.RepairMsiPath) ? null : Path.GetFileName(msiRem.RepairMsiPath)

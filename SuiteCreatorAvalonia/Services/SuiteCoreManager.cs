@@ -330,6 +330,7 @@ namespace SuiteCreatorAvalonia.Services
                     msiPkg.Context = Enums.Contexts.System;
                     msiPkg.IsCreateLog = false;
                     msiPkg.LegacyLongFilePath = false;
+                    msiPkg.SecureParams = false;
                     msiPkg.LogPath = string.Empty;
                     msiPkg.MSIPath = string.Empty;
                     msiPkg.PatchPath = string.Empty;
@@ -341,6 +342,7 @@ namespace SuiteCreatorAvalonia.Services
                     msiRemPkg.IsProductRemoval = false;
                     msiRemPkg.RemovalCode = string.Empty;
                     msiRemPkg.IsCreateLog = false;
+                    msiRemPkg.SecureParams = false;
                     msiRemPkg.LogPath = string.Empty;
                     break;
                 case OtherPkg:
