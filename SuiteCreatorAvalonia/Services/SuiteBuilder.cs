@@ -39,7 +39,8 @@ namespace SuiteCreatorAvalonia.Services
         public event EventHandler<SuiteBuiltEventArgs>? SuiteBuilt;
         private string _suiteUserPopupName = "SuiteUserPopup.exe";
         private string _suiteProgressPopupName = "SuiteProgressPopup.exe";
-        private string _suiteSfxStubName = "SuiteSfxStub.exe";
+        private const string _suiteSfxStubFileName = "SuiteSfxStub.exe";
+        private string _suiteSfxStubName = _suiteSfxStubFileName;
 
         internal List<SuiteValidationError>? GetValidationReport()
         {
@@ -920,10 +921,16 @@ namespace SuiteCreatorAvalonia.Services
                     File.Move(zipPath, finalZipPath, true);
                     Report("Creating self-extracting bootstrapper");
                     var sfxPath = Path.Combine(buildDir, $"{projectName}.exe");
-                    if (TryCreateSelfExtractingBootstrapper(finalZipPath, sfxPath))
+                    CreateSelfExtractingBootstrapper(finalZipPath, sfxPath);
+                    try { File.Delete(finalZipPath); }
+                    catch (Exception zipEx)
                     {
-                        try { File.Delete(finalZipPath); } catch { }
+                        AppLog.Warning($"Could not delete intermediate zip: {finalZipPath}, error: {zipEx.Message}", "SuiteBuilder");
                     }
+                }
+                else
+                {
+                    throw new Exception("No suite files were produced to build");
                 }
                 Report("Cleaning up temporary files");
                 DeleteDIR(tempRoot);
@@ -1545,55 +1552,72 @@ namespace SuiteCreatorAvalonia.Services
             assets.CopyTo(output);
         }
 
-        private static bool TryCreateSelfExtractingBootstrapper(string suiteZipPath, string outputExePath)
+        // Throws on any failure so the build reports it rather than finishing with no exe. A partially written
+        // exe is removed so it can't be mistaken for a good one.
+        private static void CreateSelfExtractingBootstrapper(string suiteZipPath, string outputExePath)
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return false;
+                throw new PlatformNotSupportedException("The suite exe can only be built on Windows.");
             if (!File.Exists(suiteZipPath))
-                return false;
+                throw new FileNotFoundException($"The compressed suite files were not found at: {suiteZipPath}");
+
+            // Prebuilt stub must be shipped with the SuiteCreatorAvalonia app.
+            // Expected location: {AppContext.BaseDirectory}\SuiteExec\SuiteSfxStub.exe
+            var stubExe = Path.Combine(AppContext.BaseDirectory, "SuiteExec", _suiteSfxStubFileName);
+            if (!File.Exists(stubExe))
+                throw new FileNotFoundException($"{_suiteSfxStubFileName} not found. Expected at: {stubExe}");
 
             try
             {
-                // Prebuilt stub must be shipped with the SuiteCreatorAvalonia app.
-                // Expected location: {AppContext.BaseDirectory}\SuiteExec\SuiteSfxStub.exe
-                var stubExe = Path.Combine(AppContext.BaseDirectory, "SuiteExec", "SuiteSfxStub.exe");
-                if (!File.Exists(stubExe))
-                {
-                    AppLog.Warning($"SuiteSfxStub.exe not found at: {stubExe}, suite exe will not be created", "SuiteBuilder");
-                    return false;
-                }
+                long expectedLength = CreateSfxFromStubAndZip(stubExe, suiteZipPath, outputExePath);
 
-                CreateSfxFromStubAndZip(stubExe, suiteZipPath, outputExePath);
-                return File.Exists(outputExePath);
+                // Antivirus can quarantine or truncate a freshly written exe, so confirm what's on disk is complete.
+                var written = new FileInfo(outputExePath);
+                if (!written.Exists)
+                    throw new IOException($"The suite exe was removed after it was created (possibly by antivirus software): {outputExePath}");
+                if (written.Length != expectedLength)
+                    throw new IOException($"The suite exe is incomplete ({written.Length} of {expectedLength} bytes): {outputExePath}");
             }
-            catch (Exception ex)
+            catch
             {
-                // Best-effort only.
-                AppLog.Warning($"Failed to create self-extracting bootstrapper: {outputExePath}, error: {ex.Message}", "SuiteBuilder");
-                return false;
+                try { File.Delete(outputExePath); } catch { }
+                throw;
             }
         }
 
         // Payload format (appended to the end of the exe):
-        // [zipBytes...][int32 zipLength][int32 magic 'SUFX']
-        private static void CreateSfxFromStubAndZip(string stubExePath, string suiteZipPath, string outputExePath)
+        // [zipBytes...][int64 zipLength][int32 magic 'SUF2']
+        // The zip is streamed in, so the suite size isn't limited by memory or by a 32-bit length.
+        // Returns the expected total length of the finished exe.
+        private static long CreateSfxFromStubAndZip(string stubExePath, string suiteZipPath, string outputExePath)
         {
-            const int magic = unchecked((int)0x53554658); // 'SUFX'
-            var zipBytes = File.ReadAllBytes(suiteZipPath);
+            const int magic = unchecked((int)0x53554632); // 'SUF2'
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputExePath)!);
-            using var outFs = new FileStream(outputExePath, FileMode.Create, FileAccess.Write, FileShare.None);
-            using (var stubFs = new FileStream(stubExePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            long zipLength;
+            long stubLength;
+            using (var outFs = new FileStream(outputExePath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                stubFs.CopyTo(outFs);
-            }
+                using (var stubFs = new FileStream(stubExePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    stubLength = stubFs.Length;
+                    stubFs.CopyTo(outFs);
+                }
 
-            using (var bw = new BinaryWriter(outFs, System.Text.Encoding.UTF8, leaveOpen: true))
-            {
-                bw.Write(zipBytes);
-                bw.Write(zipBytes.Length);
-                bw.Write(magic);
+                using (var zipFs = new FileStream(suiteZipPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024))
+                {
+                    zipLength = zipFs.Length;
+                    zipFs.CopyTo(outFs, 1024 * 1024);
+                }
+
+                using (var bw = new BinaryWriter(outFs, System.Text.Encoding.UTF8, leaveOpen: true))
+                {
+                    bw.Write(zipLength);
+                    bw.Write(magic);
+                }
+                outFs.Flush(true);
             }
+            return stubLength + zipLength + sizeof(long) + sizeof(int);
         }
 
         // This should match with the PopConfig class from the SuiteUserPopup project, as it will be deserialized by the popup executable.

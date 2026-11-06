@@ -24,34 +24,56 @@ namespace SuiteCreatorAvalonia.Services
 {
     public static class SuiteImport
     {
-        private const int SfxMagic = unchecked((int)0x53554658); // 'SUFX' — matches SuiteSfxStub
+        private const int SfxMagic = unchecked((int)0x53554632); // 'SUF2' — matches SuiteSfxStub
+        private const int LegacySfxMagic = unchecked((int)0x53554658); // 'SUFX' — older builds, 2GB payload limit
         private const string SuiteConfigFileName = "SuiteConfig.scfg";
 
         /// <summary>
-        /// Validates the SFX trailer ([zipBytes][int32 zipLength][int32 magic 'SUFX']) and returns where the
-        /// embedded zip payload starts and how long it is, without reading the payload itself.
+        /// Validates the SFX trailer ([zipBytes][int64 zipLength][int32 magic 'SUF2'], or the legacy
+        /// [zipBytes][int32 zipLength][int32 magic 'SUFX']) and returns where the embedded zip payload
+        /// starts and how long it is, without reading the payload itself.
         /// </summary>
-        private static (long ZipStart, int ZipLength) LocateZipPayload(FileStream fs)
+        private static (long ZipStart, long ZipLength) LocateZipPayload(FileStream fs)
         {
+            const string notSuiteMsg = "The selected file does not contain a valid Suite payload. Make sure you select a Suite exe created by SuiteCreator.";
             if (fs.Length < 8)
                 throw new InvalidDataException("The selected file does not appear to be a valid Suite exe.");
 
-            fs.Seek(-8, SeekOrigin.End);
+            fs.Seek(-4, SeekOrigin.End);
             using BinaryReader br = new BinaryReader(fs, System.Text.Encoding.UTF8, leaveOpen: true);
-            int zipLength = br.ReadInt32();
             int magic = br.ReadInt32();
-            if (magic != SfxMagic)
-                throw new InvalidDataException("The selected file does not contain a valid Suite payload. Make sure you select a Suite exe created by SuiteCreator.");
-            if (zipLength <= 0 || zipLength > fs.Length - 8)
+
+            long zipLength;
+            long trailerSize;
+            if (magic == SfxMagic)
+            {
+                if (fs.Length < 12)
+                    throw new InvalidDataException(notSuiteMsg);
+                fs.Seek(-12, SeekOrigin.End);
+                zipLength = br.ReadInt64();
+                trailerSize = 12;
+            }
+            else if (magic == LegacySfxMagic)
+            {
+                fs.Seek(-8, SeekOrigin.End);
+                zipLength = br.ReadInt32();
+                trailerSize = 8;
+            }
+            else
+            {
+                throw new InvalidDataException(notSuiteMsg);
+            }
+
+            if (zipLength <= 0 || zipLength > fs.Length - trailerSize)
                 throw new InvalidDataException("The Suite exe payload length is invalid.");
 
-            return (fs.Length - 8 - zipLength, zipLength);
+            return (fs.Length - trailerSize - zipLength, zipLength);
         }
 
         private static void ExtractZipPayload(string exePath, string outputZipPath)
         {
             using FileStream fs = new FileStream(exePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            (long zipStart, int zipLength) = LocateZipPayload(fs);
+            (long zipStart, long zipLength) = LocateZipPayload(fs);
             fs.Seek(zipStart, SeekOrigin.Begin);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputZipPath)!);
@@ -106,7 +128,7 @@ namespace SuiteCreatorAvalonia.Services
             return await Task.Run(() =>
             {
                 using FileStream fs = new FileStream(suiteExePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                (long zipStart, int zipLength) = LocateZipPayload(fs);
+                (long zipStart, long zipLength) = LocateZipPayload(fs);
 
                 // A seekable window over just the zip bytes lets ZipArchive read the central directory
                 // and the one entry we want, rather than copying the whole (potentially huge) payload.
