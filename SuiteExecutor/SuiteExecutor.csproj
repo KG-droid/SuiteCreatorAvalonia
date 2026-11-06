@@ -67,4 +67,9 @@
 		</PackageReference>
 	</ItemGroup>
 
+	<!-- Pin above the SDK default (10.0.12), which has a known high severity advisory (GHSA-p3jp-9v83-76w9) -->
+	<ItemGroup>
+		<PackageReference Include="Microsoft.DotNet.ILCompiler" Version="10.0.14" />
+	</ItemGroup>
+
 </Project>
