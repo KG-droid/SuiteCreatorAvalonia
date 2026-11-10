@@ -103,6 +103,10 @@ namespace SuiteCreatorAvalonia.ViewModels
                     Title = "Driver Events";
                     ItemsControl.ItemsSource = _suiteCoreMgr.GetDriverEvents();
                     break;
+                case SuiteProperty.FontEvents:
+                    Title = "Font Events";
+                    ItemsControl.ItemsSource = _suiteCoreMgr.GetFontEvents();
+                    break;
                 case SuiteProperty.EnvironmentEvents:
                     Title = "Environment Events";
                     ItemsControl.ItemsSource = _suiteCoreMgr.GetEnvironmentEvents();
@@ -208,6 +212,9 @@ namespace SuiteCreatorAvalonia.ViewModels
                     break;
                 case SuiteProperty.DriverEvents:
                     _suiteCoreMgr.NewDriverEvent();
+                    break;
+                case SuiteProperty.FontEvents:
+                    _suiteCoreMgr.NewFontEvent();
                     break;
                 case SuiteProperty.EnvironmentEvents:
                     _suiteCoreMgr.NewEnvironmentEvent();
@@ -329,6 +336,15 @@ namespace SuiteCreatorAvalonia.ViewModels
                         if (eventCore is Driver driver)
                         {
                             _suiteCoreMgr.RemoveDriverEvent(driver);
+                        }
+                    }
+                    break;
+                case SuiteProperty.FontEvents:
+                    foreach (EventCore eventCore in eventsForRemoval)
+                    {
+                        if (eventCore is SystemFont font)
+                        {
+                            _suiteCoreMgr.RemoveFontEvent(font);
                         }
                     }
                     break;

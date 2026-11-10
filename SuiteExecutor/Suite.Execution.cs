@@ -156,6 +156,7 @@ namespace SuiteExecutor
             List<EventCore> allEvents = new();
             if (_suiteConfig.CertEvents != null) allEvents.AddRange(_suiteConfig.CertEvents);
             if (_suiteConfig.DriverEvents != null) allEvents.AddRange(_suiteConfig.DriverEvents);
+            if (_suiteConfig.FontEvents != null) allEvents.AddRange(_suiteConfig.FontEvents);
             if (_suiteConfig.ProcClosureEvents != null) allEvents.AddRange(_suiteConfig.ProcClosureEvents);
             if (_suiteConfig.EnvironmentEvents != null) allEvents.AddRange(_suiteConfig.EnvironmentEvents);
             if (_suiteConfig.ExecutableEvents != null) allEvents.AddRange(_suiteConfig.ExecutableEvents);
@@ -292,6 +293,10 @@ namespace SuiteExecutor
                     case DriverExecEvent driver:
                         _log.WriteLog($"Executing Driver event", "Events", Log.Severity.Info);
                         driver.ExecuteEvent();
+                        break;
+                    case FontExecEvent font:
+                        _log.WriteLog($"Executing Font event", "Events", Log.Severity.Info);
+                        font.ExecuteEvent();
                         break;
                     case EnvExecEvent env:
                         _log.WriteLog($"Executing Environment Variable event: {env.Name}", "Events", Log.Severity.Info);

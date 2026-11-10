@@ -240,17 +240,30 @@ namespace SuiteCreatorAvalonia.Views
         {
             const double gap = 12;
             const double margin = 8;
-            double x = Math.Clamp(hole.X, margin, Math.Max(margin, area.Width - callout.Width - margin));
+            double maxX = Math.Max(margin, area.Width - callout.Width - margin);
+            double maxY = Math.Max(margin, area.Height - callout.Height - margin);
+            double x = Math.Clamp(hole.X, margin, maxX);
+
+            double y;
             if (hole.Bottom + gap + callout.Height + margin <= area.Height)
-                return new Point(x, hole.Bottom + gap);
-            if (hole.Top - gap - callout.Height >= margin)
-                return new Point(x, hole.Top - gap - callout.Height);
-            double y = Math.Clamp(hole.Y, margin, Math.Max(margin, area.Height - callout.Height - margin));
-            if (hole.Right + gap + callout.Width + margin <= area.Width)
-                return new Point(hole.Right + gap, y);
-            if (hole.Left - gap - callout.Width >= margin)
-                return new Point(hole.Left - gap - callout.Width, y);
-            return new Point((area.Width - callout.Width) / 2, (area.Height - callout.Height) / 2);
+                y = hole.Bottom + gap;
+            else if (hole.Top - gap - callout.Height >= margin)
+                y = hole.Top - gap - callout.Height;
+            else
+            {
+                double sideY = Math.Clamp(hole.Y, margin, maxY);
+                if (hole.Right + gap + callout.Width + margin <= area.Width)
+                    return new Point(hole.Right + gap, sideY);
+                if (hole.Left - gap - callout.Width >= margin)
+                    return new Point(hole.Left - gap - callout.Width, sideY);
+                return new Point((area.Width - callout.Width) / 2, (area.Height - callout.Height) / 2);
+            }
+
+            // A hole that's off-screen (e.g. its target is scrolled out of view) can still satisfy the
+            // "fits above/below" checks above purely on relative distance, landing the callout off-screen
+            // too. Clamping here, rather than folding it into those checks, keeps this the one place that
+            // guarantees the callout always ends up somewhere the user can actually see and use it.
+            return new Point(x, Math.Clamp(y, margin, maxY));
         }
     }
 }

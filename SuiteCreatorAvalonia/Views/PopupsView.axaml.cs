@@ -138,13 +138,13 @@ public partial class PopupsView : UserControl
             _samplePopupWindow.DataContext = _samplePopupWindowViewModel;
             if (pVM.ShowSampleFor == SuiteAction.Deployment)
             {
-                _samplePopupWindowViewModel.MainText.Text = pVM.InstallTxt.Text;
+                _samplePopupWindowViewModel.MainText = pVM.InstallTxt;
                 _samplePopupWindowViewModel.Action = pVM.InstAction;
                 _samplePopupWindowViewModel.ActionIconKind = pVM.SelectedDeployIconKind;
             }
             else
             {
-                _samplePopupWindowViewModel.MainText.Text = pVM.UninstallTxt.Text;
+                _samplePopupWindowViewModel.MainText = pVM.UninstallTxt;
                 _samplePopupWindowViewModel.Action = pVM.UninstAction;
                 _samplePopupWindowViewModel.ActionIconKind = pVM.SelectedRemoveIconKind;
             }
@@ -208,10 +208,11 @@ public partial class PopupsView : UserControl
             switch (args.PropertyName)
             {
                 case nameof(PopupsViewModel.InstallTxt):
+                case nameof(PopupsViewModel.UninstallTxt):
                     if (pVM.ShowSampleFor == SuiteAction.Deployment)
-                        popupSampleWindowViewModel.MainText.Text = pVM.InstallTxt.Text;
+                        popupSampleWindowViewModel.MainText = pVM.InstallTxt;
                     else
-                        popupSampleWindowViewModel.MainText.Text = pVM.UninstallTxt.Text;
+                        popupSampleWindowViewModel.MainText = pVM.UninstallTxt;
                     break;
                 case nameof(PopupsViewModel.ShowPopupPreview):
                     if (pVM.ShowPopupPreview)

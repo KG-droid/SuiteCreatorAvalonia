@@ -18,6 +18,7 @@
 		<ResourceDictionary>
 			<ResourceDictionary.MergedDictionaries>
 				<ResourceInclude Source="avares://SuiteCreatorAvalonia/Styles/HorizontalAccentColorPickerTheme.axaml"/>
+				<ResourceInclude Source="avares://SuiteCreatorAvalonia/Styles/RichTextBoxTemplate.axaml"/>
 			</ResourceDictionary.MergedDictionaries>
 			<ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key='Light'>

@@ -21,7 +21,7 @@ namespace SuiteCreatorAvalonia.Models.Events
             return new Shortcut
             {
                 Id = Id,
-                Schedules = Schedules,
+                Schedules = Schedules.ConvertAll(s => s.Clone()),
                 ShortAction = ShortAction,
                 ShortcutType = ShortcutType,
                 Target = Target,
@@ -41,7 +41,7 @@ namespace SuiteCreatorAvalonia.Models.Events
         {
             if (ecore is not Shortcut shortcut) return;
             Id = shortcut.Id;
-            Schedules = shortcut.Schedules;
+            Schedules = shortcut.Schedules.ConvertAll(s => s.Clone());
             ShortAction = shortcut.ShortAction;
             ShortcutType = shortcut.ShortcutType;
             Target = shortcut.Target;

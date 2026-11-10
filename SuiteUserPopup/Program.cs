@@ -29,7 +29,7 @@ namespace SuiteUserPopup
             // showing the real popup - never shows any UI, just reports via exit code and returns immediately.
             if (args.Any(a => a.Equals("--CheckMeetingStatus", StringComparison.OrdinalIgnoreCase)))
             {
-                AppLogService.Initialize(ResolveLogFilePath(null));
+                AppLogService.Initialize(ResolveLogFilePath(args, null));
                 RunMeetingStatusCheck();
                 return;
             }
@@ -51,7 +51,7 @@ namespace SuiteUserPopup
             string? companyLogoPath = ResolveLogoPath(args, "--CompanyLogo", "-cl", "CompanyLogo.png");
             string? suiteLogoPath = ResolveLogoPath(args, "--SuiteLogo", "-sl", "SuiteLogo.png");
 
-            string logFilePath = ResolveLogFilePath(configPath);
+            string logFilePath = ResolveLogFilePath(args, configPath);
             AppLogService.Initialize(logFilePath);
             AppLogService.Info("Application startup initiated.", "SuiteUserPopup");
 
@@ -170,9 +170,14 @@ namespace SuiteUserPopup
             return File.Exists(defaultPath) ? defaultPath : null;
         }
 
-        private static string ResolveLogFilePath(string? configPath)
+        private static string ResolveLogFilePath(string[] args, string? configPath)
         {
             string defaultLogFilePath = Path.Combine(AppContext.BaseDirectory, "Logs", "SuiteUserPopup.log");
+
+            // The suite passes its own log path so popup lines land in the suite log, same as the progress popup.
+            string? logFileFromArgs = TryGetArgValue(args, "--LogFile") ?? TryGetArgValue(args, "-l");
+            if (!string.IsNullOrWhiteSpace(logFileFromArgs))
+                return logFileFromArgs;
 
             if (string.IsNullOrWhiteSpace(configPath) || !File.Exists(configPath))
                 return defaultLogFilePath;
@@ -307,6 +312,7 @@ namespace SuiteUserPopup
             Console.WriteLine("  --Config <path> or -cfg <path>         : Path to Config JSON file");
             Console.WriteLine("  --CompanyLogo <path> or -cl <path>      : Path to Company logo PNG file");
             Console.WriteLine("  --SuiteLogo <path> or -sl <path>        : Path to Suite logo PNG file");
+            Console.WriteLine("  --LogFile <path> or -l <path>           : Path to the log file (overrides LogFilePath in popconfig.json)");
             Console.WriteLine("  LogFilePath in popconfig.json           : Optional path to the log file");
             Console.WriteLine("  --Blocked                                : Show a lightweight notice that a process was blocked, instead of the full popup");
             Console.WriteLine("  --ProcessName <name> or -p <name>       : Name of the blocked process, used with --Blocked");

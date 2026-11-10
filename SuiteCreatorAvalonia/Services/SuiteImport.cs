@@ -1,12 +1,15 @@
+using Avalonia.Threading;
 using SuiteCreatorAvalonia.Enums;
 using SuiteCreatorAvalonia.Models.Common;
 using SuiteCreatorAvalonia.Models.Common.TreeNodes;
 using SuiteCreatorAvalonia.Models.Events;
 using SuiteCreatorAvalonia.Models.Package;
+using SuiteOperations;
 using SuiteOperations.Package;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -21,24 +24,56 @@ namespace SuiteCreatorAvalonia.Services
 {
     public static class SuiteImport
     {
-        private const int SfxMagic = unchecked((int)0x53554658); // 'SUFX' — matches SuiteSfxStub
+        private const int SfxMagic = unchecked((int)0x53554632); // 'SUF2' — matches SuiteSfxStub
+        private const int LegacySfxMagic = unchecked((int)0x53554658); // 'SUFX' — older builds, 2GB payload limit
+        private const string SuiteConfigFileName = "SuiteConfig.scfg";
+
+        /// <summary>
+        /// Validates the SFX trailer ([zipBytes][int64 zipLength][int32 magic 'SUF2'], or the legacy
+        /// [zipBytes][int32 zipLength][int32 magic 'SUFX']) and returns where the embedded zip payload
+        /// starts and how long it is, without reading the payload itself.
+        /// </summary>
+        private static (long ZipStart, long ZipLength) LocateZipPayload(FileStream fs)
+        {
+            const string notSuiteMsg = "The selected file does not contain a valid Suite payload. Make sure you select a Suite exe created by SuiteCreator.";
+            if (fs.Length < 8)
+                throw new InvalidDataException("The selected file does not appear to be a valid Suite exe.");
+
+            fs.Seek(-4, SeekOrigin.End);
+            using BinaryReader br = new BinaryReader(fs, System.Text.Encoding.UTF8, leaveOpen: true);
+            int magic = br.ReadInt32();
+
+            long zipLength;
+            long trailerSize;
+            if (magic == SfxMagic)
+            {
+                if (fs.Length < 12)
+                    throw new InvalidDataException(notSuiteMsg);
+                fs.Seek(-12, SeekOrigin.End);
+                zipLength = br.ReadInt64();
+                trailerSize = 12;
+            }
+            else if (magic == LegacySfxMagic)
+            {
+                fs.Seek(-8, SeekOrigin.End);
+                zipLength = br.ReadInt32();
+                trailerSize = 8;
+            }
+            else
+            {
+                throw new InvalidDataException(notSuiteMsg);
+            }
+
+            if (zipLength <= 0 || zipLength > fs.Length - trailerSize)
+                throw new InvalidDataException("The Suite exe payload length is invalid.");
+
+            return (fs.Length - trailerSize - zipLength, zipLength);
+        }
 
         private static void ExtractZipPayload(string exePath, string outputZipPath)
         {
             using FileStream fs = new FileStream(exePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            if (fs.Length < 8)
-                throw new InvalidDataException("The selected file does not appear to be a valid Suite exe.");
-
-            fs.Seek(-8, SeekOrigin.End);
-            using BinaryReader br = new BinaryReader(fs, System.Text.Encoding.UTF8, leaveOpen: true);
-            int zipLength = br.ReadInt32();
-            int magic = br.ReadInt32();
-            if (magic != SfxMagic)
-                throw new InvalidDataException("The selected file does not contain a valid Suite payload. Make sure you select a Suite exe created by SuiteCreator.");
-            if (zipLength <= 0 || zipLength > fs.Length - 8)
-                throw new InvalidDataException("The Suite exe payload length is invalid.");
-
-            long zipStart = fs.Length - 8 - zipLength;
+            (long zipStart, long zipLength) = LocateZipPayload(fs);
             fs.Seek(zipStart, SeekOrigin.Begin);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputZipPath)!);
@@ -53,14 +88,173 @@ namespace SuiteCreatorAvalonia.Services
             }
         }
 
+        private static void ValidateSuiteExePath([NotNull] string? suiteExePath)
+        {
+            if (string.IsNullOrWhiteSpace(suiteExePath))
+                throw new ArgumentNullException(nameof(suiteExePath));
+            if (!File.Exists(suiteExePath))
+                throw new FileNotFoundException($"The specified file does not exist: {suiteExePath}");
+            if (!Path.GetExtension(suiteExePath).Equals(".exe", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentOutOfRangeException(nameof(suiteExePath), "Only Suite exe files (.exe) can be imported.");
+        }
+
+        private static SuiteExecConfig DeserializeExecConfig(string json)
+        {
+            SuiteExecConfig? execConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<SuiteExecConfig>(json, new Newtonsoft.Json.JsonSerializerSettings
+            {
+                TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Auto,
+                Converters =
+                {
+                    new Converters.ColorToJson(),
+                    new Converters.BitmapToJson(),
+                    new Converters.TextDocumentToJson(),
+                },
+                MaxDepth = null,
+            });
+            if (execConfig == null)
+                throw new InvalidOperationException("Failed to deserialize the suite config from the imported exe.");
+            return execConfig;
+        }
+
+        /// <summary>
+        /// Reads only the SuiteConfig.scfg out of a built Suite exe, leaving the rest of the payload
+        /// (packages, executor binaries, etc.) untouched on disk. Used by the read-only Suite Viewer so a
+        /// suite can be inspected without running the full import/extract.
+        /// </summary>
+        public static async Task<SuiteExecConfig> ReadSuiteConfigAsync(string? suiteExePath)
+        {
+            ValidateSuiteExePath(suiteExePath);
+
+            return await Task.Run(() =>
+            {
+                using FileStream fs = new FileStream(suiteExePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                (long zipStart, long zipLength) = LocateZipPayload(fs);
+
+                // A seekable window over just the zip bytes lets ZipArchive read the central directory
+                // and the one entry we want, rather than copying the whole (potentially huge) payload.
+                using PayloadSubStream payload = new PayloadSubStream(fs, zipStart, zipLength);
+                using ZipArchive zip = new ZipArchive(payload, ZipArchiveMode.Read, leaveOpen: true);
+                ZipArchiveEntry? entry = zip.Entries.FirstOrDefault(e =>
+                    !e.FullName.Contains('/') && e.Name.Equals(SuiteConfigFileName, StringComparison.OrdinalIgnoreCase));
+                if (entry == null)
+                    throw new FileNotFoundException($"No {SuiteConfigFileName} was found inside the selected Suite exe.");
+
+                using Stream entryStream = entry.Open();
+                using StreamReader reader = new StreamReader(entryStream);
+                string json = reader.ReadToEnd();
+                SuiteExecConfig config = DeserializeExecConfig(json);
+                LoadLinkedPowerShellScripts(zip, config);
+                return config;
+            });
+        }
+
+        /// <summary>
+        /// PowerShell events that were linked to a .ps1 file when the suite was built carry no script text in
+        /// SuiteConfig.scfg - the file itself is bundled at PowerShell/{eventId}/*.ps1 in the payload. Read that
+        /// file's text into the event's ScriptDoc so the viewer can preview it like an inline script.
+        ///
+        /// This runs inside ReadSuiteConfigAsync's Task.Run, i.e. on a background thread, but ScriptDoc is an
+        /// AvaloniaEdit TextDocument, which (like TextDocumentToJson's own converter) can only be created or
+        /// read on the UI thread that owns it - touching one from any other thread throws
+        /// "Call from invalid thread", so every read or write of ScriptDoc here is explicitly marshaled over.
+        /// </summary>
+        private static void LoadLinkedPowerShellScripts(ZipArchive zip, SuiteExecConfig config)
+        {
+            if (config.PowerShellEvents == null) return;
+            foreach (SuiteOperations.Events.PowerShellExecEvent psEvent in config.PowerShellEvents)
+            {
+                bool hasInlineText = Dispatcher.UIThread.InvokeAsync(
+                    () => !string.IsNullOrWhiteSpace(psEvent.ScriptDoc?.Text)).GetAwaiter().GetResult();
+                if (hasInlineText) continue;
+
+                // Only the script directly in the event folder; the "Support" subfolder holds supporting files.
+                string prefix = $"PowerShell/{psEvent.Id}/";
+                ZipArchiveEntry? scriptEntry = zip.Entries.FirstOrDefault(e =>
+                {
+                    string name = e.FullName.Replace('\\', '/');
+                    return name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                        && !name.Substring(prefix.Length).Contains('/')
+                        && name.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase);
+                });
+                if (scriptEntry == null) continue;
+
+                try
+                {
+                    string scriptText;
+                    using (Stream scriptStream = scriptEntry.Open())
+                    using (StreamReader scriptReader = new StreamReader(scriptStream))
+                    {
+                        scriptText = scriptReader.ReadToEnd();
+                    }
+                    Dispatcher.UIThread.InvokeAsync(
+                        () => psEvent.ScriptDoc = new AvaloniaEdit.Document.TextDocument(scriptText)).Wait();
+                }
+                catch (Exception ex) when (ex is IOException || ex is InvalidDataException)
+                {
+                    AppLog.Warning($"Could not read linked PowerShell script for event {psEvent.Id}: {ex.Message}", "SuiteViewer");
+                }
+            }
+        }
+
+        /// <summary>Read-only, seekable view over a fixed byte range of another stream.</summary>
+        private sealed class PayloadSubStream : Stream
+        {
+            private readonly Stream _inner;
+            private readonly long _start;
+            private readonly long _length;
+            private long _position;
+
+            public PayloadSubStream(Stream inner, long start, long length)
+            {
+                _inner = inner;
+                _start = start;
+                _length = length;
+            }
+
+            public override bool CanRead => true;
+            public override bool CanSeek => true;
+            public override bool CanWrite => false;
+            public override long Length => _length;
+
+            public override long Position
+            {
+                get => _position;
+                set => Seek(value, SeekOrigin.Begin);
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                if (_position >= _length) return 0;
+                int toRead = (int)Math.Min(count, _length - _position);
+                _inner.Seek(_start + _position, SeekOrigin.Begin);
+                int read = _inner.Read(buffer, offset, toRead);
+                _position += read;
+                return read;
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                long target = origin switch
+                {
+                    SeekOrigin.Begin => offset,
+                    SeekOrigin.Current => _position + offset,
+                    SeekOrigin.End => _length + offset,
+                    _ => throw new ArgumentOutOfRangeException(nameof(origin)),
+                };
+                if (target < 0)
+                    throw new IOException("Attempted to seek before the start of the payload.");
+                _position = target;
+                return _position;
+            }
+
+            public override void Flush() { }
+            public override void SetLength(long value) => throw new NotSupportedException();
+            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        }
+
         public static async Task<SuiteProjectConfig> ImportSuiteAsync(string? importFilePath, string outputFolder, IProgress<string>? progress = null)
         {
-            if (string.IsNullOrWhiteSpace(importFilePath))
-                throw new ArgumentNullException(nameof(importFilePath));
-            if (!File.Exists(importFilePath))
-                throw new FileNotFoundException($"The specified file does not exist: {importFilePath}");
-            if (!Path.GetExtension(importFilePath).Equals(".exe", StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentOutOfRangeException(nameof(importFilePath), "Only Suite exe files (.exe) can be imported.");
+            ValidateSuiteExePath(importFilePath);
             if (string.IsNullOrWhiteSpace(outputFolder))
                 throw new ArgumentNullException(nameof(outputFolder));
 
@@ -117,24 +311,7 @@ namespace SuiteCreatorAvalonia.Services
             string extractRoot = Path.GetDirectoryName(scfgPath)!;
 
             Report("Reading suite configuration");
-            SuiteOperations.SuiteExecConfig? execConfig = null;
-            await Task.Run(() =>
-            {
-                string json = File.ReadAllText(scfgPath);
-                execConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<SuiteOperations.SuiteExecConfig>(json, new Newtonsoft.Json.JsonSerializerSettings
-                {
-                    TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Auto,
-                    Converters =
-                    {
-                        new Converters.ColorToJson(),
-                        new Converters.BitmapToJson(),
-                        new Converters.TextDocumentToJson(),
-                    },
-                    MaxDepth = null,
-                });
-            });
-            if (execConfig == null)
-                throw new InvalidOperationException("Failed to deserialize the suite config from the imported exe.");
+            SuiteExecConfig execConfig = await Task.Run(() => DeserializeExecConfig(File.ReadAllText(scfgPath)));
 
             string GetPkgDir(Guid pkgId) => Path.Combine(extractRoot, "Package", pkgId.ToString());
             string GetEventDir(string eventType, Guid id) => Path.Combine(extractRoot, eventType, id.ToString());
@@ -146,6 +323,7 @@ namespace SuiteCreatorAvalonia.Services
                 RuleSets = new ObservableCollection<RuleSet>(execConfig.RuleSets ?? new List<RuleSet>()),
                 CertEvents = new ObservableCollection<Cert>(),
                 DriverEvents = new ObservableCollection<Driver>(),
+                FontEvents = new ObservableCollection<SystemFont>(),
                 ProcClosureEvents = new ObservableCollection<ProcessClosure>((execConfig.ProcClosureEvents ?? new List<SuiteOperations.Events.ProcClosureExecEvent>()).Select(e => new ProcessClosure
                 {
                     Id = e.Id,
@@ -439,6 +617,7 @@ namespace SuiteCreatorAvalonia.Services
             Report("Importing events");
             AssignCertEventFiles(execConfig.CertEvents ?? new List<SuiteOperations.Events.CertExecEvent>(), newConfig, GetEventDir);
             AssignDriverEventFiles(execConfig.DriverEvents ?? new List<SuiteOperations.Events.DriverExecEvent>(), newConfig, GetEventDir);
+            AssignFontEventFiles(execConfig.FontEvents ?? new List<SuiteOperations.Events.FontExecEvent>(), newConfig, GetEventDir);
             await AssignExecutableEventFiles(execConfig.ExecutableEvents ?? new List<SuiteOperations.Events.ExecutableExecEvent>(), newConfig, GetEventDir);
             AssignExtensionEventFiles(execConfig.ExtensionEvents ?? new List<SuiteOperations.Events.BrowserExExecEvent>(), newConfig, GetEventDir);
             AssignFileEventFiles(execConfig.FileEvents ?? new List<SuiteOperations.Events.FileExecEvent>(), newConfig, GetEventDir);
@@ -528,6 +707,29 @@ namespace SuiteCreatorAvalonia.Services
             }
         }
 
+        private static void AssignFontEventFiles(IEnumerable<SuiteOperations.Events.FontExecEvent> fontEvents, SuiteProjectConfig config, Func<string, Guid, string> getEventDir)
+        {
+            foreach (var font in fontEvents)
+            {
+                var fontDir = getEventDir("Font", font.Id);
+                if (Directory.Exists(fontDir))
+                {
+                    // Installs are bundled flat into the event's folder, so point at the folder (or the single file in it)
+                    string[] fontFiles = Directory.GetFiles(fontDir, "*", SearchOption.TopDirectoryOnly).Where(SystemFont.IsFontFile).ToArray();
+                    font.FontPath = fontFiles.Length == 1 ? fontFiles[0] : fontDir;
+                }
+                config.FontEvents.Add(new SystemFont
+                {
+                    Id = font.Id,
+                    Action = font.Action,
+                    FontPath = font.FontPath,
+                    FontFileName = font.FontFileName,
+                    IsPermanent = font.IsPermanent,
+                    Schedules = font.Schedules?.Select(s => s.Clone()).ToList() ?? new List<Schedule>()
+                });
+            }
+        }
+
         private static async Task AssignExecutableEventFiles(IEnumerable<SuiteOperations.Events.ExecutableExecEvent> execEvents, SuiteProjectConfig config, Func<string, Guid, string> getEventDir)
         {
             foreach (var exe in execEvents)
@@ -594,6 +796,7 @@ namespace SuiteCreatorAvalonia.Services
                     SourcePath = sourcePath,
                     DestinationPath = fileEvent.DestinationPath?.Select(v => v.Clone()).ToList(),
                     ReplaceExisting = fileEvent.ReplaceExisting,
+                    DeleteOnlyIfEmpty = fileEvent.DeleteOnlyIfEmpty,
                     OverridePermissions = fileEvent.OverridePermissions,
                     Permissions = fileEvent.Permissions?.Select(p => p.Clone()).ToList(),
                     IsPermanent = fileEvent.IsPermanent,
@@ -681,7 +884,7 @@ namespace SuiteCreatorAvalonia.Services
                 }
 
                 // Named folders to remove if present at the root
-                string[] foldersToDelete = { "Certificate", "Driver", "Executable", "File", "Package", "Popup" };
+                string[] foldersToDelete = { "Certificate", "Driver", "Executable", "File", "Font", "Package", "Popup" };
                 foreach (string folderName in foldersToDelete)
                 {
                     string? dir = Directory.EnumerateDirectories(outputFolder, "*").FirstOrDefault(d =>

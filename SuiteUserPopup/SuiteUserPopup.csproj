@@ -17,9 +17,9 @@
 	<PropertyGroup>
 		<PackageIcon>SuiteCreatorLogoImage.png</PackageIcon>
 		<ApplicationIcon>SuiteCreatorLogo.ico</ApplicationIcon>
-		<Version>1.0.6</Version>
-		<AssemblyVersion>1.0.6</AssemblyVersion>
-		<FileVersion>1.0.6</FileVersion>
+		<Version>1.0.8</Version>
+		<AssemblyVersion>1.0.8</AssemblyVersion>
+		<FileVersion>1.0.8</FileVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<Content Include="SuiteCreatorLogo.ico" />
@@ -31,16 +31,16 @@
 
 
 	<ItemGroup>
-		<PackageReference Include="Avalonia" Version="12.1.0" />
-		<PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+		<PackageReference Include="Avalonia" Version="12.1.4" />
+		<PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
 		<PackageReference Include="Avalonia.Labs.Gif" Version="12.0.2" />
-		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
-		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.4" />
 		<PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
 		<PackageReference Include="Material.Icons.Avalonia" Version="3.0.2" />
-		<PackageReference Include="Microsoft.Win32.SystemEvents" Version="10.0.10" />
-		<PackageReference Include="System.Drawing.Common" Version="10.0.10" />
+		<PackageReference Include="Microsoft.Win32.SystemEvents" Version="10.0.13" />
+		<PackageReference Include="System.Drawing.Common" Version="10.0.13" />
 	</ItemGroup>
 
 
@@ -82,4 +82,9 @@
 	  </None>
 	</ItemGroup>
 	
+	<!-- Pin above the SDK default (10.0.12), which has a known high severity advisory (GHSA-p3jp-9v83-76w9) -->
+	<ItemGroup>
+		<PackageReference Include="Microsoft.DotNet.ILCompiler" Version="10.0.14" />
+	</ItemGroup>
+
 </Project>

@@ -30,6 +30,13 @@ public partial class PowerShellWindow : Window
     {
         if (DataContext is PowerShellWindowViewModel pVM)
         {
+            // Nothing can have been changed in read-only mode, so there's nothing to warn about losing.
+            if (pVM.IsReadOnly)
+            {
+                Close();
+                return;
+            }
+
             bool scriptNameMissing = !pVM.IsRuleMode && string.IsNullOrEmpty(pVM.ScriptName);
             bool scriptBodyMissing = string.IsNullOrEmpty(pVM.ScriptDoc.Text) && string.IsNullOrEmpty(pVM.FilePath);
             if (scriptNameMissing || scriptBodyMissing)

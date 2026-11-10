@@ -67,6 +67,11 @@
 				ToolTip.Tip="Import an existing Suite"
 				Command="{Binding ImportProjectCommand}"
 				Tag="FileImport"/>
+			<Button
+				Classes="WindowBtn"
+				ToolTip.Tip="View a built Suite's configuration (read-only, without importing it)"
+				Command="{Binding ViewSuiteConfigCommand}"
+				Tag="FileEye"/>
 		</StackPanel>
 
 		<!-- Window Title -->

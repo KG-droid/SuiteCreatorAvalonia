@@ -292,6 +292,24 @@ namespace SuiteExecutor
                 }
             }
 
+            // Font events (the font file, or the font files from a folder, are bundled flat into the event's folder)
+            if (_suiteConfig.FontEvents != null && _action != SuiteAction.Removal)
+            {
+                foreach (FontExecEvent font in _suiteConfig.FontEvents)
+                {
+                    if (font.Action == FontAction.Install)
+                    {
+                        string fontDir = Path.Combine(_suiteRootDir, "Font", font.Id.ToString());
+                        if (!Directory.Exists(fontDir))
+                        {
+                            throw new DirectoryNotFoundException($"Could not find font directory: {fontDir}");
+                        }
+                        font.FontPath = fontDir;
+                        _log.WriteLog($"Resolved font directory: {fontDir}", "PathResolution", Log.Severity.Info);
+                    }
+                }
+            }
+
             // Registry events. A non-permanent Import event gets reversed into a value removal on a Removal
             // run (see Registry.Reverse()/RegExecEvent.RemoveValuesFromImportedRegFile), which still needs
             // the original .reg file's contents - so resolve it then too, from the uninstall media's own
@@ -400,11 +418,12 @@ namespace SuiteExecutor
                     if (ext.Action == ExtAction.Install && ext.Source == BrowserExtensionSource.Local)
                     {
                         string extDir = Path.Combine(_suiteRootDir, "BrowserExt", ext.Id.ToString());
-                        if (Directory.Exists(extDir))
+                        if (!Directory.Exists(extDir))
                         {
-                            ext.ExtPath = extDir;
-                            _log.WriteLog($"Resolved browser extension path: {extDir}", "PathResolution", Log.Severity.Info);
+                            throw new DirectoryNotFoundException($"Could not find browser extension directory: {extDir}");
                         }
+                        ext.ExtPath = extDir;
+                        _log.WriteLog($"Resolved browser extension path: {extDir}", "PathResolution", Log.Severity.Info);
                     }
                 }
             }

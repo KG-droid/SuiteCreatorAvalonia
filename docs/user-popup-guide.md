@@ -8,7 +8,7 @@ The popup shows:
 
 - Your **company logo** on the coloured tab (set on the Popups page, or [enforced by an admin](admin-guide.md)), and the **suite logo**, product name and version from the Build page.
 - The **action** ("Upgrade", "Install", whatever text you choose) with a pickable icon.
-- Your **message text** — separate messages for Deployment and for Removal/Rollback runs.
+- Your **message text** — separate messages for Deployment and for Removal/Rollback runs, with bold, italic, font size and colour formatting.
 - A row of the user's **running apps that will be closed** (when linked to Process Closures — see below), with their real icons and names.
 - A **countdown timer** with what happens when it expires.
 - **Later (n)** — defer the run, with the number of remaining delay days shown — and **Continue**.

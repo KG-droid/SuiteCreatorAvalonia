@@ -190,6 +190,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 FilePath = cert.FilePath;
                 ThumbPrint = cert.Thumbprint;
                 Password = cert.Password;
+                IsPermanent = cert.IsPermanent;
                 Schedules.Clear();
                 Schedules.AddRange(cert.Schedules);
                 // Ensure that the EventStage and Condition in each Schedule is the same instance as in SuiteStages/SuiteConditions for the ComboBox binding to work correctly.
@@ -210,6 +211,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 cert.FilePath = FilePath;
                 cert.Thumbprint = ThumbPrint;
                 cert.Password = Password;
+                cert.IsPermanent = IsPermanent;
                 cert.Schedules = Schedules.ToList();
                 if (!Design.IsDesignMode)
                     _coreManager.UpdateCertEvent(cert);

@@ -63,6 +63,14 @@ namespace SuiteCreatorAvalonia.Models.Common
                 }
         };
 
+        public static List<FilePickerFileType> Fonts { get; } = new()
+        {
+            new ("Font")
+                {
+                    Patterns = new[] { "*.ttf", "*.otf", "*.ttc", "*.otc" },
+                }
+        };
+
         public static List<FilePickerFileType> CRX { get; } = new()
         {
             new ("CRX")

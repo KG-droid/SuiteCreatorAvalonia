@@ -39,7 +39,8 @@ namespace SuiteCreatorAvalonia.Services
         public event EventHandler<SuiteBuiltEventArgs>? SuiteBuilt;
         private string _suiteUserPopupName = "SuiteUserPopup.exe";
         private string _suiteProgressPopupName = "SuiteProgressPopup.exe";
-        private string _suiteSfxStubName = "SuiteSfxStub.exe";
+        private const string _suiteSfxStubFileName = "SuiteSfxStub.exe";
+        private string _suiteSfxStubName = _suiteSfxStubFileName;
 
         internal List<SuiteValidationError>? GetValidationReport()
         {
@@ -73,6 +74,7 @@ namespace SuiteCreatorAvalonia.Services
             List<BrowserExt> extensionEvents = _suiteCoreManager.GetExtensionEvents().ToList();
             List<Cert> certEvents = _suiteCoreManager.GetCertEvents().ToList();
             List<Driver> driverEvents = _suiteCoreManager.GetDriverEvents().ToList();
+            List<SystemFont> fontEvents = _suiteCoreManager.GetFontEvents().ToList();
             List<PackageBase> packages = _suiteCoreManager.GetPackages().ToList();
             List<FileSysIO> fileEvents = _suiteCoreManager.GetFileEvents().ToList();
             List<Executable> executableEvents = _suiteCoreManager.GetExecutableEvents().ToList();
@@ -108,11 +110,11 @@ namespace SuiteCreatorAvalonia.Services
             DateTime buildTime = DateTime.Now;
             await Task.Run(() =>
             {
-                buildPath = CreateSuiteFiles(suiteExecConfig, extensionEvents, certEvents, driverEvents, packages, fileEvents, executableEvents, powerShellEvents, registryEvents, popupSettings, companyLogoBase64, companyLogoBytes, companyLogoExt, progress, cancellationToken);
+                buildPath = CreateSuiteFiles(suiteExecConfig, extensionEvents, certEvents, driverEvents, fontEvents, packages, fileEvents, executableEvents, powerShellEvents, registryEvents, popupSettings, companyLogoBase64, companyLogoBytes, companyLogoExt, progress, cancellationToken);
             }, cancellationToken);
             Report("Finalizing build");
             Build buildSettings = _suiteCoreManager.GetBuildSettings();
-            buildSettings.Detection = $@"Set to a Detection Reg Key of: {(buildSettings.Architecture == SuiteCreatorAvalonia.Enums.Architecture.x64 ? _uninstallKeyBase64 : _uninstallKeyBase32)}\{buildSettings.UpgradeCode}, with a Property detection of: DisplayVersion greater or equal to {buildSettings.SuiteVersion}";
+            buildSettings.Detection = $@"Set to a Detection Reg Key of: {(buildSettings.Architecture == SuiteCreatorAvalonia.Enums.Architecture.x64 ? _uninstallKeyBase64 : _uninstallKeyBase32)}\{{{buildSettings.UpgradeCode}}}, with a Property detection of: DisplayVersion greater or equal to {buildSettings.SuiteVersion}";
             _suiteCoreManager.UpdateBuildSettings(buildSettings);
             AppLog.Info($"Build completed, output at: {buildPath}", "SuiteBuilder");
             SuiteBuilt?.Invoke(this, new SuiteBuiltEventArgs(buildPath ?? string.Empty, buildTime));
@@ -324,7 +326,8 @@ namespace SuiteCreatorAvalonia.Services
             {
                 Id = driver.Id,
                 Action = driver.Action,
-                InfPath = driver.InfPath,
+                // InfPath is deliberately not stored: it's a path on this machine, and the executor resolves
+                // it from the Driver/{id} folder bundled in the built suite (see Suite.PathResolution).
                 // Removal identifies the driver by its original .inf file name, so derive it from
                 // the .inf path for install events where it hasn't been set explicitly.
                 InfName = string.IsNullOrWhiteSpace(driver.InfName) && !string.IsNullOrWhiteSpace(driver.InfPath)
@@ -332,6 +335,20 @@ namespace SuiteCreatorAvalonia.Services
                     : driver.InfName,
                 IsPermanent = driver.IsPermanent,
                 Schedules = driver.Schedules.Select(s => s).ToList(),
+            }).ToList();
+            suiteExecConfig.FontEvents = _suiteCoreManager.GetFontEvents().Select(font => new SuiteOperations.Events.FontExecEvent(log)
+            {
+                Id = font.Id,
+                Action = font.Action,
+                // FontPath is deliberately not stored: it's a path on this machine, and the executor resolves
+                // it from the Font/{id} folder bundled in the built suite (see Suite.PathResolution).
+                // Removal identifies the font by its file name(s), so derive them from the font path
+                // for install events where they haven't been set explicitly.
+                FontFileName = string.IsNullOrWhiteSpace(font.FontFileName) && !string.IsNullOrWhiteSpace(font.FontPath)
+                    ? SystemFont.DeriveFileNames(font.FontPath)
+                    : font.FontFileName,
+                IsPermanent = font.IsPermanent,
+                Schedules = font.Schedules.Select(s => s).ToList(),
             }).ToList();
             suiteExecConfig.ProcClosureEvents = _suiteCoreManager.GetProcessClosureEvents().Select(proc => new SuiteOperations.Events.ProcClosureExecEvent(log)
             {
@@ -367,7 +384,7 @@ namespace SuiteCreatorAvalonia.Services
                 ExtensionId = ext.ExtensionId,
                 Browser = ext.Browser,
                 Source = ext.Source,
-                ExtPath = ext.ExtPath,
+                ExtPath = null, // Resolved by the executor from the bundled BrowserExt/{id} folder, never the admin's path
                 Schedules = ext.Schedules.Select(s => s).ToList(),
                 IsPermanent = ext.IsPermanent,
             }).ToList();
@@ -379,6 +396,7 @@ namespace SuiteCreatorAvalonia.Services
                 SourcePath = file.Action == Enums.FileSysIOAction.Deploy ? null : file.SourcePath,
                 DestinationPath = file.DestinationPath,
                 ReplaceExisting = file.ReplaceExisting,
+                DeleteOnlyIfEmpty = file.DeleteOnlyIfEmpty,
                 OverridePermissions = file.OverridePermissions,
                 Permissions = file.Permissions?.Select(p => p.Clone()).ToList(),
                 Schedules = file.Schedules.Select(s => s).ToList(),
@@ -489,6 +507,7 @@ namespace SuiteCreatorAvalonia.Services
             List<BrowserExt> extensionEvents,
             List<Cert> certEvents,
             List<Driver> driverEvents,
+            List<SystemFont> fontEvents,
             List<PackageBase> packages,
             List<FileSysIO> fileEvents,
             List<Executable> executableEvents,
@@ -582,6 +601,25 @@ namespace SuiteCreatorAvalonia.Services
                         }
                         string fileDir = Path.Combine(tempRoot, "Driver", driverEvent.Id.ToString());
                         NativeTools.CopyWithRoboCopy(driverSourceDir, fileDir, false, cancellationToken: cancellationToken);
+                    }
+                }
+
+                // Font files (a single file, or every font file in a folder, flattened into the event's folder)
+                Report("Copying font files");
+                foreach (SystemFont fontEvent in fontEvents)
+                {
+                    if (fontEvent.Action == Enums.FontAction.Install && !string.IsNullOrWhiteSpace(fontEvent.FontPath))
+                    {
+                        string fileDir = Path.Combine(tempRoot, "Font", fontEvent.Id.ToString());
+                        Directory.CreateDirectory(fileDir);
+                        IEnumerable<string> fontFiles = Directory.Exists(fontEvent.FontPath)
+                            ? Directory.EnumerateFiles(fontEvent.FontPath, "*", SearchOption.AllDirectories).Where(SystemFont.IsFontFile)
+                            : new[] { fontEvent.FontPath };
+                        foreach (string fontFile in fontFiles)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            File.Copy(fontFile, Path.Combine(fileDir, Path.GetFileName(fontFile)), true);
+                        }
                     }
                 }
 
@@ -883,10 +921,16 @@ namespace SuiteCreatorAvalonia.Services
                     File.Move(zipPath, finalZipPath, true);
                     Report("Creating self-extracting bootstrapper");
                     var sfxPath = Path.Combine(buildDir, $"{projectName}.exe");
-                    if (TryCreateSelfExtractingBootstrapper(finalZipPath, sfxPath))
+                    CreateSelfExtractingBootstrapper(finalZipPath, sfxPath);
+                    try { File.Delete(finalZipPath); }
+                    catch (Exception zipEx)
                     {
-                        try { File.Delete(finalZipPath); } catch { }
+                        AppLog.Warning($"Could not delete intermediate zip: {finalZipPath}, error: {zipEx.Message}", "SuiteBuilder");
                     }
+                }
+                else
+                {
+                    throw new Exception("No suite files were produced to build");
                 }
                 Report("Cleaning up temporary files");
                 DeleteDIR(tempRoot);
@@ -1076,6 +1120,20 @@ namespace SuiteCreatorAvalonia.Services
                     {
                         Message = valResult,
                         ObjectForError = driver
+                    });
+                }
+            }
+
+            // Validate FontEvents
+            foreach (SystemFont font in _suiteCoreManager.GetFontEvents())
+            {
+                string? valResult = font.Validate();
+                if (!string.IsNullOrWhiteSpace(valResult))
+                {
+                    validationErrors.Add(new SuiteValidationError
+                    {
+                        Message = valResult,
+                        ObjectForError = font
                     });
                 }
             }
@@ -1308,6 +1366,7 @@ namespace SuiteCreatorAvalonia.Services
             List<EventCore> allEvents = new();
             allEvents.AddRange(_suiteCoreManager.GetCertEvents());
             allEvents.AddRange(_suiteCoreManager.GetDriverEvents());
+            allEvents.AddRange(_suiteCoreManager.GetFontEvents());
             allEvents.AddRange(_suiteCoreManager.GetProcessClosureEvents());
             allEvents.AddRange(_suiteCoreManager.GetEnvironmentEvents());
             allEvents.AddRange(_suiteCoreManager.GetExecutableEvents());
@@ -1464,7 +1523,7 @@ namespace SuiteCreatorAvalonia.Services
         {
             var config = new PopConfigDto
             {
-                LogFilePath = Path.Combine(_appSettingsControl.GetLogLocation(), $"{suiteExecCfg.BuildSettings.Manufacturer}_{suiteExecCfg.BuildSettings.Name}_{suiteExecCfg.BuildSettings.SuiteVersion}_{suiteExecCfg.BuildSettings.Revision}_Suite.log"),
+                LogFilePath = Path.Combine(string.IsNullOrWhiteSpace(suiteExecCfg.BuildSettings.LogDir) ? _appSettingsControl.GetLogLocation() : suiteExecCfg.BuildSettings.LogDir, $"{suiteExecCfg.BuildSettings.Manufacturer}_{suiteExecCfg.BuildSettings.Name}_{suiteExecCfg.BuildSettings.SuiteVersion}_{suiteExecCfg.BuildSettings.Revision}_Suite.log"),
                 CompanyLogoBackground = suiteExecCfg.CompanyLogoBackgroundColor.ToString(),
                 MainText = "The following apps will be closed before the upgrade. Please save any work required before you continue.",
                 IsClosuresAppsVisible = popupSettings.LinkToProcClosures,
@@ -1493,55 +1552,72 @@ namespace SuiteCreatorAvalonia.Services
             assets.CopyTo(output);
         }
 
-        private static bool TryCreateSelfExtractingBootstrapper(string suiteZipPath, string outputExePath)
+        // Throws on any failure so the build reports it rather than finishing with no exe. A partially written
+        // exe is removed so it can't be mistaken for a good one.
+        private static void CreateSelfExtractingBootstrapper(string suiteZipPath, string outputExePath)
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return false;
+                throw new PlatformNotSupportedException("The suite exe can only be built on Windows.");
             if (!File.Exists(suiteZipPath))
-                return false;
+                throw new FileNotFoundException($"The compressed suite files were not found at: {suiteZipPath}");
+
+            // Prebuilt stub must be shipped with the SuiteCreatorAvalonia app.
+            // Expected location: {AppContext.BaseDirectory}\SuiteExec\SuiteSfxStub.exe
+            var stubExe = Path.Combine(AppContext.BaseDirectory, "SuiteExec", _suiteSfxStubFileName);
+            if (!File.Exists(stubExe))
+                throw new FileNotFoundException($"{_suiteSfxStubFileName} not found. Expected at: {stubExe}");
 
             try
             {
-                // Prebuilt stub must be shipped with the SuiteCreatorAvalonia app.
-                // Expected location: {AppContext.BaseDirectory}\SuiteExec\SuiteSfxStub.exe
-                var stubExe = Path.Combine(AppContext.BaseDirectory, "SuiteExec", "SuiteSfxStub.exe");
-                if (!File.Exists(stubExe))
-                {
-                    AppLog.Warning($"SuiteSfxStub.exe not found at: {stubExe}, suite exe will not be created", "SuiteBuilder");
-                    return false;
-                }
+                long expectedLength = CreateSfxFromStubAndZip(stubExe, suiteZipPath, outputExePath);
 
-                CreateSfxFromStubAndZip(stubExe, suiteZipPath, outputExePath);
-                return File.Exists(outputExePath);
+                // Antivirus can quarantine or truncate a freshly written exe, so confirm what's on disk is complete.
+                var written = new FileInfo(outputExePath);
+                if (!written.Exists)
+                    throw new IOException($"The suite exe was removed after it was created (possibly by antivirus software): {outputExePath}");
+                if (written.Length != expectedLength)
+                    throw new IOException($"The suite exe is incomplete ({written.Length} of {expectedLength} bytes): {outputExePath}");
             }
-            catch (Exception ex)
+            catch
             {
-                // Best-effort only.
-                AppLog.Warning($"Failed to create self-extracting bootstrapper: {outputExePath}, error: {ex.Message}", "SuiteBuilder");
-                return false;
+                try { File.Delete(outputExePath); } catch { }
+                throw;
             }
         }
 
         // Payload format (appended to the end of the exe):
-        // [zipBytes...][int32 zipLength][int32 magic 'SUFX']
-        private static void CreateSfxFromStubAndZip(string stubExePath, string suiteZipPath, string outputExePath)
+        // [zipBytes...][int64 zipLength][int32 magic 'SUF2']
+        // The zip is streamed in, so the suite size isn't limited by memory or by a 32-bit length.
+        // Returns the expected total length of the finished exe.
+        private static long CreateSfxFromStubAndZip(string stubExePath, string suiteZipPath, string outputExePath)
         {
-            const int magic = unchecked((int)0x53554658); // 'SUFX'
-            var zipBytes = File.ReadAllBytes(suiteZipPath);
+            const int magic = unchecked((int)0x53554632); // 'SUF2'
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputExePath)!);
-            using var outFs = new FileStream(outputExePath, FileMode.Create, FileAccess.Write, FileShare.None);
-            using (var stubFs = new FileStream(stubExePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            long zipLength;
+            long stubLength;
+            using (var outFs = new FileStream(outputExePath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                stubFs.CopyTo(outFs);
-            }
+                using (var stubFs = new FileStream(stubExePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    stubLength = stubFs.Length;
+                    stubFs.CopyTo(outFs);
+                }
 
-            using (var bw = new BinaryWriter(outFs, System.Text.Encoding.UTF8, leaveOpen: true))
-            {
-                bw.Write(zipBytes);
-                bw.Write(zipBytes.Length);
-                bw.Write(magic);
+                using (var zipFs = new FileStream(suiteZipPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024))
+                {
+                    zipLength = zipFs.Length;
+                    zipFs.CopyTo(outFs, 1024 * 1024);
+                }
+
+                using (var bw = new BinaryWriter(outFs, System.Text.Encoding.UTF8, leaveOpen: true))
+                {
+                    bw.Write(zipLength);
+                    bw.Write(magic);
+                }
+                outFs.Flush(true);
             }
+            return stubLength + zipLength + sizeof(long) + sizeof(int);
         }
 
         // This should match with the PopConfig class from the SuiteUserPopup project, as it will be deserialized by the popup executable.

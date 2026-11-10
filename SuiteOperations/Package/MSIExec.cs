@@ -121,6 +121,7 @@ namespace SuiteOperations.Package
 
             _log.WriteLog("Running per-user MSI install for all active user sessions.");
             string msiPath = GetEffectivePath(MSIFile)!;
+            MSITools.EnsureLogDirectoryExists(GetEffectiveLogPath(LogPath));
             string args = MSITools.BuildInstallArguments(
                 msiPath,
                 GetEffectivePath(TransformsFile),
@@ -308,7 +309,7 @@ namespace SuiteOperations.Package
             {
                 if (string.IsNullOrEmpty(ProductCode)) 
                     throw new Exception("Could not determine ProductCode from the MSI");
-                result.Result = IsMSIProductInstalledForAllUsers(ProductCode, Architecture);
+                result.Result = IsMSIProductInstalledForAllUsers(ProductCode);
                 result.Summary = $"Checked for specific product code: {ProductCode}";
             }
             return result;

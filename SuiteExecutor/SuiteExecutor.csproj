@@ -13,9 +13,9 @@
 		<Platforms>AnyCPU;x64</Platforms>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Version>1.0.17</Version>
-        <AssemblyVersion>1.0.17</AssemblyVersion>
-        <FileVersion>1.0.17</FileVersion>
+        <Version>1.0.22</Version>
+        <AssemblyVersion>1.0.22</AssemblyVersion>
+        <FileVersion>1.0.22</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -65,6 +65,11 @@
 		<PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0">
 			<ExcludeAssets>*</ExcludeAssets>
 		</PackageReference>
+	</ItemGroup>
+
+	<!-- Pin above the SDK default (10.0.12), which has a known high severity advisory (GHSA-p3jp-9v83-76w9) -->
+	<ItemGroup>
+		<PackageReference Include="Microsoft.DotNet.ILCompiler" Version="10.0.14" />
 	</ItemGroup>
 
 </Project>

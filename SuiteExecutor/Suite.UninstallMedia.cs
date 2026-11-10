@@ -162,6 +162,7 @@ namespace SuiteExecutor
 
             uninstallSuiteConfig.CertEvents = FilterEventsForUninstall(uninstallSuiteConfig.CertEvents, validStageIds, ref removedScheduleCount, ref removedEventCount);
             uninstallSuiteConfig.DriverEvents = FilterEventsForUninstall(uninstallSuiteConfig.DriverEvents, validStageIds, ref removedScheduleCount, ref removedEventCount);
+            uninstallSuiteConfig.FontEvents = FilterEventsForUninstall(uninstallSuiteConfig.FontEvents, validStageIds, ref removedScheduleCount, ref removedEventCount);
             uninstallSuiteConfig.ProcClosureEvents = FilterEventsForUninstall(uninstallSuiteConfig.ProcClosureEvents, validStageIds, ref removedScheduleCount, ref removedEventCount);
             uninstallSuiteConfig.EnvironmentEvents = FilterEventsForUninstall(uninstallSuiteConfig.EnvironmentEvents, validStageIds, ref removedScheduleCount, ref removedEventCount);
             uninstallSuiteConfig.ExecutableEvents = FilterEventsForUninstall(uninstallSuiteConfig.ExecutableEvents, validStageIds, ref removedScheduleCount, ref removedEventCount);

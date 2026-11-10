@@ -90,6 +90,10 @@ namespace SuiteCreatorAvalonia.IDataTemplates
                         ToolTip.SetTip(button, "Navigate to this Driver event");
                         iconKind = EventTabMappings.Drivers.IconKind;
                         break;
+                    case SystemFont font:
+                        ToolTip.SetTip(button, "Navigate to this Font event");
+                        iconKind = EventTabMappings.Fonts.IconKind;
+                        break;
                     case Models.Events.Environment env:
                         ToolTip.SetTip(button, "Navigate to this Environment Variable event");
                         iconKind = EventTabMappings.Environments.IconKind;
@@ -239,6 +243,11 @@ namespace SuiteCreatorAvalonia.IDataTemplates
                             if (cardToSelect != null)
                             {
                                 cardToSelect.IsSelected = true;
+                                if (cardToSelect is PowerShellCardViewModel psCardVM
+                                    && valErr.Message.Contains("do not exist", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    psCardVM.OpenPSModalWindow(true);
+                                }
                             }
                         }
                         else if (pkgProp != null)
@@ -246,6 +255,11 @@ namespace SuiteCreatorAvalonia.IDataTemplates
                             // View is package
                             PackageViewModel pkgVM = (PackageViewModel)_mainViewModel.CurrentTabView;
                             pkgVM.SelectedPackage = pkgVM.PackageList.FirstOrDefault(p => p.Id == ((PackageBase)valErr.ObjectForError).Id);
+                            if (valErr.Message.Contains("do not exist", StringComparison.OrdinalIgnoreCase)
+                                && pkgVM.CurrentPackageView is PackageOtherBaseDetailsViewModel otherPkgVM)
+                            {
+                                otherPkgVM.ShowMissingFiles();
+                            }
                         }
                     });
                 });

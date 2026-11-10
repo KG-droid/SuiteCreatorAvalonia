@@ -85,6 +85,8 @@ namespace SuiteCreatorAvalonia
             collection.AddTransient<DriverCardViewModel>();
             collection.AddTransient<DriversViewModel>();
             collection.AddTransient<EnvCardViewModel>();
+            collection.AddTransient<FontCardViewModel>();
+            collection.AddTransient<FontsViewModel>();
             collection.AddTransient<EnvViewModel>();
             collection.AddTransient<ExecCardViewModel>();
             collection.AddTransient<ExecViewModel>();
@@ -121,6 +123,7 @@ namespace SuiteCreatorAvalonia
             collection.AddTransient<ServClosuresViewModel>();
             collection.AddTransient<SettingsViewModel>();
             collection.AddTransient<ShortcutsViewModel>();
+            collection.AddTransient<SuiteConfigViewerViewModel>();
             collection.AddTransient<SupportFilesViewModel>();
             collection.AddTransient<UninstallsViewModel>();
             collection.AddSingleton<Func<Type, ViewModelBase>>(serviceProvider => type =>

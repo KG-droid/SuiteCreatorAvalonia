@@ -107,6 +107,7 @@ namespace SuiteExecutor
             string escapedReminderTask = System.Security.SecurityElement.Escape(reminderTaskName);
             string escapedSuiteName = System.Security.SecurityElement.Escape(_suiteConfig.BuildSettings.Name ?? "Suite");
             string escapedLogoPath = System.Security.SecurityElement.Escape(suiteLogoPath);
+            string escapedLogPath = System.Security.SecurityElement.Escape(_logPath);
 
             string taskXml = $@"<?xml version=""1.0"" encoding=""UTF-16""?>
 <Task version=""1.2"" xmlns=""http://schemas.microsoft.com/windows/2004/02/mit/task"">
@@ -142,7 +143,7 @@ namespace SuiteExecutor
   <Actions Context=""Author"">
     <Exec>
       <Command>""{commandPath}""</Command>
-      <Arguments>--Tray --ReminderTask ""{escapedReminderTask}"" --SuiteName ""{escapedSuiteName}"" --SuiteLogo ""{escapedLogoPath}""</Arguments>
+      <Arguments>--Tray --ReminderTask ""{escapedReminderTask}"" --SuiteName ""{escapedSuiteName}"" --SuiteLogo ""{escapedLogoPath}"" --LogFile ""{escapedLogPath}""</Arguments>
     </Exec>
   </Actions>
 </Task>";
@@ -190,7 +191,7 @@ namespace SuiteExecutor
 
             string popupDir = Path.Combine(_suiteRootDir, "Popup");
             string suiteName = _suiteConfig.BuildSettings.Name ?? "Suite";
-            string trayArguments = $"--Tray --ReminderTask \"{reminderTaskName}\" --SuiteName \"{suiteName}\" --SuiteLogo \"{suiteLogoPath}\"";
+            string trayArguments = $"--Tray --ReminderTask \"{reminderTaskName}\" --SuiteName \"{suiteName}\" --SuiteLogo \"{suiteLogoPath}\" --LogFile \"{_logPath}\"";
 
             // Fire-and-forget, and deliberately NOT tied to this process's lifetime (killWithParent stays
             // false): SuiteExecutor exits immediately after this via Environment.Exit(1602), which would

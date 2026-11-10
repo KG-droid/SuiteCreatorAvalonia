@@ -127,6 +127,15 @@ namespace SuiteCreatorAvalonia.Models.Common
             ModelType = typeof(Driver),
         };
 
+        public static EventTab Fonts { get; set; } = new EventTab
+        {
+            Header = "Fonts",
+            IconKind = MaterialIconKind.FormatFont,
+            IconColor = Brush.Parse("#d9822b"),
+            ContentType = typeof(FontsViewModel),
+            ModelType = typeof(SystemFont),
+        };
+
         public static EventTab Rules { get; set; } = new EventTab
         {
             Header = "Rules",

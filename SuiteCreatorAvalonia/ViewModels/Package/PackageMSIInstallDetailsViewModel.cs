@@ -81,7 +81,11 @@ namespace SuiteCreatorAvalonia.ViewModels
         {
             _isLoading = true;
             var msiPkg = _suiteCoreManager.GetPackage(packageId) as MSIPkg;
-            if (msiPkg == null || string.IsNullOrWhiteSpace(msiPkg.Name)) return;
+            if (msiPkg == null || string.IsNullOrWhiteSpace(msiPkg.Name))
+            {
+                _isLoading = false;
+                return;
+            }
             base.LoadPackage(packageId);
             MsiSubDetails.MsiFilePath = msiPkg.MSIPath;
             MsiSubDetails.IsUserContext = msiPkg.Context == Enums.Contexts.User;
@@ -109,6 +113,7 @@ namespace SuiteCreatorAvalonia.ViewModels
             }
             if (msiPkg.Rollback is MSIPkg rollbackPkg)
             {
+                AddRollBack = true;
                 Rollback.MsiFilePath = rollbackPkg.MSIPath;
                 Rollback.IsUserContext = rollbackPkg.Context == Enums.Contexts.User;
                 Rollback.IsCreateLog = rollbackPkg.IsCreateLog;
@@ -119,6 +124,7 @@ namespace SuiteCreatorAvalonia.ViewModels
                 Rollback.PatchFile = rollbackPkg.PatchPath;
                 Rollback.SecureTransforms = rollbackPkg.SecureTransforms;
                 Rollback.LegacyLongFilePath = rollbackPkg.LegacyLongFilePath;
+                Rollback.RestartBehavior = rollbackPkg.RestartBehavior;
                 Rollback.EstimatedInstallSeconds = rollbackPkg.EstimatedInstallSeconds;
                 // Update Rollback Properties in place
                 Rollback.Properties.Clear();
@@ -127,6 +133,23 @@ namespace SuiteCreatorAvalonia.ViewModels
                     foreach (var prop in rollbackPkg.Properties)
                         Rollback.Properties.Add(prop);
                 }
+            }
+            else
+            {
+                AddRollBack = false;
+                Rollback.MsiFilePath = null;
+                Rollback.IsUserContext = false;
+                Rollback.IsCreateLog = true;
+                Rollback.LogPath = null;
+                Rollback.IsRemoveFamily = true;
+                Rollback.IncludeAdjacentFilesFolders = false;
+                Rollback.TransformFile = null;
+                Rollback.PatchFile = null;
+                Rollback.SecureTransforms = false;
+                Rollback.LegacyLongFilePath = false;
+                Rollback.RestartBehavior = Enums.RestartBehavior.Ignore;
+                Rollback.EstimatedInstallSeconds = 0;
+                Rollback.Properties.Clear();
             }
             _isLoading = false;
         }
@@ -151,8 +174,9 @@ namespace SuiteCreatorAvalonia.ViewModels
             msiPkg.RemoveOnSuiteRemoval = MsiSubDetails.RemoveOnSuiteRemoval;
             msiPkg.EstimatedInstallSeconds = MsiSubDetails.EstimatedInstallSeconds;
             msiPkg.EstimatedUninstallSeconds = MsiSubDetails.EstimatedUninstallSeconds;
-            if (Rollback != null && msiPkg.Rollback is MSIPkg rollbackPkg)
+            if (AddRollBack && Rollback != null)
             {
+                MSIPkg rollbackPkg = msiPkg.Rollback as MSIPkg ?? new MSIPkg();
                 rollbackPkg.MSIPath = Rollback.MsiFilePath;
                 rollbackPkg.TransformsPath = Rollback.TransformFile;
                 rollbackPkg.PatchPath = Rollback.PatchFile;
@@ -160,10 +184,17 @@ namespace SuiteCreatorAvalonia.ViewModels
                 rollbackPkg.SecureTransforms = Rollback.SecureTransforms;
                 rollbackPkg.Context = Rollback.IsUserContext ? Enums.Contexts.User : Enums.Contexts.System;
                 rollbackPkg.IsCreateLog = Rollback.IsCreateLog;
+                rollbackPkg.IncludeAdjacentFiles = Rollback.IncludeAdjacentFilesFolders;
                 rollbackPkg.LegacyLongFilePath = Rollback.LegacyLongFilePath;
+                rollbackPkg.RestartBehavior = Rollback.RestartBehavior;
                 rollbackPkg.LogPath = Rollback.LogPath;
                 rollbackPkg.Properties = Rollback.Properties.ToList();
                 rollbackPkg.EstimatedInstallSeconds = Rollback.EstimatedInstallSeconds;
+                msiPkg.Rollback = rollbackPkg;
+            }
+            else
+            {
+                msiPkg.Rollback = null;
             }
             _suiteCoreManager.UpdatePackage(msiPkg);
         }

@@ -83,13 +83,13 @@ namespace SuiteCreatorAvalonia.ViewModels
         private bool _hasUninstallPopup = true;
 
         [ObservableProperty]
-        private TextDocument _installTxt = new();
+        private string _installTxt = "";
 
         [ObservableProperty]
         private string _instAction = "Upgrade";
 
         [ObservableProperty]
-        private TextDocument _uninstallTxt = new();
+        private string _uninstallTxt = "";
 
         [ObservableProperty]
         private string _uninstAction = "Rollback";
@@ -207,14 +207,6 @@ namespace SuiteCreatorAvalonia.ViewModels
 
         private void SetupEvents()
         {
-            InstallTxt.TextChanged += (sender, args) =>
-            {
-                OnPropertyChanged(nameof(InstallTxt));
-            };
-            UninstallTxt.TextChanged += (sender, args) =>
-            {
-                OnPropertyChanged(nameof(InstallTxt));
-            };
             PSCondition.TextChanged += (sender, args) =>
             {
                 OnPropertyChanged(nameof(PSCondition));
@@ -525,8 +517,8 @@ namespace SuiteCreatorAvalonia.ViewModels
             {
                 PSCondition.Text = string.Empty;
             }
-            InstallTxt.Text = popSettings.InstallTxt ?? "";
-            UninstallTxt.Text = popSettings.UninstallTxt ?? "";
+            InstallTxt = popSettings.InstallTxt ?? "";
+            UninstallTxt = popSettings.UninstallTxt ?? "";
             Timer = popSettings.Timer > 0 ? popSettings.Timer : 40;
             TimerExpireAction = popSettings.TimerExpireAction ?? PopupAction.Continue;
             DelayDays = popSettings.DelayDays ?? 7;
@@ -568,8 +560,8 @@ namespace SuiteCreatorAvalonia.ViewModels
                 LinkToProcClosures = LinkToProcClosures,
                 PauseDuringMeeting = PauseDuringMeeting,
                 PSCondition = psConditionBase64,
-                InstallTxt = InstallTxt.Text,
-                UninstallTxt = UninstallTxt.Text,
+                InstallTxt = InstallTxt,
+                UninstallTxt = UninstallTxt,
                 Timer = Timer != null ? (int)Timer : 40,
                 TimerExpireAction = TimerExpireAction,
                 DelayDays = DelayDays != null ? (int)DelayDays : 7,

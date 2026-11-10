@@ -1,6 +1,5 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Media;
-using AvaloniaEdit.Document;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Material.Icons;
 using SuiteCreatorAvalonia.Enums;
@@ -20,7 +19,7 @@ namespace SuiteCreatorAvalonia.ViewModels
         private AppSettingsControl _settingsCtrl;
 
         [ObservableProperty]
-        private TextDocument _mainText = new();
+        private string _mainText = "";
 
         [ObservableProperty]
         private Bitmap _icon;
@@ -199,7 +198,7 @@ namespace SuiteCreatorAvalonia.ViewModels
         {
             _settingsCtrl = settingsCtrl;
             LoadCompanyLogoFromSettings();
-            MainText.Text =
+            MainText =
                     "The following apps will be closed before the upgrade.\n" +
                     "Please save any work required before continuing.";
             if (Icon == null)

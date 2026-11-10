@@ -524,6 +524,10 @@ namespace SuiteCreatorAvalonia.ViewModels.RuleBuilder
                     TextBox addComparatorValueTextBox = new TextBox();
                     addComparatorValueTextBox.PlaceholderText = isRegexComparator ? "RegEx pattern to compare" : "Value to compare";
                     addComparatorValueTextBox.Bind(TextBox.TextProperty, new Binding("ComparatorValue") { Mode = BindingMode.TwoWay });
+                    if (IsVersionDetection)
+                    {
+                        addComparatorValueTextBox.LostFocus += async (s, e) => await WarnIfLooseVersionAsync();
+                    }
                     Grid.SetColumn(addComparatorValueTextBox, gridColumn);
                     gridColumn++;
                     CardInnerView.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
@@ -553,6 +557,31 @@ namespace SuiteCreatorAvalonia.ViewModels.RuleBuilder
             {
                 _configuringCard = false;
             }
+        }
+
+        private bool IsVersionDetection =>
+            DetectionType == DetectionTypes.Version ||
+            DetectionType == DetectionTypes.FileVersion ||
+            DetectionType == DetectionTypes.ProductVersion ||
+            DetectionType == DetectionTypes.StringVersion;
+
+        // The UI wants a proper dotted version, but a value with other separators is still accepted since the
+        // SuiteExecutor normalizes separators on both sides before comparing. Warn once per edit on focus loss.
+        private string? _lastWarnedVersion;
+        private async Task WarnIfLooseVersionAsync()
+        {
+            string? value = ComparatorValue?.Trim();
+            if (string.IsNullOrEmpty(value) || Rule.IsStrictVersion(value) || value == _lastWarnedVersion)
+                return;
+            if (!Rule.TryParseLooseVersion(value, out _))
+                return;
+            _lastWarnedVersion = value;
+            string normalized = Rule.NormalizeVersionSeparators(value);
+            await ShowErrorPop(
+                "Version uses non-dot separators",
+                $"'{value}' isn't a standard version. It will still be parsed and treated as '{normalized}'. " +
+                "Any separator in the version read from the target (for example 10,0,0 or 10/0/0) is handled the same way. " +
+                "Consider using dots, like 10.0.0, to keep it clear.");
         }
 
         private async void OpenPSModalWindow()

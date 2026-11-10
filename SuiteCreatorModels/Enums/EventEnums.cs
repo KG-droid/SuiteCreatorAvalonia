@@ -35,6 +35,14 @@
     }
     #endregion
 
+    #region Fonts
+    public enum FontAction
+    {
+        Install,
+        Remove
+    }
+    #endregion
+
     #region Drivers
     public enum DriverAction
     {
@@ -60,7 +68,8 @@
         Copy,
         Move,
         Delete,
-        Rename
+        Rename,
+        CreateFolder
     }
 
     public enum FileSysIOType

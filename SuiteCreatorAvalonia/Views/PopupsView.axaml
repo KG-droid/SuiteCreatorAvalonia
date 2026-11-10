@@ -8,6 +8,7 @@
 	xmlns:mibase="using:Material.Icons"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:helpers="using:SuiteCreatorAvalonia.Helpers"
+	xmlns:controls="using:SuiteCreatorAvalonia.Controls"
 	xmlns:converters="using:SuiteCreatorAvalonia.Converters"
 	xmlns:eventCommon="using:SuiteCreatorAvalonia.Models.Common"
 	services:DialogManager.Register="{Binding}"
@@ -15,7 +16,7 @@
     mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="1000"
     x:Class="SuiteCreatorAvalonia.Views.PopupsView"
     services:Help.Title="Popups"
-    services:Help.PageSummary="Configure the popups end users see while the suite runs — the messages, your company logo, and options like letting users defer the install with a timer. Use the sample window to preview exactly what users will see."
+    services:Help.PageSummary="Configure the popups end users see while the suite runs — the messages (with bold, italic, size and colour formatting), your company logo, and options like letting users defer the install with a timer. Use the sample window to preview exactly what users will see."
     x:DataType="vm:PopupsViewModel">
 
 	<UserControl.Resources>
@@ -230,17 +231,9 @@
 											Classes="IconButton"
 											Command="{Binding RemoveInstallPopCommand}"
 											Tag="Minus"/>
-										<Border
+										<controls:RichTextEditor
 											Grid.Row="1"
-											BorderBrush="#FF838383"
-											BorderThickness="1"
-											CornerRadius="7">
-											<AvaloniaEdit:TextEditor
-												Margin="5"
-												Document="{Binding InstallTxt}"
-												BorderBrush="Gray"
-												MinHeight="100"/>
-										</Border>
+											Markup="{Binding InstallTxt}"/>
 										<Grid
 											ColumnDefinitions="Auto,*,Auto"
 											Margin="0,5,0,0"
@@ -309,16 +302,9 @@
 											Command="{Binding RemoveUninstallPopCommand}"
 											Classes="IconButton"
 											Tag="Minus"/>
-										<Border
+										<controls:RichTextEditor
 											Grid.Row="1"
-											BorderBrush="#FF838383"
-											BorderThickness="1"
-											CornerRadius="7">
-											<AvaloniaEdit:TextEditor
-												Document="{Binding UninstallTxt}"
-												Margin="5"
-												MinHeight="100"/>
-										</Border>
+											Markup="{Binding UninstallTxt}"/>
 										<Grid
 											ColumnDefinitions="Auto,*,Auto"
 											Margin="0,5,0,0"

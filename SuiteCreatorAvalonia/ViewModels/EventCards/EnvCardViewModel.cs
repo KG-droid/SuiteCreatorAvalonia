@@ -211,6 +211,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 Value = env.Value;
                 Behaviour = env.Behaviour;
                 Separator = env.Separator;
+                IsPermanent = env.IsPermanent;
                 Schedules.Clear();
                 Schedules.AddRange(env.Schedules);
                 // Ensure that the EventStage and Condition in each Schedule is the same instance as in SuiteStages/SuiteConditions for the ComboBox binding to work correctly.
@@ -229,6 +230,7 @@ namespace SuiteCreatorAvalonia.ViewModels.EventCards
                 env.Value = Value;
                 env.Behaviour = Behaviour;
                 env.Separator = Separator;
+                env.IsPermanent = IsPermanent;
                 env.Schedules = Schedules.ToList();
                 if (!Design.IsDesignMode)
                     _coreManager.UpdateEnvironmentEvent(env);

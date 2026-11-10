@@ -23,6 +23,7 @@ Instead of hand-rolling a wrapper script per app, you build the suite visually: 
 - **Service / Process Closures** — stop services or close running processes before installs run, so files aren't locked.
 - **Shortcuts** — create desktop or Start Menu shortcuts.
 - **Drivers** — install Windows drivers from an `.inf`, or remove them from the driver store.
+- **Fonts** — install a font file, or every font in a folder, for all users, or remove installed fonts by file name.
 - **Rules** — conditional logic that gates other events on a file, registry value, or other condition matching.
 - **Popups** — end-user facing messaging while the suite runs: warn users before an upgrade, show install progress, let them defer with a timer, preview exactly what they'll see, and automatically pause if the user's on a call. See the **[user popup guide](docs/user-popup-guide.md)** for how the popup works, linking it to process closures, and the deferral flow.
 
@@ -37,6 +38,10 @@ The **Build** page turns your configuration into a real deployable: fill in the 
 | Popups | Build |
 |---|---|
 | ![Popups](docs/images/popups.png) | ![Build](docs/images/build.png) |
+
+## Viewing a built suite without importing it
+
+Need to check what's inside a suite someone else built? Press the **View a built Suite** button (the file-with-eye icon in the top-left toolbar) and pick the suite `.exe`. Suite Creator reads only the suite's configuration file out of the exe and shows a read-only summary of the packages and events it contains, each with its settings and when in the suite it runs, plus the rule sets, popup and build settings. PS Scripts events have a **View script** button that opens their full script text in a read-only window. Nothing is extracted and your open project isn't touched. If you decide you want to change the suite, press **Import for editing** in the viewer to run the normal full import.
 
 ## How suites stay up to date
 

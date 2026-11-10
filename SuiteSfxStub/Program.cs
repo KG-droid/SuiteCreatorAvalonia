@@ -10,7 +10,8 @@ namespace SuiteSfxStub;
 
 internal static class Program
 {
-    private const int Magic = unchecked((int)0x53554658); // 'SUFX'
+    private const int Magic = unchecked((int)0x53554632); // 'SUF2'
+    private const int LegacyMagic = unchecked((int)0x53554658); // 'SUFX'
     private static readonly string _installedExecutorDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "SuiteExecutor");
 
     // The suite always extracts to a fixed, admin-only location under %windir%. This is deliberately
@@ -297,23 +298,43 @@ internal static class Program
     }
 
     // Payload format (appended to the end of the exe):
-    // [zipBytes...][int32 zipLength][int32 magic 'SUFX']
+    //   current: [zipBytes...][int64 zipLength][int32 magic 'SUF2']
+    //   legacy:  [zipBytes...][int32 zipLength][int32 magic 'SUFX']  (limited to 2GB payloads)
     // Returns the byte range of the embedded zip within the exe so it can be read/extracted in place.
     private static (long zipStart, long zipLength) LocatePayload(FileStream fs)
     {
         if (fs.Length < 8)
             throw new InvalidDataException("Invalid SFX file.");
 
-        fs.Seek(-8, SeekOrigin.End);
+        fs.Seek(-4, SeekOrigin.End);
         using var br = new BinaryReader(fs, System.Text.Encoding.UTF8, leaveOpen: true);
-        int zipLength = br.ReadInt32();
         int magic = br.ReadInt32();
-        if (magic != Magic)
+
+        long zipLength;
+        long trailerSize;
+        if (magic == Magic)
+        {
+            if (fs.Length < 12)
+                throw new InvalidDataException("Invalid SFX file.");
+            fs.Seek(-12, SeekOrigin.End);
+            zipLength = br.ReadInt64();
+            trailerSize = 12;
+        }
+        else if (magic == LegacyMagic)
+        {
+            fs.Seek(-8, SeekOrigin.End);
+            zipLength = br.ReadInt32();
+            trailerSize = 8;
+        }
+        else
+        {
             throw new InvalidDataException("Invalid SFX magic.");
-        if (zipLength <= 0 || zipLength > fs.Length - 8)
+        }
+
+        if (zipLength <= 0 || zipLength > fs.Length - trailerSize)
             throw new InvalidDataException("Invalid payload length.");
 
-        long zipStart = fs.Length - 8 - zipLength;
+        long zipStart = fs.Length - trailerSize - zipLength;
         return (zipStart, zipLength);
     }
 

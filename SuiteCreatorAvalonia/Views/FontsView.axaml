@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:vm="clr-namespace:SuiteCreatorAvalonia.ViewModels"
+			 xmlns:views="using:SuiteCreatorAvalonia.Views"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:services="using:SuiteCreatorAvalonia.Services"
+             x:Class="SuiteCreatorAvalonia.Views.FontsView"
+             services:Help.Title="Fonts"
+             services:Help.PageSummary="Install font files for all users on the machine (a single font file, or a whole folder of them, is bundled into the suite), or remove installed fonts from the Windows Fonts folder by their file name."
+			 x:DataType="vm:FontsViewModel">
+
+	<Design.DataContext>
+		<vm:FontsViewModel/>
+	</Design.DataContext>
+
+	<UserControl Content="{Binding IoEventViewModel}"/>
+
+</UserControl>

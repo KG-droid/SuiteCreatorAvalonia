@@ -31,11 +31,13 @@ namespace SuiteCreatorAvalonia.Models.Events
         public override void UpdateFrom(EventCore ecore)
         {
             if (ecore is not PowerShellBase powershell) return;
-            Id = Id;
+            Id = powershell.Id;
             ScriptName = powershell.ScriptName;
             ScriptPath = powershell.ScriptPath;
-            if (ScriptDoc != null)
-                ScriptDoc.Text = powershell.ScriptDoc != null ? powershell.ScriptDoc.Text : string.Empty;
+            if (ScriptDoc == null)
+                ScriptDoc = powershell.ScriptDoc != null ? new TextDocument(powershell.ScriptDoc.Text) : null;
+            else if (!string.Equals(ScriptDoc.Text, powershell.ScriptDoc?.Text ?? string.Empty, StringComparison.Ordinal))
+                ScriptDoc.Text = powershell.ScriptDoc?.Text ?? string.Empty;
             ScriptArgs = powershell.ScriptArgs;
             Context = powershell.Context;
             SupportFilesDir = powershell.SupportFilesDir;
