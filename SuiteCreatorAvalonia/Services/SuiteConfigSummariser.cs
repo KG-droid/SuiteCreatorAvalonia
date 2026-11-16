@@ -650,7 +650,7 @@ namespace SuiteCreatorAvalonia.Services
                 ("Lockdown", popup.LockdownEnabled));
             if (popup.ShowPopupWarning)
             {
-                if (popup.Timer > 0) Add(details, "Timer", $"{popup.Timer}s, then {HumaniseNullable(popup.TimerExpireAction) ?? "continue"}");
+                if (popup.Timer > 0) Add(details, "Timer", $"{popup.Timer} min, then{HumaniseNullable(popup.TimerExpireAction) ?? "continue"}");
                 if (popup.DelayDays.HasValue) Add(details, "Deferral", $"Up to {popup.DelayDays.Value} day(s)");
                 Add(details, "If logged off", HumaniseNullable(popup.LoggedOffAction));
                 Add(details, "If locked", HumaniseNullable(popup.LockedAction));
