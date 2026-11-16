@@ -356,8 +356,26 @@ namespace SuiteExecutor
                 TimeSpan popTimeSpan = TimeSpan.FromMinutes(_suiteConfig.PopupSettings.Timer);
                 string popArguments = $"--Config \"{popConfigPath}\" --SuiteLogo \"{suiteLogoPath}\" --CompanyLogo \"{companyLogoPath}\" --LogFile \"{_logPath}\"";
                 _log.WriteLog($"Popup command: \"{_userPopExe}\" {popArguments}", "ExecPopup", Log.Severity.Info);
-                ImpersonatedProcessResult? result = StartProcessAsCurrentUser(_userPopExe, popArguments, popupDir, true, true, popTimeSpan);
-                switch ((PopupExitType?)result?.ExitCode)
+                // The popup runs its own countdown for the same duration and exits with TimerExpired. Give it a
+                // grace period so that it, not this host-side wait, normally decides the outcome.
+                TimeSpan popWaitTimeout = popTimeSpan + TimeSpan.FromMinutes(1);
+                ImpersonatedProcessResult? result;
+                PopupExitType? popupExit;
+                try
+                {
+                    result = StartProcessAsCurrentUser(_userPopExe, popArguments, popupDir, true, true, popWaitTimeout);
+                    popupExit = (PopupExitType?)result?.ExitCode;
+                }
+                catch (TimeoutException)
+                {
+                    // The popup never exited by itself (hung/unresponsive) and was terminated. The timer ran
+                    // out either way, so honour TimerExpireAction rather than falling into the generic
+                    // "popup failed, proceed" path, which would ignore a configured Skip.
+                    _log.WriteLog($"Popup did not exit within {popWaitTimeout} and was terminated, treating as timer expired", "ExecPopup", Log.Severity.Warning);
+                    result = null;
+                    popupExit = PopupExitType.TimerExpired;
+                }
+                switch (popupExit)
                 {
                     case PopupExitType.Continue:
                         _log.WriteLog($"Popup result was: {PopupExitType.Continue}", "ExecPopup", Log.Severity.Info);
